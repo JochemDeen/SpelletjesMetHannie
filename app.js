@@ -1,8 +1,13 @@
+// Load environment variables
 require('dotenv').config();
+
 const express = require('express');
 const session = require('express-session'); // Import express-session
-const bcrypt = require('bcrypt');
-const db = require('./models/user');
+const SQLiteStore = require('connect-sqlite3')(session);
+
+const path = require('path');
+const authRoutes = require('./routes/auth');
+const gameRoutes = require('./routes/games');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -11,59 +16,39 @@ const PORT = process.env.PORT || 3000;
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+// Serve static files from the 'public' directory
+app.use(express.static(path.join(__dirname, 'public')));
+
 // Add session management
 app.use(session({
-  secret: process.env.SESSION_SECRET || 'secret', // Use a strong secret key in production!
-  resave: false,
-  saveUninitialized: true,
-  cookie: { secure: false } // Note: `secure: true` requires HTTPS
-}));
+    store: new SQLiteStore({ db: 'sessions.sqlite' }),
+    secret: process.env.SESSION_SECRET || 'secret',
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+      secure: process.env.COOKIE_SECURE === 'true',
+      maxAge: 7 * 24 * 60 * 60 * 1000 // Optional: Set cookie to expire in 7 days
+    }
+  }));
+  
+  // Use authentication routes
+  app.use('/', authRoutes);
 
+  // Use game routes
+  app.use('/', gameRoutes);
 
-function requireLogin(req, res, next) {
+  
+  // Catch-all route to handle all other requests
+  app.get('*', (req, res) => {
     if (req.session.userId) {
-      next();
+      res.redirect('/dashboard');
     } else {
       res.redirect('/login');
     }
-  }
-    
-app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
-});
-app.post('/login', (req, res) => {
-    const { username, password } = req.body;
-
-    db.get('SELECT * FROM users WHERE username = ?', [username], (err, user) => {
-        if (err) {
-            console.error(err.message);
-            res.send('An error occurred.');
-        } else if (user && bcrypt.compareSync(password, user.passwordHash)) {
-            req.session.userId = user.id;
-            res.redirect('/dashboard');
-        } else {
-            res.send('Invalid username or password.');
-        }
-    });
-});
-
-app.get('/logout', (req, res) => {
-    req.session.destroy(err => {
-        if (err) {
-            return res.send('Er is een fout opgetreden.');
-        }
-        res.redirect('/login');
-    });
-});
-
-app.get('/login', (req, res) => {
-    res.sendFile(__dirname + '/public/login.html');
-});
-
-app.get('/dashboard', requireLogin, (req, res) => {
-    res.send('Welkom!');
-});
-
-app.get('*', requireLogin, (req, res) => {
-    res.redirect('/dashboard');
-});
+  });
+  
+  // Start the server
+  app.listen(PORT, () => {
+    console.log(`Server is running on port ${PORT}`);
+  });
+  

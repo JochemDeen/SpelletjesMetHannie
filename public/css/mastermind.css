@@ -1,0 +1,15 @@
+/* Basic styles for the Mastermind game */
+
+body {
+    font-family: Arial, sans-serif;
+    text-align: center;
+  }
+  
+  #game-container {
+    margin: 20px auto;
+    width: 90%;
+    max-width: 600px;
+  }
+  
+  /* Add more styles as needed */
+  

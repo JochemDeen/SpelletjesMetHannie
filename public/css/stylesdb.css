@@ -1,0 +1,33 @@
+body {
+    font-family: Arial, sans-serif;
+    text-align: center;
+  }
+  
+  .game-grid {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  
+  .game-card {
+    margin: 15px;
+    flex: 1 1 200px;
+    max-width: 200px;
+  }
+  
+  .game-card img {
+    width: 100%;
+    height: auto;
+  }
+  
+  .game-card h2 {
+    font-size: 1.2em;
+  }
+  
+  @media (max-width: 600px) {
+    .game-grid {
+      flex-direction: column;
+      align-items: center;
+    }
+  }
+  
