@@ -1,0 +1,24 @@
+# Node.js dependencies
+node_modules/
+
+# Logs
+logs
+*.log
+
+# Runtime data
+pids
+*.pid
+*.seed
+
+# Configuration files
+.env
+
+# OS files
+.DS_Store
+
+# NPM debug file
+npm-debug.log*
+
+# IDE files
+.idea/
+.vscode/
