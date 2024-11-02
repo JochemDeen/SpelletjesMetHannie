@@ -16,6 +16,17 @@
       <input type="password" id="password" name="password" required><br>
       <button type="submit">Inloggen</button>
     </form>
+    <p id="error-message" class="error"></p>
+
   </div>
+  <script>
+    // Check for error query parameter
+    const urlParams = new URLSearchParams(window.location.search);
+    const error = urlParams.get('error');
+    if (error) {
+      const errorMessage = document.getElementById('error-message');
+      errorMessage.textContent = 'Ongeldige gebruikersnaam of wachtwoord.';
+    }
+  </script>
 </body>
 </html>

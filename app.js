@@ -19,6 +19,8 @@ app.use(express.urlencoded({ extended: true }));
 // Serve static files from the 'public' directory
 app.use(express.static(path.join(__dirname, 'public')));
 
+app.set('trust proxy', 1); // Trust first proxy
+
 // Add session management
 app.use(session({
     store: new SQLiteStore({ db: 'sessions.sqlite' }),
@@ -37,7 +39,6 @@ app.use(session({
   // Use game routes
   app.use('/', gameRoutes);
 
-  
   // Catch-all route to handle all other requests
   app.get('*', (req, res) => {
     if (req.session.userId) {

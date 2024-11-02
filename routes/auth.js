@@ -12,19 +12,20 @@ router.get('/login', (req, res) => {
 
 router.post('/login', (req, res) => {
     const { username, password } = req.body;
-
+  
     db.get('SELECT * FROM users WHERE username = ?', [username], (err, user) => {
-        if (err) {
-            console.error(err.message);
-            res.send('An error occurred.');
-        } else if (user && bcrypt.compareSync(password, user.passwordHash)) {
-            req.session.userId = user.id;
-            res.redirect('/dashboard');
-        } else {
-            res.send('Ongeldige gebruikersnaam of wachtwoord.');
-        }
+      if (err) {
+        console.error(err.message);
+        res.redirect('/login?error=1');
+      } else if (user && bcrypt.compareSync(password, user.passwordHash)) {
+        req.session.userId = user.id;
+        res.redirect('/dashboard');
+      } else {
+        res.redirect('/login?error=1');
+      }
     });
-});
+  });
+  
 
 router.get('/logout', (req, res) => {
     req.session.destroy(err => {

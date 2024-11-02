@@ -13,6 +13,10 @@ pids
 # Configuration files
 .env
 
+# Database files
+*.sqlite
+
+
 # OS files
 .DS_Store
 
