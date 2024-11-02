@@ -7,10 +7,20 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
 <body>
-  <h1>Mastermind</h1>
-  <div id="game-container">
-    <!-- Game interface will be here -->
-  </div>
+    <h1>Raad het woord</h1>
+    <div id="nav-links">
+        <a href="/mastermind/compare" id="compare-link" style="display: none;">Vergelijk resultaten</a>
+        <a href="/mastermind/stats" id="stats-link">Stats</a>
+      </div>
+    
+    <div id="game-container">
+        <!-- Grid will be generated dynamically -->
+      </div>
+      <div id="keyboard">
+        <div class="keyboard-row" id="row-1"></div>
+        <div class="keyboard-row" id="row-2" style="margin-left: 25px;"></div>
+        <div class="keyboard-row" id="row-3"></div>
+      </div>
   <script src="/js/mastermind.js"></script>
 </body>
 </html>

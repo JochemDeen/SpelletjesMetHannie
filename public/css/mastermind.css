@@ -1,15 +1,87 @@
-/* Basic styles for the Mastermind game */
+#game-container {
+    display: grid;
+    grid-template-columns: repeat(5, 50px);
+    grid-template-rows: repeat(6, 50px);
+    gap: 10px;
+    justify-content: center;
+    margin-top: 20px;
+  }
 
-body {
-    font-family: Arial, sans-serif;
+  .letter-box {
+    width: 50px;
+    height: 50px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border: 2px solid lightgray;
+    font-size: 24px;
+    font-weight: bold;
+    text-transform: uppercase;
+    background-color: white;
+    font-family: 'Arial', sans-serif;
+  }
+
+  #keyboard {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    justify-content: center;
+    align-items: center;
+    margin-top: 20px;
+  }
+
+  .keyboard-row {
+    display: flex;
+    gap: 5px;
+    justify-content: center;
+  }
+
+  .key {
+    width: 45px;
+    height: 50px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 18px;
+    cursor: pointer;
+    background-color: lightgray;
+    text-transform: uppercase;
+    border: none;
+    transition: background-color 0.1s;
+    font-weight: bold;
+    font-family: 'Arial', sans-serif;
+  }
+
+  .key:active {
+    background-color: darkgray;
+  }
+
+  .key.enter {
+    width: 75px;
+  }
+
+  .key.backspace {
+    width: 75px;
+    font-size: 24px;
+  }
+
+  h1 {
     text-align: center;
+    font-size: 2.5em;
+    color: #333;
+    font-family: 'Arial', sans-serif;
+    margin-top: 20px;
   }
-  
-  #game-container {
-    margin: 20px auto;
-    width: 90%;
-    max-width: 600px;
+
+  #nav-links {
+    text-align: center;
+    margin-top: 10px;
   }
-  
-  /* Add more styles as needed */
-  
+
+  #nav-links a {
+    margin: 0 15px;
+    text-decoration: none;
+    color: #333;
+    font-weight: bold;
+    font-family: 'Arial', sans-serif;
+  }
