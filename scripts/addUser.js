@@ -1,11 +1,12 @@
 const bcrypt = require('bcrypt');
 const { db } = require('../models/user'); 
+const logger = require('../logger');  
 
 const username = process.argv[2];
 const password = process.argv[3];
 
 if (!username || !password) {
-  console.log('Usage: node addUser.js <username> <password>');
+  logger.info('Usage: node addUser.js <username> <password>');
   process.exit(1);
 }
 
@@ -16,8 +17,8 @@ db.run(
   [username, passwordHash],
   function (err) {
     if (err) {
-      return console.log('Error adding user:', err.message);
+      return logger.info('Error adding user:', err.message);
     }
-    console.log(`User ${username} added with ID ${this.lastID}`);
+    logger.info(`User ${username} added with ID ${this.lastID}`);
   }
 );

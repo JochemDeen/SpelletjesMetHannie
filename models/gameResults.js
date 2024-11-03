@@ -1,5 +1,7 @@
 // models/gameResults.js
 const sqlite3 = require('sqlite3').verbose();
+const logger = require('../logger');  
+
 const db = new sqlite3.Database('database.sqlite');
 
 db.serialize(() => {
@@ -24,6 +26,8 @@ async function updateUserGuess(user_id, guess, feedback, wordOfTheDay) {
           if (err) {
             return reject(err);
           }
+          logger.info(`Successfully updated guess for user ${user_id}`);
+
           resolve();
         });
     });
@@ -31,82 +35,92 @@ async function updateUserGuess(user_id, guess, feedback, wordOfTheDay) {
 
 
 async function getUserGameState(user_id) {
-    return new Promise((resolve, reject) => {
-      const today = new Date().toISOString().split('T')[0];
-      db.all('SELECT * FROM mastermind_results WHERE user_id = ? AND date(timestamp) = ?', [user_id, today], (err, rows) => {
-        if (err) {
-          return reject(err);
-        }
-        if (rows.length) {
-          const guesses = rows.map(row => row.guess);
-          const feedback = rows.map(row => JSON.parse(row.feedback));
-          const success = feedback.some(feedbackArray => feedbackArray.every(entry => entry === 'correct'));
-          resolve({ guesses, feedback, success, currentRow: rows.length });
-        } else {
-          resolve(null);
-        }
-      });
+  logger.info(`Retrieving game state for user ${user_id}`);
+  return new Promise((resolve, reject) => {
+    const today = new Date().toISOString().split('T')[0];
+    db.all('SELECT * FROM mastermind_results WHERE user_id = ? AND date(timestamp) = ?', [user_id, today], (err, rows) => {
+      if (err) {
+        return reject(err);
+      }
+      if (rows.length) {
+        logger.info(`Game state found for user ${user_id}`);
+        const guesses = rows.map(row => row.guess);
+        const feedback = rows.map(row => JSON.parse(row.feedback));
+        const success = feedback.some(feedbackArray => feedbackArray.every(entry => entry === 'correct'));
+        resolve({ guesses, feedback, success, currentRow: rows.length });
+      } else {
+        logger.info(`No game state found for user ${user_id}`);
+        resolve(null);
+      }
     });
-  }
+  });
+}
  
  // Function to get all results for the stats page if the user has solved the puzzle today
 async function getAllResults(user_id) {
-    const today = new Date().toISOString().split('T')[0];
-    return new Promise((resolve, reject) => {
-      // First, check if the user has a correct guess for today
-      db.get('SELECT * FROM mastermind_results WHERE user_id = ? AND feedback LIKE ? AND date(timestamp) = ?', [user_id, '%correct%', today], (err, row) => {
-        if (err) {
-          return reject(err);
-        }
-        if (row) {
-          // If the user has solved it, retrieve all results for today
-          db.all('SELECT * FROM mastermind_results WHERE date(timestamp) = ?', [today], async (err, rows) => {
-            if (err) {
-              return reject(err);
-            }
-            if (rows.length) {
-              const userDb = require('./user');
-              const resultsMap = new Map();
-  
-              for (const row of rows) {
-                const username = await userDb.getUsernameById(row.user_id);
-                if (!resultsMap.has(username)) {
-                  resultsMap.set(username, {
-                    solveTime: row.timestamp,
-                    username,
-                    guesses: [],
-                    feedback: []
-                  });
-                }
-                const userResult = resultsMap.get(username);
-                userResult.guesses.push(row.guess);
-                userResult.feedback.push(JSON.parse(row.feedback));
-                // Update solveTime to the latest timestamp when the user correctly solved it
-                if (JSON.parse(row.feedback).every(entry => entry === 'correct')) {
-                  userResult.solveTime = row.timestamp;
-                }
+  logger.info(`Retrieving all results for user ${user_id}`);
+  const today = new Date().toISOString().split('T')[0];
+  return new Promise((resolve, reject) => {
+    // First, check if the user has a correct guess for today
+    db.get('SELECT * FROM mastermind_results WHERE user_id = ? AND feedback LIKE ? AND date(timestamp) = ?', [user_id, '%correct%', today], (err, row) => {
+      if (err) {
+        return reject(err);
+      }
+      if (row) {
+        logger.info(`User ${user_id} solved the puzzle today. Retrieving all results.`);
+
+        // If the user has solved it, retrieve all results for today
+        db.all('SELECT * FROM mastermind_results WHERE date(timestamp) = ?', [today], async (err, rows) => {
+          if (err) {
+            return reject(err);
+          }
+          if (rows.length) {
+            const userDb = require('./user');
+            const resultsMap = new Map();
+
+            for (const row of rows) {
+              const username = await userDb.getUsernameById(row.user_id);
+              if (!resultsMap.has(username)) {
+                resultsMap.set(username, {
+                  solveTime: row.timestamp,
+                  username,
+                  guesses: [],
+                  feedback: []
+                });
               }
-  
-              // Filter out users who haven't completed the puzzle (i.e., no 'correct' feedback)
-              const results = Array.from(resultsMap.values()).filter(result => 
-                result.feedback.some(feedbackArray => feedbackArray.every(entry => entry === 'correct'))
-              );
-  
-              resolve(results);
-            } else {
-              resolve([]);
+              const userResult = resultsMap.get(username);
+              userResult.guesses.push(row.guess);
+              userResult.feedback.push(JSON.parse(row.feedback));
+              // Update solveTime to the latest timestamp when the user correctly solved it
+              if (JSON.parse(row.feedback).every(entry => entry === 'correct')) {
+                userResult.solveTime = row.timestamp;
+              }
             }
-          });
-        } else {
-          // User hasn't solved the puzzle today, return empty
-          resolve([]);
-        }
-      });
+
+            // Filter out users who haven't completed the puzzle (i.e., no 'correct' feedback)
+            const results = Array.from(resultsMap.values()).filter(result => 
+              result.feedback.some(feedbackArray => feedbackArray.every(entry => entry === 'correct'))
+            );
+            logger.info(`Retrieved ${results.length} results for today.`);
+
+            resolve(results);
+          } else {
+            logger.info(`User ${user_id} has not solved the puzzle today.`);
+            resolve([]);
+          }
+        });
+      } else {
+        // User hasn't solved the puzzle today, return empty
+        resolve([]);
+      }
     });
-  }
+  });
+}
 
 // Function to get statistics for a user
 async function getUserStats(user_id) {
+  logger.info(`Retrieving statistics for user ${user_id}`);
+
     return new Promise((resolve, reject) => {
       db.all('SELECT * FROM mastermind_results WHERE user_id = ?', [user_id], (err, rows) => {
         if (err) {
@@ -161,7 +175,8 @@ async function getUserStats(user_id) {
         const latestGuessTime = rows.length ? rows[rows.length - 1].timestamp : null;
         const averageGuess = totalGames > 0 ? (rows.length / totalGames).toFixed(2) : 0;
         const medianGuess = guessDistribution.reduce((a, b) => a + b, 0) / 2;
-  
+        logger.info(`User ${user_id} statistics - Total Games: ${totalGames}, Correct Games: ${correctGames}, Percent Correct: ${percentCorrect}`);
+
         resolve({
           totalGames,
           percentCorrect,

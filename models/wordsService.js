@@ -1,6 +1,9 @@
+//models/wordsService.js
 const fs = require('fs');
 const path = require('path');
 const sqlite3 = require('sqlite3').verbose();
+const logger = require('../logger');  
+
 const db = new sqlite3.Database('database.sqlite');
 
 db.serialize(() => {
@@ -21,8 +24,10 @@ let wordsList = [];
   try {
     const data = fs.readFileSync(wordsFilePath, 'utf-8');
     wordsList = data.split('\n').map(word => word.trim().toLowerCase());
+    logger.info(`Loaded ${wordsList.length} words into memory.`);
+
   } catch (error) {
-    console.error('Error loading words from woorden.txt:', error);
+    logger.error('Error loading words from woorden.txt:', error);
   }
 })();
 
@@ -35,14 +40,18 @@ let validationWordsList = [];
   try {
     const data = fs.readFileSync(validationFilePath, 'utf-8');
     validationWordsList = data.split('\n').map(word => word.trim().toLowerCase());
+    logger.info(`Loaded ${validationWordsList.length} validation words into memory.`);
+
   } catch (error) {
-    console.error('Error loading words from 5wordlist.txt:', error);
+    logger.error('Error loading words from 5wordlist.txt:', error);
   }
 })();
 
 
 // Function to get or set the word of the day in the database
 async function getWordOfTheDay() {
+  logger.info('Getting word of the day.');
+
   return new Promise((resolve, reject) => {
     const today = new Date().toISOString().split('T')[0];
     db.get('SELECT word FROM mastermind_word WHERE date = ?', [today], (err, row) => {
@@ -50,7 +59,7 @@ async function getWordOfTheDay() {
         return reject(err);
       }
       if (row) {
-        console.log(`Word of the day (existing): ${row.word}`);
+        logger.info(`Word of the day for ${today} is: ${row.word}`);
         resolve(row.word);
       } else {
         const wordOfTheDay = wordsList[Math.floor(Math.random() * wordsList.length)];
@@ -58,7 +67,7 @@ async function getWordOfTheDay() {
           if (err) {
             return reject(err);
           }
-          console.log(`Word of the day (new): ${wordOfTheDay}`);
+          logger.info(`Set word of the day for ${today} to: ${wordOfTheDay}`);
           resolve(wordOfTheDay);
         });
       }
@@ -67,7 +76,10 @@ async function getWordOfTheDay() {
 }
 
 async function validateWord(word) {
+  logger.info(`Validating word: ${word}`);
   return validationWordsList.includes(word.toLowerCase());
+  logger.info(`Validation result for word "${word}": ${isValid}`);
+
 }
 
 module.exports = {

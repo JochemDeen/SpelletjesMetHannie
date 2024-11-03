@@ -6,18 +6,22 @@ const path = require('path');
 const { requireLogin } = require('../middleware/authMiddleware');
 const gameResults = require('../models/gameResults'); // Assuming this module handles game data storage
 const wordsService = require('../models/wordsService'); // Assuming this module handles word validation and word of the day
+const logger = require('../logger');  
 
 
 // Mastermind Game Page
 router.get('/mastermind', requireLogin, (req, res) => {
+  logger.info(`GET /mastermind for user: ${req.session.userId}`);
   res.sendFile('mastermind.html', { root: path.join(__dirname, '../public') });
 });
 
 router.get('/mastermind/stats', requireLogin, (req, res) => {
+  logger.info(`GET /mastermind/stats for user: ${req.session.userId}`);
     res.sendFile('mastermind-stats.html', { root: path.join(__dirname, '../public') });
 });
 
 router.get('/mastermind/compare', requireLogin, (req, res) => {
+    logger.info(`GET /compare/stats for user: ${req.session.userId}`);
     res.sendFile('mastermind-compare.html', { root: path.join(__dirname, '../public') });
 });
 
@@ -26,11 +30,13 @@ router.get('/mastermind/compare', requireLogin, (req, res) => {
 // Validate Word Endpoint
 router.post('/api/validate-word', requireLogin, async (req, res) => {
     const { word } = req.body;
+    logger.info(`POST /api/validate-word - User: ${req.session.userId}, Word: ${word}`);
     try {
         const isValid = await wordsService.validateWord(word);
+        logger.info(`Validation result for word "${word}": ${isValid}`);
         res.json({ valid: isValid });
     } catch (error) {
-        console.error('Error validating word:', error);
+        logger.error('Error validating word:', error);
         res.status(500).send('An error occurred while validating the word.');
     }
 });
@@ -38,15 +44,14 @@ router.post('/api/validate-word', requireLogin, async (req, res) => {
 // Submit Guess Endpoint
 router.post('/api/submit-guess', requireLogin, async (req, res) => {
     const { guess } = req.body;
-    console.log('Guess:', guess);
     const user_id = req.session.userId;
+    logger.info(`POST /api/submit-guess - User: ${user_id}, Guess: ${guess}`);
+
     try {
         if (!guess) {
             return res.status(400).json({ error: 'Guess is required.' });
           }
         const wordOfTheDay = await wordsService.getWordOfTheDay();
-        console.log('Word of the day:', wordOfTheDay);
-        console.log('Guess:', guess);
         const feedback = generateFeedback(guess, wordOfTheDay);
 
         // Check if the guess is correct
@@ -54,10 +59,11 @@ router.post('/api/submit-guess', requireLogin, async (req, res) => {
 
         // Update game results for the user
         await gameResults.updateUserGuess(user_id, guess, feedback, wordOfTheDay);
-
+        
+        logger.info(`User ${user_id} guess processed - Correct: ${correct}`);
         res.json({ correct, feedback });
     } catch (error) {
-        console.error('Error submitting guess:', error);
+        logger.error('Error submitting guess:', error);
         res.status(500).send('An error occurred while submitting the guess.');
     }
 });
@@ -65,7 +71,7 @@ router.post('/api/submit-guess', requireLogin, async (req, res) => {
 // Load Game State Endpoint
 router.get('/api/load-game-state', requireLogin, async (req, res) => {
     const user_id = req.session.userId;
-    console.log('User ID:', user_id);
+    logger.info(`GET /api/load-game-state for user ${user_id}`);
     try {
       const gameState = await gameResults.getUserGameState(user_id);
       if (gameState) {
@@ -74,7 +80,7 @@ router.get('/api/load-game-state', requireLogin, async (req, res) => {
         res.json({ success: false, message: 'No game state found.' });
       }
     } catch (error) {
-      console.error('Error loading game state:', error);
+      logger.error('Error loading game state:', error);
       res.status(500).send('An error occurred while loading the game state.');
     }
   });
@@ -100,19 +106,16 @@ function generateFeedback(guess, wordOfTheDay) {
 
   router.get('/api/get-results', requireLogin, async (req, res) => {
     const user_id = req.session.userId;
-    console.log('User ID:', user_id);
     try {
       const userGameState = await gameResults.getUserGameState(user_id);
-      console.log('User game state:', userGameState);
       if (userGameState && userGameState.success) {
         const results = await gameResults.getAllResults(user_id);
-        console.log('Results:', results);
         res.json({ success: true, results });
       } else {
         res.status(403).json({ success: false, message: 'You need to solve the puzzle before accessing the results.' });
       }
     } catch (error) {
-      console.error('Error getting results:', error);
+      logger.error('Error getting results:', error);
       res.status(500).json({ error: 'An error occurred while retrieving the results.' });
     }
   });
@@ -123,7 +126,7 @@ try {
     const stats = await gameResults.getUserStats(user_id);
     res.json({ success: true, stats });
 } catch (error) {
-    console.error('Error getting user stats:', error);
+    logger.error('Error getting user stats:', error);
     res.status(500).json({ error: 'An error occurred while retrieving user statistics.' });
 }
 });
