@@ -27,7 +27,11 @@ document.addEventListener('DOMContentLoaded', async () => {
             // Create a header for the user's name and solve time
             const header = document.createElement('h2');
             const solveTime = new Date(result.solveTime);
-            header.textContent = `${result.username} - Opgelost om: ${solveTime.getHours().toString().padStart(2, '0')}:${solveTime.getMinutes().toString().padStart(2, '0')}`;
+            if (result.success) {
+                header.textContent = `${result.username} - Opgelost om: ${solveTime.getHours().toString().padStart(2, '0')}:${solveTime.getMinutes().toString().padStart(2, '0')}`;
+            } else {
+                header.textContent = `${result.username} - Niet opgelost`;
+            }
             userContainer.appendChild(header);
 
             // Create a grid for the user's guesses

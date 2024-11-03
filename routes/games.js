@@ -87,28 +87,43 @@ router.get('/api/load-game-state', requireLogin, async (req, res) => {
 
 // Helper function to generate feedback for the guess
 function generateFeedback(guess, wordOfTheDay) {
-    if (!guess || !wordOfTheDay || guess.length !== wordOfTheDay.length) {
-        throw new Error('Invalid guess or word of the day. They must be non-empty and of equal length.');
-      }
-    
-    const feedback = [];
-    for (let i = 0; i < guess.length; i++) {
-      if (guess[i] === wordOfTheDay[i]) {
-        feedback.push('correct');
-      } else if (wordOfTheDay.includes(guess[i])) {
-        feedback.push('misplaced');
-      } else {
-        feedback.push('incorrect');
-      }
-    }
-    return feedback;
+  if (!guess || !wordOfTheDay || guess.length !== wordOfTheDay.length) {
+      throw new Error('Invalid guess or word of the day. They must be non-empty and of equal length.');
   }
+  
+  const feedback = new Array(guess.length).fill('incorrect');
+  const usedIndices = new Set();
+  
+  // Step 1: Mark exact matches as 'correct' and track used indices
+  for (let i = 0; i < guess.length; i++) {
+      if (guess[i] === wordOfTheDay[i]) {
+          feedback[i] = 'correct';
+          usedIndices.add(i);
+      }
+  }
+
+  // Step 2: Mark misplaced letters
+  for (let i = 0; i < guess.length; i++) {
+      if (feedback[i] === 'correct') continue; // Skip if already marked correct
+      
+      // Find if guess[i] exists in wordOfTheDay but at a different position
+      for (let j = 0; j < wordOfTheDay.length; j++) {
+          if (guess[i] === wordOfTheDay[j] && !usedIndices.has(j)) {
+              feedback[i] = 'misplaced';
+              usedIndices.add(j); // Mark this position as used in wordOfTheDay
+              break;
+          }
+      }
+  }
+  
+  return feedback;
+}
 
   router.get('/api/get-results', requireLogin, async (req, res) => {
     const user_id = req.session.userId;
     try {
       const userGameState = await gameResults.getUserGameState(user_id);
-      if (userGameState && userGameState.success) {
+      if (userGameState && userGameState.finished) {
         const results = await gameResults.getAllResults(user_id);
         res.json({ success: true, results });
       } else {
