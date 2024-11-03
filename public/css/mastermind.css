@@ -85,3 +85,37 @@
     font-weight: bold;
     font-family: 'Arial', sans-serif;
   }
+
+  #row-2 {
+    margin-left: 25px; /* Default margin */
+}
+
+  /* Existing styles adjusted for mobile */
+@media (max-width: 768px) {
+  .key {
+    width: 30px; /* Reduce width for mobile screens */
+    height: 45px; /* Slightly reduce height */
+    font-size: 14px; /* Make the font size smaller to match the reduced key size */
+  }
+
+  .key.enter{
+    width: 55px; /* Reduce width for larger keys */
+    font-size: 12px;
+  }
+
+  .key.backspace {
+    width: 55px; /* Reduce width for larger keys */
+    font-size: 15px;
+  }
+
+  #keyboard {
+    gap: 3px; /* Reduce gap between keys for smaller screens */
+  }
+
+  .keyboard-row {
+    gap: 3px; /* Match reduced key gap */
+  }
+  #row-2 {
+    margin-left: 15px; /* Reduced margin for smaller screens */
+  }
+}
