@@ -1,5 +1,5 @@
 const bcrypt = require('bcrypt');
-const db = require('../models/user');
+const { db } = require('../models/user'); 
 
 const username = process.argv[2];
 const password = process.argv[3];

@@ -97,6 +97,36 @@ function generateFeedback(guess, wordOfTheDay) {
     }
     return feedback;
   }
+
+  router.get('/api/get-results', requireLogin, async (req, res) => {
+    const user_id = req.session.userId;
+    console.log('User ID:', user_id);
+    try {
+      const userGameState = await gameResults.getUserGameState(user_id);
+      console.log('User game state:', userGameState);
+      if (userGameState && userGameState.success) {
+        const results = await gameResults.getAllResults(user_id);
+        console.log('Results:', results);
+        res.json({ success: true, results });
+      } else {
+        res.status(403).json({ success: false, message: 'You need to solve the puzzle before accessing the results.' });
+      }
+    } catch (error) {
+      console.error('Error getting results:', error);
+      res.status(500).json({ error: 'An error occurred while retrieving the results.' });
+    }
+  });
+
+router.get('/api/get-stats', requireLogin, async (req, res) => {
+const user_id = req.session.userId;
+try {
+    const stats = await gameResults.getUserStats(user_id);
+    res.json({ success: true, stats });
+} catch (error) {
+    console.error('Error getting user stats:', error);
+    res.status(500).json({ error: 'An error occurred while retrieving user statistics.' });
+}
+});
   
 
 module.exports = router;

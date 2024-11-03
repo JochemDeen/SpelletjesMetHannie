@@ -12,4 +12,19 @@ db.serialize(() => {
   `);
 });
 
-module.exports = db;
+// Function to get username by user_id
+async function getUsernameById(user_id) {
+  return new Promise((resolve, reject) => {
+    db.get('SELECT username FROM users WHERE id = ?', [user_id], (err, row) => {
+      if (err) {
+        return reject(err);
+      }
+      resolve(row ? row.username : null);
+    });
+  });
+}
+
+module.exports = {
+  db,
+  getUsernameById,
+};

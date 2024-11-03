@@ -26,6 +26,21 @@ let wordsList = [];
   }
 })();
 
+// Load validation words from 5wordlist.txt
+const validationFilePath = path.resolve(__dirname, '../data/5wordlist.txt');
+let validationWordsList = [];
+
+// Load validation words into memory when the service starts
+(async function loadValidationWords() {
+  try {
+    const data = fs.readFileSync(validationFilePath, 'utf-8');
+    validationWordsList = data.split('\n').map(word => word.trim().toLowerCase());
+  } catch (error) {
+    console.error('Error loading words from 5wordlist.txt:', error);
+  }
+})();
+
+
 // Function to get or set the word of the day in the database
 async function getWordOfTheDay() {
   return new Promise((resolve, reject) => {
@@ -51,9 +66,8 @@ async function getWordOfTheDay() {
   });
 }
 
-
 async function validateWord(word) {
-  return wordsList.includes(word.toLowerCase());
+  return validationWordsList.includes(word.toLowerCase());
 }
 
 module.exports = {

@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8">
+  <title>Spel Statistieken</title>
+  <link rel="stylesheet" href="/css/mastermind.css">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="/css/stats.css"> 
+</head>
+<body>
+    <a href="/dashboard" class="home-button"><img src="/images/home.png" alt="Home" /></a>
+    <h1>Spel Statistieken</h1>
+    <div id="stats-summary">
+        <p><span id="total-games">...</span><br>Gespeeld</p>
+        <p><span id="percent-correct">...</span><br>Win %</p>
+        <p><span id="current-streak">...</span><br>Reeks</p>
+        <p><span id="max-streak">...</span><br>Max reeks</p>
+    </div>
+    <div id="guess-distribution">
+        <h2>Verdeling van Pogingen</h2>
+        <!-- Guess distribution bars will be generated dynamically here -->
+    </div>
+    <div id="average-stats">
+        <p><span id="average-guess">...</span><br>Gemiddelde poging</p>
+        <p><span id="median-guess">...</span><br>Mediaan poging</p>
+        <p><span id="latest-guess-time">...</span><br>Laatste poging</p>
+    </div>
+    
+  <script src="/js/stats.js"></script>
+</body>
+</html>
