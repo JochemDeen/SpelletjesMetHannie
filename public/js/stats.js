@@ -17,6 +17,8 @@ document.addEventListener('DOMContentLoaded', async () => {
         document.getElementById('percent-correct').textContent = `${Math.round(stats.percentCorrect)}%`;
         document.getElementById('current-streak').textContent = stats.currentStreak;
         document.getElementById('max-streak').textContent = stats.maxStreak;
+        document.getElementById('total-score').textContent = stats.totalScore; // Update total score
+        document.getElementById('monthly-score').textContent = stats.monthlyScore; // Update monthly score
     }
 
     function renderGuessDistribution(guessDistribution, latestGuessIndex) {

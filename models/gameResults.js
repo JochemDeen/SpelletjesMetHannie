@@ -161,6 +161,43 @@ async function getUserStats(user_id) {
       const correctGames = rows.filter(row => JSON.parse(row.feedback).every(entry => entry === 'correct')).length;
       const percentCorrect = totalGames > 0 ? ((correctGames / totalGames) * 100).toFixed(2) : 0;
 
+      // Calculate total score for all guesses and for the current month
+      const currentMonth = new Date().toISOString().split('T')[0].slice(0, 7); // "YYYY-MM"
+      let totalScore = 0;
+      let monthlyScore = 0;
+
+      // Scoring function for a day's guesses
+      function calculateScore(guesses) {
+        const length = guesses.length;
+        switch (length) {
+          case 6: return 1;
+          case 5: return 2;
+          case 4: return 3;
+          case 3: return 4;
+          case 2: return 6;
+          case 1: return 8;
+          default: return 0;  // If more than 6 guesses
+        }
+      }
+
+      const gamesByDate = rows.reduce((acc, row) => {
+        const date = row.timestamp.split('T')[0];
+        if (!acc[date]) acc[date] = [];
+        acc[date].push(row);
+        return acc;
+      }, {});
+
+      Object.entries(gamesByDate).forEach(([date, gameRows]) => {
+        const guesses = gameRows.map(row => row.guess);
+        const dailyScore = calculateScore(guesses);
+        totalScore += dailyScore;
+
+        // Add to monthly score if within current month
+        if (date.startsWith(currentMonth)) {
+          monthlyScore += dailyScore;
+        }
+      });
+
       // Calculate streaks
       const dates = [...new Set(rows.map(row => row.timestamp.split('T')[0]))].sort();
       let currentStreak = 0;
@@ -197,13 +234,6 @@ async function getUserStats(user_id) {
 
       // Calculate medianGuess
       const guessCounts = [];
-      const gamesByDate = rows.reduce((acc, row) => {
-        const date = row.timestamp.split('T')[0];
-        if (!acc[date]) acc[date] = [];
-        acc[date].push(row);
-        return acc;
-      }, {});
-
       Object.values(gamesByDate).forEach(gameRows => {
         if (gameRows.some(row => JSON.parse(row.feedback).every(entry => entry === 'correct'))) {
           guessCounts.push(gameRows.length);
@@ -226,7 +256,7 @@ async function getUserStats(user_id) {
       const latestGuessTime = rows.length ? rows[rows.length - 1].timestamp : null;
       const averageGuess = totalGames > 0 ? (rows.length / totalGames).toFixed(2) : 0;
       
-      logger.info(`User ${user_id} statistics - Total Games: ${totalGames}, Correct Games: ${correctGames}, Percent Correct: ${percentCorrect}`);
+      logger.info(`User ${user_id} statistics - Total Games: ${totalGames}, Correct Games: ${correctGames}, Percent Correct: ${percentCorrect}, Total Score: ${totalScore}, Monthly Score: ${monthlyScore}`);
 
       resolve({
         totalGames,
@@ -237,35 +267,46 @@ async function getUserStats(user_id) {
         averageGuess,
         medianGuess,
         latestGuessTime,
-        latestGuessIndex
+        latestGuessIndex,
+        totalScore,       // Total score from all games
+        monthlyScore      // Score for the current month
       });
     });
   });
 }
 
 
-  // Function to get monthly scores
+
+// Function to get monthly scores
 async function getMonthlyScores() {
   return new Promise((resolve, reject) => {
       db.all(`
-          SELECT u.username, strftime('%Y-%m', r.timestamp) AS month, GROUP_CONCAT(r.guess) AS guesses
+          SELECT u.username, strftime('%Y-%m', r.timestamp) AS month, strftime('%Y-%m-%d', r.timestamp) AS day,
+                 GROUP_CONCAT(r.guess) AS guesses
           FROM mastermind_results AS r
           JOIN users AS u ON r.user_id = u.id
-          GROUP BY u.username, month
+          GROUP BY u.username, month, day
           ORDER BY month DESC
       `, (err, rows) => {
           if (err) return reject(err);
 
-          // Process each row to calculate score
-          const scores = rows.map(row => {
+          // Step 1: Calculate daily scores and sum them per month for each user
+          const monthlyScores = {};
+
+          rows.forEach(row => {
               const guesses = row.guesses.split(','); // Convert guess string to array
-              const score = calculateScore(guesses);  // Calculate score based on guesses
-              return {
-                  username: row.username,
-                  month: row.month,
-                  score
-              };
+              const dailyScore = calculateScore(guesses);  // Calculate score based on daily guesses
+
+              // Aggregate daily scores into monthly totals
+              const key = `${row.username}-${row.month}`;
+              if (!monthlyScores[key]) {
+                  monthlyScores[key] = { username: row.username, month: row.month, score: 0 };
+              }
+              monthlyScores[key].score += dailyScore;
           });
+
+          // Convert aggregated results to an array for response
+          const scores = Object.values(monthlyScores);
           logger.info(`Retrieved monthly scores for ${scores.length} users.`);
           resolve(scores);
       });
@@ -274,43 +315,57 @@ async function getMonthlyScores() {
 
 
 
+
 // Function to get the highest scorer per month
 async function getHighestScorerCounts() {
   return new Promise((resolve, reject) => {
-      // Step 1: Calculate monthly scores for each user
       db.all(`
-          SELECT u.username, strftime('%Y-%m', r.timestamp) AS month, GROUP_CONCAT(r.guess) AS guesses
+          SELECT u.username, strftime('%Y-%m', r.timestamp) AS month, strftime('%Y-%m-%d', r.timestamp) AS day,
+                 GROUP_CONCAT(r.guess) AS guesses
           FROM mastermind_results AS r
           JOIN users AS u ON r.user_id = u.id
-          GROUP BY u.username, month
+          GROUP BY u.username, month, day
           ORDER BY month DESC
-      `, async (err, rows) => {
+      `, (err, rows) => {
           if (err) return reject(err);
 
-          const monthlyScores = {};  // { month: [{ username, score }] }
-          const userSet = new Set(); // Set to track all usernames
+          const monthlyScores = {};  // { month: { username: score } }
+          const userMonthlyScores = {};  // For tracking each user's score per month
 
+          // Step 1: Calculate daily scores and aggregate them into monthly scores
           rows.forEach(row => {
-              const guesses = row.guesses.split(','); // Convert guess string to array
-              const score = calculateScore(guesses);  // Calculate score based on guesses
+              const guesses = row.guesses.split(',');  // Convert guesses to array
+              const dailyScore = calculateScore(guesses);  // Calculate score based on daily guesses
+              const key = `${row.username}-${row.month}`;
 
-              userSet.add(row.username);
+              // Sum daily scores for each month and user
+              if (!userMonthlyScores[key]) {
+                  userMonthlyScores[key] = { username: row.username, month: row.month, score: 0 };
+              }
+              userMonthlyScores[key].score += dailyScore;
 
+              // Track total scores per user per month
               if (!monthlyScores[row.month]) {
                   monthlyScores[row.month] = [];
               }
-
-              monthlyScores[row.month].push({ username: row.username, score });
           });
 
-          // Step 2: Find the highest scorers per month
+          // Step 2: Prepare monthlyScores as array of { month: { username: score } }
+          Object.values(userMonthlyScores).forEach(({ username, month, score }) => {
+              if (!monthlyScores[month]) {
+                  monthlyScores[month] = [];
+              }
+              monthlyScores[month].push({ username, score });
+          });
+
+          // Step 3: Determine highest scorer counts
           const highestScorerCounts = {};
 
           for (const [month, users] of Object.entries(monthlyScores)) {
-              // Find the maximum score for the month
+              // Find the max score for this month
               const maxScore = Math.max(...users.map(user => user.score));
 
-              // Identify users with the max score for that month
+              // Increment count for each user with the max score in this month
               users.forEach(user => {
                   if (user.score === maxScore) {
                       if (!highestScorerCounts[user.username]) {
@@ -321,17 +376,21 @@ async function getHighestScorerCounts() {
               });
           }
 
-          // Step 3: Include all users with a default count of 0 if they have no highest scores
-          const result = Array.from(userSet).map(username => ({
-              username,
-              highestCount: highestScorerCounts[username] || 0
-          }));
-          logger.info(`Retrieved highest scorer counts for ${result.length} users.`);
-          // Format response as requested
-          resolve({ success: true, highestScores: result });
+          // Format results
+          db.all("SELECT username FROM users", (err, allUsers) => {
+              if (err) return reject(err);
+
+              const result = allUsers.map(row => ({
+                  username: row.username,
+                  highestCount: highestScorerCounts[row.username] || 0
+              }));
+              logger.info(`Retrieved highest scorer counts for ${result.length} users.`);
+              resolve({ success: true, highestScores: result });
+          });
       });
   });
 }
+
 
 
 
