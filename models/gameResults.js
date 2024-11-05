@@ -60,6 +60,7 @@ async function getUserGameState(user_id) {
 async function getAllResults(user_id) {
   logger.info(`Retrieving all results for user ${user_id}`);
   const today = new Date().toISOString().split('T')[0];
+  
   return new Promise((resolve, reject) => {
     // First, check if the user has a correct guess or has made 6 guesses today
     db.get(
@@ -102,7 +103,8 @@ async function getAllResults(user_id) {
                       username,
                       guesses: [],
                       feedback: [],
-                      success: false  // Track if the user was successful
+                      success: false,  // Track if the user was successful
+                      score: 0         // Initialize score for the user
                     });
                   }
                   const userResult = resultsMap.get(username);
@@ -116,6 +118,11 @@ async function getAllResults(user_id) {
                   }
                 }
 
+                // Calculate the score for each user based on their guesses
+                resultsMap.forEach(userResult => {
+                  userResult.score = calculateScore(userResult.guesses);  // Use existing calculateScore function
+                });
+
                 // Filter out users who haven't completed the puzzle or haven't made 6 guesses
                 const results = Array.from(resultsMap.values()).filter(result => 
                   result.success || result.guesses.length >= 6
@@ -128,7 +135,7 @@ async function getAllResults(user_id) {
                   }
                 });
 
-                logger.info(`Retrieved ${results.length} results for today.`);
+                logger.info(`Retrieved ${results.length} results for today, with scores included.`);
 
                 resolve(results);
               } else {
@@ -146,6 +153,7 @@ async function getAllResults(user_id) {
     );
   });
 }
+
 
 // Function to get statistics for a user
 async function getUserStats(user_id) {
@@ -165,20 +173,6 @@ async function getUserStats(user_id) {
       const currentMonth = new Date().toISOString().split('T')[0].slice(0, 7); // "YYYY-MM"
       let totalScore = 0;
       let monthlyScore = 0;
-
-      // Scoring function for a day's guesses
-      function calculateScore(guesses) {
-        const length = guesses.length;
-        switch (length) {
-          case 6: return 1;
-          case 5: return 2;
-          case 4: return 3;
-          case 3: return 4;
-          case 2: return 6;
-          case 1: return 8;
-          default: return 0;  // If more than 6 guesses
-        }
-      }
 
       const gamesByDate = rows.reduce((acc, row) => {
         const date = row.timestamp.split('T')[0];
