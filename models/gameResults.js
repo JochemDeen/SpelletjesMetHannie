@@ -151,80 +151,213 @@ async function getAllResults(user_id) {
 async function getUserStats(user_id) {
   logger.info(`Retrieving statistics for user ${user_id}`);
 
-    return new Promise((resolve, reject) => {
-      db.all('SELECT * FROM mastermind_results WHERE user_id = ?', [user_id], (err, rows) => {
-        if (err) {
-          return reject(err);
-        }
-  
-        const totalGames = new Set(rows.map(row => row.timestamp.split('T')[0])).size;
-        const correctGames = rows.filter(row => JSON.parse(row.feedback).every(entry => entry === 'correct')).length;
-        const percentCorrect = totalGames > 0 ? ((correctGames / totalGames) * 100).toFixed(2) : 0;
-  
-        // Calculate streaks
-        const dates = [...new Set(rows.map(row => row.timestamp.split('T')[0]))].sort();
-        let currentStreak = 0;
-        let maxStreak = 0;
-        let streak = 0;
-        let previousDate = null;
-  
-        for (const date of dates) {
-          if (previousDate) {
-            const difference = new Date(date) - new Date(previousDate);
-            if (difference === 86400000) { // 1 day in milliseconds
-              streak++;
-            } else {
-              streak = 1;
-            }
+  return new Promise((resolve, reject) => {
+    db.all('SELECT * FROM mastermind_results WHERE user_id = ?', [user_id], (err, rows) => {
+      if (err) {
+        return reject(err);
+      }
+
+      const totalGames = new Set(rows.map(row => row.timestamp.split('T')[0])).size;
+      const correctGames = rows.filter(row => JSON.parse(row.feedback).every(entry => entry === 'correct')).length;
+      const percentCorrect = totalGames > 0 ? ((correctGames / totalGames) * 100).toFixed(2) : 0;
+
+      // Calculate streaks
+      const dates = [...new Set(rows.map(row => row.timestamp.split('T')[0]))].sort();
+      let currentStreak = 0;
+      let maxStreak = 0;
+      let streak = 0;
+      let previousDate = null;
+
+      for (const date of dates) {
+        if (previousDate) {
+          const difference = new Date(date) - new Date(previousDate);
+          if (difference === 86400000) { // 1 day in milliseconds
+            streak++;
           } else {
             streak = 1;
           }
-          previousDate = date;
-          maxStreak = Math.max(maxStreak, streak);
-          currentStreak = streak;
+        } else {
+          streak = 1;
         }
-  
-        // Calculate guess distribution
-        const guessDistribution = Array(7).fill(0); // Index 1-6, index 0 unused
-        rows.forEach(row => {
-          if (JSON.parse(row.feedback).every(entry => entry === 'correct')) {
-            const gameGuesses = rows.filter(r => r.timestamp.split('T')[0] === row.timestamp.split('T')[0]).length;
-            if (gameGuesses <= 6) {
-              guessDistribution[gameGuesses]++;
-            }
+        previousDate = date;
+        maxStreak = Math.max(maxStreak, streak);
+        currentStreak = streak;
+      }
+
+      // Calculate guess distribution
+      const guessDistribution = Array(7).fill(0); // Index 1-6, index 0 unused
+      rows.forEach(row => {
+        if (JSON.parse(row.feedback).every(entry => entry === 'correct')) {
+          const gameGuesses = rows.filter(r => r.timestamp.split('T')[0] === row.timestamp.split('T')[0]).length;
+          if (gameGuesses <= 6) {
+            guessDistribution[gameGuesses]++;
           }
-        });
-
-        let latestGuessIndex = null;
-        if (rows.length) {
-          const latestGameDate = rows[rows.length - 1].timestamp.split('T')[0];
-          latestGuessIndex = rows.filter(row => row.timestamp.split('T')[0] === latestGameDate).length;
         }
+      });
 
-  
-        const latestGuessTime = rows.length ? rows[rows.length - 1].timestamp : null;
-        const averageGuess = totalGames > 0 ? (rows.length / totalGames).toFixed(2) : 0;
-        const medianGuess = guessDistribution.reduce((a, b) => a + b, 0) / 2;
-        logger.info(`User ${user_id} statistics - Total Games: ${totalGames}, Correct Games: ${correctGames}, Percent Correct: ${percentCorrect}`);
+      // Calculate medianGuess
+      const guessCounts = [];
+      const gamesByDate = rows.reduce((acc, row) => {
+        const date = row.timestamp.split('T')[0];
+        if (!acc[date]) acc[date] = [];
+        acc[date].push(row);
+        return acc;
+      }, {});
 
-        resolve({
-          totalGames,
-          percentCorrect,
-          currentStreak,
-          maxStreak,
-          guessDistribution,
-          averageGuess,
-          medianGuess,
-          latestGuessTime,
-          latestGuessIndex
-        });
+      Object.values(gamesByDate).forEach(gameRows => {
+        if (gameRows.some(row => JSON.parse(row.feedback).every(entry => entry === 'correct'))) {
+          guessCounts.push(gameRows.length);
+        }
+      });
+
+      guessCounts.sort((a, b) => a - b);
+      const midIndex = Math.floor(guessCounts.length / 2);
+      const medianGuess = guessCounts.length % 2 !== 0
+        ? guessCounts[midIndex]
+        : (guessCounts[midIndex - 1] + guessCounts[midIndex]) / 2;
+
+      // Calculate additional statistics
+      let latestGuessIndex = null;
+      if (rows.length) {
+        const latestGameDate = rows[rows.length - 1].timestamp.split('T')[0];
+        latestGuessIndex = rows.filter(row => row.timestamp.split('T')[0] === latestGameDate).length;
+      }
+
+      const latestGuessTime = rows.length ? rows[rows.length - 1].timestamp : null;
+      const averageGuess = totalGames > 0 ? (rows.length / totalGames).toFixed(2) : 0;
+      
+      logger.info(`User ${user_id} statistics - Total Games: ${totalGames}, Correct Games: ${correctGames}, Percent Correct: ${percentCorrect}`);
+
+      resolve({
+        totalGames,
+        percentCorrect,
+        currentStreak,
+        maxStreak,
+        guessDistribution,
+        averageGuess,
+        medianGuess,
+        latestGuessTime,
+        latestGuessIndex
       });
     });
+  });
+}
+
+
+  // Function to get monthly scores
+async function getMonthlyScores() {
+  return new Promise((resolve, reject) => {
+      db.all(`
+          SELECT u.username, strftime('%Y-%m', r.timestamp) AS month, GROUP_CONCAT(r.guess) AS guesses
+          FROM mastermind_results AS r
+          JOIN users AS u ON r.user_id = u.id
+          GROUP BY u.username, month
+          ORDER BY month DESC
+      `, (err, rows) => {
+          if (err) return reject(err);
+
+          // Process each row to calculate score
+          const scores = rows.map(row => {
+              const guesses = row.guesses.split(','); // Convert guess string to array
+              const score = calculateScore(guesses);  // Calculate score based on guesses
+              return {
+                  username: row.username,
+                  month: row.month,
+                  score
+              };
+          });
+          logger.info(`Retrieved monthly scores for ${scores.length} users.`);
+          resolve(scores);
+      });
+  });
+}
+
+
+
+// Function to get the highest scorer per month
+async function getHighestScorerCounts() {
+  return new Promise((resolve, reject) => {
+      // Step 1: Calculate monthly scores for each user
+      db.all(`
+          SELECT u.username, strftime('%Y-%m', r.timestamp) AS month, GROUP_CONCAT(r.guess) AS guesses
+          FROM mastermind_results AS r
+          JOIN users AS u ON r.user_id = u.id
+          GROUP BY u.username, month
+          ORDER BY month DESC
+      `, async (err, rows) => {
+          if (err) return reject(err);
+
+          const monthlyScores = {};  // { month: [{ username, score }] }
+          const userSet = new Set(); // Set to track all usernames
+
+          rows.forEach(row => {
+              const guesses = row.guesses.split(','); // Convert guess string to array
+              const score = calculateScore(guesses);  // Calculate score based on guesses
+
+              userSet.add(row.username);
+
+              if (!monthlyScores[row.month]) {
+                  monthlyScores[row.month] = [];
+              }
+
+              monthlyScores[row.month].push({ username: row.username, score });
+          });
+
+          // Step 2: Find the highest scorers per month
+          const highestScorerCounts = {};
+
+          for (const [month, users] of Object.entries(monthlyScores)) {
+              // Find the maximum score for the month
+              const maxScore = Math.max(...users.map(user => user.score));
+
+              // Identify users with the max score for that month
+              users.forEach(user => {
+                  if (user.score === maxScore) {
+                      if (!highestScorerCounts[user.username]) {
+                          highestScorerCounts[user.username] = 0;
+                      }
+                      highestScorerCounts[user.username] += 1;
+                  }
+              });
+          }
+
+          // Step 3: Include all users with a default count of 0 if they have no highest scores
+          const result = Array.from(userSet).map(username => ({
+              username,
+              highestCount: highestScorerCounts[username] || 0
+          }));
+          logger.info(`Retrieved highest scorer counts for ${result.length} users.`);
+          // Format response as requested
+          resolve({ success: true, highestScores: result });
+      });
+  });
+}
+
+
+
+
+// Function to calculate score based on the number of guesses
+function calculateScore(guesses) {
+  const length = guesses.length;
+  switch (length) {
+      case 6: return 1;
+      case 5: return 2;
+      case 4: return 3;
+      case 3: return 4;
+      case 2: return 6;
+      case 1: return 8;
+      default: return 0;  // In case there are more than 6 guesses
   }
+}
+
+
   
   module.exports = {
     updateUserGuess,
     getUserGameState,
     getAllResults,
     getUserStats,
+    getMonthlyScores,
+    getHighestScorerCounts,
+    calculateScore
   };

@@ -7,6 +7,7 @@ const { requireLogin } = require('../middleware/authMiddleware');
 const gameResults = require('../models/gameResults'); // Assuming this module handles game data storage
 const wordsService = require('../models/wordsService'); // Assuming this module handles word validation and word of the day
 const logger = require('../logger');  
+const { getMonthlyScores, getHighestScorerCounts } = require('../models/gameResults');
 
 
 // Mastermind Game Page
@@ -23,6 +24,11 @@ router.get('/mastermind/stats', requireLogin, (req, res) => {
 router.get('/mastermind/compare', requireLogin, (req, res) => {
     logger.info(`GET /compare/stats for user: ${req.session.userId}`);
     res.sendFile('mastermind-compare.html', { root: path.join(__dirname, '../public') });
+});
+
+router.get('/mastermind/scoreboard', requireLogin, (req, res) => {
+  logger.info(`GET /compare/scoreboard for user: ${req.session.userId}`);
+  res.sendFile('mastermind-scoreboard.html', { root: path.join(__dirname, '../public') });
 });
 
 
@@ -145,6 +151,31 @@ try {
     res.status(500).json({ error: 'An error occurred while retrieving user statistics.' });
 }
 });
+
+// Endpoint for Get Monthly Scores
+router.get('/api/get-monthly-scores', requireLogin, async (req, res) => {
+  logger.info('GET /api/get-monthly-scores');
+  try {
+      const scores = await getMonthlyScores();
+      res.json({ success: true, scores });
+  } catch (error) {
+      logger.error('Error fetching monthly scores:', error);
+      res.status(500).json({ success: false, error: 'An error occurred while retrieving monthly scores.' });
+  }
+});
+
+// Endpoint for Get Highest Scorer Counts
+router.get('/api/get-highest-scorer-counts', requireLogin, async (req, res) => {
+  logger.info('GET /api/get-highest-scorer-counts');
+  try {
+      const highestScores = await getHighestScorerCounts();
+      res.json({ success: true, highestScores });
+  } catch (error) {
+      logger.error('Error fetching highest scorer counts:', error);
+      res.status(500).json({ success: false, error: 'An error occurred while retrieving highest scorer counts.' });
+  }
+});
+
   
 
 module.exports = router;

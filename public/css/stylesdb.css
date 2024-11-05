@@ -1,33 +1,84 @@
+/* General Styles */
 body {
-    font-family: Arial, sans-serif;
-    text-align: center;
+  font-family: 'Roboto', Arial, sans-serif;
+  background-color: #f4f4f4;
+  color: #333;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  text-align: center;
+}
+
+h1 {
+  margin-top: 20px;
+  font-size: 2.5em;
+  color: #222;
+}
+
+/* Game Grid Styles */
+.game-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 20px;
+  max-width: 1200px;
+  width: 100%;
+  padding: 20px;
+}
+
+.game-card {
+  background-color: #ffffff;
+  border-radius: 15px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  transition: transform 0.3s, box-shadow 0.3s;
+  text-align: center;
+  margin: 15px;
+  max-width: 220px;
+}
+
+.game-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+}
+
+.game-card a {
+  text-decoration: none;
+  color: inherit;
+}
+
+.game-card img {
+  width: 100%;
+  height: auto;
+}
+
+.game-card h2 {
+  font-size: 1.5em;
+  margin: 15px 0;
+  color: #333;
+}
+
+.coming-soon {
+  color: #888;
+  font-style: italic;
+}
+
+/* Responsive Styles */
+@media (max-width: 600px) {
+  h1 {
+    font-size: 2em;
   }
   
   .game-grid {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
+    flex-direction: column;
+    align-items: center;
   }
-  
+
   .game-card {
-    margin: 15px;
-    flex: 1 1 200px;
-    max-width: 200px;
+    max-width: 180px;
+    margin: 20px auto;
   }
-  
-  .game-card img {
-    width: 100%;
-    height: auto;
-  }
-  
-  .game-card h2 {
-    font-size: 1.2em;
-  }
-  
-  @media (max-width: 600px) {
-    .game-grid {
-      flex-direction: column;
-      align-items: center;
-    }
-  }
-  
+}

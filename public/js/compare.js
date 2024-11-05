@@ -1,3 +1,8 @@
+const pastelOchre = getComputedStyle(document.documentElement).getPropertyValue('--pastel-ochre').trim();
+const pastelGreen = getComputedStyle(document.documentElement).getPropertyValue('--pastel-green').trim();
+const gray = getComputedStyle(document.documentElement).getPropertyValue('--gray').trim();
+
+
 document.addEventListener('DOMContentLoaded', async () => {
     const compareContainer = document.getElementById('compare-container');
     try {
@@ -50,13 +55,13 @@ document.addEventListener('DOMContentLoaded', async () => {
                     // Apply feedback styles
                     const feedback = result.feedback[rowIndex][colIndex];
                     if (feedback === 'correct') {
-                        letterBox.style.backgroundColor = 'green';
+                        letterBox.style.backgroundColor = pastelGreen;
                         letterBox.style.color = 'white';
                     } else if (feedback === 'misplaced') {
-                        letterBox.style.backgroundColor = '#c9a228'; // Ochre yellow
+                        letterBox.style.backgroundColor = pastelOchre;
                         letterBox.style.color = 'white';
                     } else if (feedback === 'incorrect') {
-                        letterBox.style.backgroundColor = 'gray';
+                        letterBox.style.backgroundColor = gray;
                         letterBox.style.color = 'white';
                     }
 

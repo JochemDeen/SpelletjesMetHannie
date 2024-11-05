@@ -1,3 +1,8 @@
+const pastelOchre = getComputedStyle(document.documentElement).getPropertyValue('--pastel-ochre').trim();
+const pastelGreen = getComputedStyle(document.documentElement).getPropertyValue('--pastel-green').trim();
+const gray = getComputedStyle(document.documentElement).getPropertyValue('--gray').trim();
+
+
 const gameContainer = document.getElementById('game-container');
 const keyboardRows = [
     document.getElementById('row-1'),
@@ -158,17 +163,17 @@ function animateReveal(isCorrect, feedback = [],deltaDelay = 0) {
 
       setTimeout(() => {
         if (isCorrect) {
-          letterBox.style.backgroundColor = 'green';
+          letterBox.style.backgroundColor = pastelGreen;
           letterBox.style.color = 'white';
         } else {
           if (feedback[i] === 'correct') {
-            letterBox.style.backgroundColor = 'green';
+            letterBox.style.backgroundColor = pastelGreen;
             letterBox.style.color = 'white';
           } else if (feedback[i] === 'misplaced') {
-            letterBox.style.backgroundColor = '#c9a228'; // Ochre yellow
+            letterBox.style.backgroundColor = pastelOchre; 
             letterBox.style.color = 'white';
           } else {
-            letterBox.style.backgroundColor = 'gray';
+            letterBox.style.backgroundColor = gray;
             letterBox.style.color = 'white';
           }
 
@@ -176,13 +181,13 @@ function animateReveal(isCorrect, feedback = [],deltaDelay = 0) {
           const keyElement = Array.from(document.querySelectorAll('.key')).find(k => k.textContent === letter);
           if (keyElement) {
             if (feedback[i] === 'correct') {
-              keyElement.style.backgroundColor = 'green';
+              keyElement.style.backgroundColor = pastelGreen;
               keyElement.style.color = 'white';
             } else if (feedback[i] === 'misplaced' && keyElement.style.backgroundColor !== 'green') {
-              keyElement.style.backgroundColor = '#c9a228';
+              keyElement.style.backgroundColor = pastelOchre;
               keyElement.style.color = 'white';
             } else if (feedback[i] === 'incorrect') {
-              keyElement.style.backgroundColor = '#4d4d4d'; // Darker gray for incorrect letters
+              keyElement.style.backgroundColor = gray;
               keyElement.style.color = 'white';
             }
           }

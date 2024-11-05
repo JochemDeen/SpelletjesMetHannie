@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8">
+  <title>Spel Statistieken</title>
+  <link rel="stylesheet" href="/css/mastermind.css">
+  <link rel="stylesheet" href="/css/stats.css">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="/css/scoreboard.css"> 
+</head>
+<body>
+    <a href="/" class="home-button"><img src="/images/home.png" alt="Home" /></a>
+    <h1>Scoreboard</h1>
+    <div id="scoreboard-container">
+        <!-- Monthly Scores Section -->
+        <div class="monthly-scores" data-month-section>
+            <h2 data-month></h2>
+            <ol data-month-list class="score-list"></ol>
+        </div>
+        
+        <!-- Most Months at the Top Section -->
+        <div class="highest-scorers">
+            <h2>Meeste maanden gewonnen:</h2>
+            <ol id="highest-scorer-list" class="highest-score-list"></ol>
+        </div>
+    </div>
+    <script src="/js/scoreboard.js"></script>
+</body>
+</html>
