@@ -329,11 +329,14 @@ async function getHighestScorerCounts() {
       `, (err, rows) => {
           if (err) return reject(err);
 
+          const currentMonth = new Date().toISOString().slice(0, 7); // Get current month in "YYYY-MM" format
           const monthlyScores = {};  // { month: { username: score } }
           const userMonthlyScores = {};  // For tracking each user's score per month
 
-          // Step 1: Calculate daily scores and aggregate them into monthly scores
+          // Step 1: Calculate daily scores and aggregate them into monthly scores, excluding the current month
           rows.forEach(row => {
+              if (row.month === currentMonth) return; // Skip the current month
+
               const guesses = row.guesses.split(',');  // Convert guesses to array
               const dailyScore = calculateScore(guesses);  // Calculate score based on daily guesses
               const key = `${row.username}-${row.month}`;
