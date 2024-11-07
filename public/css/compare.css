@@ -80,3 +80,21 @@ h1 {
     width: 30px;
     height: 30px;
 }
+
+#captureSection {
+    /* Adjust your capture section styling as needed */
+    position: relative;
+}
+
+#shareButton {
+    width: 30px; 
+    height: 30px;
+    cursor: pointer;
+    padding: 10px; 
+    z-index: 10; 
+    transition: transform 0.3s ease; /* Hover effect */
+}
+
+#shareButton:hover {
+    transform: scale(1.1); /* Slightly enlarge on hover */
+}

@@ -10,9 +10,40 @@
 <body>
     <a href="/" class="home-button"><img src="/images/home.png" alt="Home" /></a>
     <h1>Samenvatting</h1>
+    
+    <div id="captureSection">
+
     <div id="compare-container">
         <!-- User grids will be generated dynamically here -->
     </div>
+    </div>
+    <img id="shareButton" src="/images/whatsapp.png" alt="Share on WhatsApp" />
+
   <script src="/js/compare.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
 </body>
 </html>
+<script>
+  document.getElementById("shareButton").addEventListener("click", function() {
+    html2canvas(document.getElementById("captureSection")).then(canvas => {
+        canvas.toBlob(blob => {
+            const file = new File([blob], "screenshot.png", { type: "image/png" });
+
+            if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                navigator.share({
+                    files: [file],
+                    text: "Check this out!",
+                }).then(() => {
+                    console.log("Shared successfully");
+                }).catch(error => {
+                    console.error("Error sharing:", error);
+                });
+            } else {
+                alert("Sharing not supported on this browser. Please use a compatible device.");
+            }
+        });
+    });
+});
+
+  </script>`;
