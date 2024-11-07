@@ -156,7 +156,7 @@ function updateGrid() {
 const keyState = {}; // Dictionary to track the highest state of each key
 
 // Helper function to get the highest state for each key
-function getHighestStateColor(feedback) {
+function getStateColor(feedback) {
     if (feedback === 'correct') return pastelGreen;
     if (feedback === 'misplaced') return pastelOchre;
     return gray;
@@ -164,20 +164,26 @@ function getHighestStateColor(feedback) {
 
 // Function to update the keyboard color based on the highest state encountered
 function updateKeyColor(letter, feedback) {
-    const currentColor = keyState[letter] || gray;
-    const newColor = getHighestStateColor(feedback);
+  console.info(`Updating key color for ${letter} with feedback: ${feedback}`);
+  const currentColor = keyState[letter] || gray;
+  const newColor = getStateColor(feedback);
+  console.info(`Current color: ${currentColor}, New color: ${newColor}`);
 
-    // Only update if the new color has a higher priority
-    if (newColor === pastelGreen || 
-        (newColor === pastelOchre && currentColor !== pastelGreen)) {
-        keyState[letter] = newColor; // Update the highest state encountered
-        const keyElement = Array.from(document.querySelectorAll('.key')).find(k => k.textContent === letter);
-        if (keyElement) {
-            keyElement.style.backgroundColor = keyState[letter];
-            keyElement.style.color = 'white';
-        }
-    }
+  // Update if the new color has a higher priority or if it's the first time setting it
+  if (
+      (newColor === pastelGreen) || 
+      (newColor === pastelOchre && currentColor !== pastelGreen) || 
+      (!keyState[letter] && newColor === gray) // Allow gray if it's the first encounter for this key
+  ) {
+      keyState[letter] = newColor; // Store the highest state encountered
+      const keyElement = Array.from(document.querySelectorAll('.key')).find(k => k.textContent === letter);
+      if (keyElement) {
+          keyElement.style.backgroundColor = keyState[letter];
+          keyElement.style.color = 'white';
+      }
+  }
 }
+
 
 
 
