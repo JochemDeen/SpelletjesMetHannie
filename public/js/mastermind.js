@@ -153,6 +153,33 @@ function updateGrid() {
   }
 }
 
+const keyState = {}; // Dictionary to track the highest state of each key
+
+// Helper function to get the highest state for each key
+function getHighestStateColor(feedback) {
+    if (feedback === 'correct') return pastelGreen;
+    if (feedback === 'misplaced') return pastelOchre;
+    return gray;
+}
+
+// Function to update the keyboard color based on the highest state encountered
+function updateKeyColor(letter, feedback) {
+    const currentColor = keyState[letter] || gray;
+    const newColor = getHighestStateColor(feedback);
+
+    // Only update if the new color has a higher priority
+    if (newColor === pastelGreen || 
+        (newColor === pastelOchre && currentColor !== pastelGreen)) {
+        keyState[letter] = newColor; // Update the highest state encountered
+        const keyElement = Array.from(document.querySelectorAll('.key')).find(k => k.textContent === letter);
+        if (keyElement) {
+            keyElement.style.backgroundColor = keyState[letter];
+            keyElement.style.color = 'white';
+        }
+    }
+}
+
+
 
 function animateReveal(isCorrect, feedback = [],deltaDelay = 0) {
     const startIndex = currentRow * 5;
@@ -178,19 +205,8 @@ function animateReveal(isCorrect, feedback = [],deltaDelay = 0) {
           }
 
           // Update keyboard color
-          const keyElement = Array.from(document.querySelectorAll('.key')).find(k => k.textContent === letter);
-          if (keyElement) {
-            if (feedback[i] === 'correct') {
-              keyElement.style.backgroundColor = pastelGreen;
-              keyElement.style.color = 'white';
-            } else if (feedback[i] === 'misplaced' && keyElement.style.backgroundColor !== 'green') {
-              keyElement.style.backgroundColor = pastelOchre;
-              keyElement.style.color = 'white';
-            } else if (feedback[i] === 'incorrect') {
-              keyElement.style.backgroundColor = gray;
-              keyElement.style.color = 'white';
-            }
-          }
+          updateKeyColor(letter, feedback[i]);
+
         }
 
         // Remove border if color is set
