@@ -1,3 +1,4 @@
+/* General styles */
 body {
     font-family: 'Arial', sans-serif;
     background-color: #f9f9f9;
@@ -13,6 +14,7 @@ h1 {
     color: #333;
 }
 
+/* Container for comparing results */
 #compare-container {
     display: flex;
     flex-direction: column;
@@ -21,6 +23,15 @@ h1 {
     gap: 30px;
 }
 
+/* Date header styling */
+.results-date-header {
+    font-size: 1.5em;
+    color: #333;
+    margin-bottom: 1rem;
+    text-align: center;
+}
+
+/* User result container styling */
 .user-container {
     width: 90%;
     max-width: 600px;
@@ -36,6 +47,33 @@ h1 {
     margin-bottom: 15px;
 }
 
+/* Layout for username, time, and score */
+.user-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 1.1em;
+    color: #333;
+    padding: 0 0 20px;
+}
+
+.username {
+    font-weight: bold;
+    color: #000;
+}
+
+
+.solve-time {
+    font-size: 0.9em;
+    color: #666;
+}
+
+.score {
+    font-weight: bold;
+    color: #ff9800;
+}
+
+/* Game grid for guesses */
 .game-grid {
     display: grid;
     gap: 10px;
@@ -71,16 +109,19 @@ h1 {
     color: white;
 }
 
+/* Navigation button */
 .home-button {
     position: absolute;
     top: 10px;
     left: 10px;
 }
+
 .home-button img {
     width: 30px;
     height: 30px;
 }
 
+/* Capture section */
 #captureSection {
     /* Adjust your capture section styling as needed */
     position: relative;

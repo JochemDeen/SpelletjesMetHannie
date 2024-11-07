@@ -19,26 +19,32 @@ document.addEventListener('DOMContentLoaded', async () => {
         // Sort results by solve time (earliest first)
         results.sort((a, b) => new Date(a.solveTime) - new Date(b.solveTime));
 
+        // Header for the date
         const subHeader = document.createElement('h2');
         const solveDate = new Date(results[0].solveTime);
         subHeader.textContent = `${solveDate.getDate()} ${solveDate.toLocaleString('nl-NL', { month: 'short' })} ${solveDate.getFullYear()}`;
+        subHeader.classList.add('results-date-header');
         compareContainer.appendChild(subHeader);
-
+    
         results.forEach(result => {
-            // Create a user container
+            // Container for each user's result
             const userContainer = document.createElement('div');
             userContainer.classList.add('user-container');
-
-            // Create a header for the user's name and solve time
-            const header = document.createElement('h2');
+    
+            // Header for username, solve time, and score
+            const header = document.createElement('div');
+            header.classList.add('user-header');
+    
             const solveTime = new Date(result.solveTime);
-            if (result.success) {
-                header.textContent = `${result.username} - Opgelost om: ${solveTime.getHours().toString().padStart(2, '0')}:${solveTime.getMinutes().toString().padStart(2, '0')} - Score: ${result.score}`;
-            } else {
-                header.textContent = `${result.username} - Niet opgelost - Score: ${result.score}`;
-            }
-
+            const statusSymbol = result.success ? '✓' : '✗';
+            header.innerHTML = `
+                <span class="username">${statusSymbol} ${result.username}</span>
+                <span class="score">⭐ Score: ${result.score}</span>
+                <span class="solve-time">${result.success ? `⏰ ${solveTime.getHours().toString().padStart(2, '0')}:${solveTime.getMinutes().toString().padStart(2, '0')}` : "❌ Niet opgelost"}</span>
+            `;
+    
             userContainer.appendChild(header);
+    
 
             // Create a grid for the user's guesses
             const gridContainer = document.createElement('div');
