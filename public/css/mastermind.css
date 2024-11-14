@@ -117,26 +117,31 @@
 
   /* Existing styles adjusted for mobile */
 @media (max-width: 768px) {
+  #keyboard {
+    width: 95vw; 
+  }
   .key {
-    width: 30px; /* Reduce width for mobile screens */
-    height: 45px; /* Slightly reduce height */
-    font-size: 14px; /* Make the font size smaller to match the reduced key size */
+    width: 8vw; 
+    height: 55px; 
+    font-size: 18px; 
   }
 
   .key.enter{
-    width: 55px; /* Reduce width for larger keys */
+    width: 55px; 
     font-size: 12px;
   }
 
   .key.backspace {
-    width: 55px; /* Reduce width for larger keys */
-    font-size: 18px;
+    width: 55px; 
+    font-size: 30px;
   }
 
   .keyboard-row {
-    gap: 7px; /* Increase key gap */
+    gap: 7px; 
   }
   #row-2 {
     margin-left: 15px; /* Reduced margin for smaller screens */
   }
+
+  
 }
