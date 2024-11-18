@@ -117,6 +117,13 @@
 
   /* Existing styles adjusted for mobile */
 @media (max-width: 768px) {
+
+  #game-container {
+    grid-template-columns: repeat(5, minmax(40px, 12vw));
+    grid-template-rows: repeat(6, minmax(40px, 12vw));
+}
+
+
   #keyboard {
     width: 95vw; 
   }
@@ -144,4 +151,21 @@
   }
 
   
+}
+@media (max-width: 420px) {
+  h1 {
+    display: none;
+  }
+
+  .key {
+    width: 7vw; 
+    height: 45px; 
+  }
+  .keyboard-row {
+    gap: 5px; 
+  }
+  #row-2 {
+    margin-left: 5px;
+  }
+
 }
