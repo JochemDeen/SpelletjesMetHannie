@@ -34,35 +34,34 @@ async function updateUserGuess(user_id, guess, feedback, wordOfTheDay) {
   }
 
 
-async function getUserGameState(user_id) {
-  logger.info(`Retrieving game state for user ${user_id}`);
-  return new Promise((resolve, reject) => {
-    const today = new Date().toISOString().split('T')[0];
-    db.all('SELECT * FROM mastermind_results WHERE user_id = ? AND date(timestamp) = ?', [user_id, today], (err, rows) => {
-      if (err) {
-        return reject(err);
-      }
-      if (rows.length) {
-        logger.info(`Game state found for user ${user_id}`);
-        const guesses = rows.map(row => row.guess);
-        const feedback = rows.map(row => JSON.parse(row.feedback));
-        const success = feedback.some(feedbackArray => feedbackArray.every(entry => entry === 'correct'));
-        const finished = guesses.length >= 6 || success;
-        resolve({ guesses, feedback, success, currentRow: rows.length, finished });
-      } else {
-        logger.info(`No game state found for user ${user_id}`);
-        resolve(null);
-      }
+  async function getUserGameState(user_id, date) {
+    const targetDate = date || new Date().toISOString().split('T')[0];
+    return new Promise((resolve, reject) => {
+      db.all('SELECT * FROM mastermind_results WHERE user_id = ? AND date(timestamp) = ?', [user_id, targetDate], (err, rows) => {
+        if (err) {
+          return reject(err);
+        }
+        if (rows.length) {
+          const guesses = rows.map(row => row.guess);
+          const feedback = rows.map(row => JSON.parse(row.feedback));
+          const success = feedback.some(feedbackArray => feedbackArray.every(entry => entry === 'correct'));
+          const finished = guesses.length >= 6 || success;
+          resolve({ guesses, feedback, success, currentRow: rows.length, finished });
+        } else {
+          resolve(null);
+        }
+      });
     });
-  });
-}
+  }
+  
  
-async function getAllResults(user_id) {
+async function getAllResults(user_id, date) {
   logger.info(`Retrieving all results for user ${user_id}`);
-  const today = new Date().toISOString().split('T')[0];
+  const targetDate = date || new Date().toISOString().split('T')[0];
+
   
   return new Promise((resolve, reject) => {
-    // First, check if the user has a correct guess or has made 6 guesses today
+    // First, check if the user has a correct guess or has made 6 guesses at targetDate
     db.get(
       `SELECT * FROM mastermind_results 
        WHERE user_id = ? 
@@ -70,15 +69,15 @@ async function getAllResults(user_id) {
             (SELECT COUNT(*) FROM mastermind_results 
              WHERE user_id = ? AND date(timestamp) = ?) >= 6) 
        AND date(timestamp) = ?`, 
-      [user_id, '%correct%', user_id, today, today], 
+      [user_id, '%correct%', user_id, targetDate, targetDate], 
       (err, row) => {
         if (err) {
           return reject(err);
         }
         if (row) {
-          logger.info(`User ${user_id} met the criteria today. Retrieving all results.`);
+          logger.info(`User ${user_id} met the criteria at ${targetDate}. Retrieving all results.`);
 
-          // Retrieve all results for users who solved the puzzle or made 6 guesses today
+          // Retrieve all results for users who solved the puzzle or made 6 guesses at targetDate
           db.all(
             `SELECT * FROM mastermind_results 
              WHERE date(timestamp) = ? 
@@ -86,7 +85,7 @@ async function getAllResults(user_id) {
                   (SELECT COUNT(*) FROM mastermind_results 
                    WHERE user_id = mastermind_results.user_id 
                    AND date(timestamp) = ?) >= 6)`,
-            [today, today],
+            [targetDate, targetDate],
             async (err, rows) => {
               if (err) {
                 return reject(err);
@@ -135,18 +134,18 @@ async function getAllResults(user_id) {
                   }
                 });
 
-                logger.info(`Retrieved ${results.length} results for today, with scores included.`);
+                logger.info(`Retrieved ${results.length} results for ${targetDate}, with scores included.`);
 
                 resolve(results);
               } else {
-                logger.info(`No users met the criteria today.`);
+                logger.info(`No users met the criteria ${targetDate}.`);
                 resolve([]);
               }
             }
           );
         } else {
           // User hasn't met either criterion, return empty
-          logger.info(`User ${user_id} hasn't met the criteria today.`);
+          logger.info(`User ${user_id} hasn't met the criteria ${targetDate}.`);
           resolve([]);
         }
       }
@@ -406,6 +405,25 @@ function calculateScore(guesses) {
   }
 }
 
+/**
+ * Fetch the earliest date from the results table
+ * @returns {Promise<string>} Earliest date in YYYY-MM-DD format
+ */
+async function getEarliestDate() {
+  return new Promise((resolve, reject) => {
+      db.get(
+          `SELECT MIN(date(timestamp)) as earliestDate FROM mastermind_results`,
+          (err, row) => {
+              if (err) {
+                  return reject(err);
+              }
+              resolve(row?.earliestDate || null);
+          }
+      );
+  });
+}
+
+
 
   
   module.exports = {
@@ -415,5 +433,6 @@ function calculateScore(guesses) {
     getUserStats,
     getMonthlyScores,
     getHighestScorerCounts,
-    calculateScore
+    calculateScore,
+    getEarliestDate
   };

@@ -127,10 +127,12 @@ function generateFeedback(guess, wordOfTheDay) {
 
   router.get('/api/get-results', requireLogin, async (req, res) => {
     const user_id = req.session.userId;
+    const date = req.query.date; // Fetch date from query parameters
+
     try {
-      const userGameState = await gameResults.getUserGameState(user_id);
+      const userGameState = await gameResults.getUserGameState(user_id, date);
       if (userGameState && userGameState.finished) {
-        const results = await gameResults.getAllResults(user_id);
+        const results = await gameResults.getAllResults(user_id, date);
         res.json({ success: true, results });
       } else {
         res.status(403).json({ success: false, message: 'You need to solve the puzzle before accessing the results.' });
@@ -175,6 +177,22 @@ router.get('/api/get-highest-scorer-counts', requireLogin, async (req, res) => {
       res.status(500).json({ success: false, error: 'An error occurred while retrieving highest scorer counts.' });
   }
 });
+
+// GET /api/get-earliest-date
+router.get('/api/get-earliest-date', requireLogin, async (req, res) => {
+  try {
+      const earliestDate = await gameResults.getEarliestDate(); // Delegate to the model
+      if (earliestDate) {
+          res.json({ success: true, earliestDate });
+      } else {
+          res.status(404).json({ success: false, message: 'No results available.' });
+      }
+  } catch (error) {
+      logger.error('Error fetching earliest date:', error);
+      res.status(500).json({ success: false, message: 'An error occurred while fetching the earliest date.' });
+  }
+});
+
 
   
 

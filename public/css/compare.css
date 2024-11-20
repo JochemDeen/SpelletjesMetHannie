@@ -140,3 +140,29 @@ h1 {
 #shareButton:hover {
     transform: scale(1.1); /* Slightly enlarge on hover */
 }
+
+.date-navigation {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: 20px 0;
+}
+
+.nav-arrow {
+    background-color: transparent;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    margin: 0 10px;
+    color: #333;
+}
+
+.nav-arrow:hover {
+    color: #000;
+}
+
+.results-date-header {
+    font-size: 1.5em;
+    color: #333;
+    margin: 0 10px;
+}
