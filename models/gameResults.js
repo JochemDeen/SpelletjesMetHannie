@@ -118,8 +118,11 @@ async function getAllResults(user_id, date) {
                 }
 
                 // Calculate the score for each user based on their guesses
+                // resultsMap.forEach(userResult => {
+                //   userResult.score = calculateScore(userResult.guesses);  // Use existing calculateScore function
+                // });
                 resultsMap.forEach(userResult => {
-                  userResult.score = calculateScore(userResult.guesses);  // Use existing calculateScore function
+                  userResult.score = calculateScore(userResult.guesses, userResult.success);
                 });
 
                 // Filter out users who haven't completed the puzzle or haven't made 6 guesses
@@ -182,7 +185,8 @@ async function getUserStats(user_id) {
 
       Object.entries(gamesByDate).forEach(([date, gameRows]) => {
         const guesses = gameRows.map(row => row.guess);
-        const dailyScore = calculateScore(guesses);
+        const success = gameRows.some(row => JSON.parse(row.feedback).every(entry => entry === 'correct'));
+        const dailyScore = calculateScore(guesses,success);
         totalScore += dailyScore;
 
         // Add to monthly score if within current month
@@ -274,8 +278,11 @@ async function getUserStats(user_id) {
 async function getMonthlyScores() {
   return new Promise((resolve, reject) => {
       db.all(`
-          SELECT u.username, strftime('%Y-%m', r.timestamp) AS month, strftime('%Y-%m-%d', r.timestamp) AS day,
-                 GROUP_CONCAT(r.guess) AS guesses
+          SELECT u.username,
+                strftime('%Y-%m', r.timestamp) AS month,
+                strftime('%Y-%m-%d', r.timestamp) AS day,
+                GROUP_CONCAT(r.guess, '|~|') AS guesses,
+                GROUP_CONCAT(r.feedback, '|~|') AS feedbacks
           FROM mastermind_results AS r
           JOIN users AS u ON r.user_id = u.id
           GROUP BY u.username, month, day
@@ -287,15 +294,17 @@ async function getMonthlyScores() {
           const monthlyScores = {};
 
           rows.forEach(row => {
-              const guesses = row.guesses.split(','); // Convert guess string to array
-              const dailyScore = calculateScore(guesses);  // Calculate score based on daily guesses
-
-              // Aggregate daily scores into monthly totals
-              const key = `${row.username}-${row.month}`;
-              if (!monthlyScores[key]) {
-                  monthlyScores[key] = { username: row.username, month: row.month, score: 0 };
-              }
-              monthlyScores[key].score += dailyScore;
+            const guesses = row.guesses.split('|~|'); // Use the unique separator
+            const feedbacks = row.feedbacks.split('|~|').map(feedback => JSON.parse(feedback));
+            const success = feedbacks.some(feedbackArray => feedbackArray.every(entry => entry === 'correct'));
+            const dailyScore = calculateScore(guesses, success);
+        
+            // Aggregate daily scores into monthly totals
+            const key = `${row.username}-${row.month}`;
+            if (!monthlyScores[key]) {
+                monthlyScores[key] = { username: row.username, month: row.month, score: 0 };
+            }
+            monthlyScores[key].score += dailyScore;
           });
 
           // Convert aggregated results to an array for response
@@ -314,7 +323,7 @@ async function getHighestScorerCounts() {
   return new Promise((resolve, reject) => {
       db.all(`
           SELECT u.username, strftime('%Y-%m', r.timestamp) AS month, strftime('%Y-%m-%d', r.timestamp) AS day,
-                 GROUP_CONCAT(r.guess) AS guesses
+                 GROUP_CONCAT(r.guess) AS guesses, GROUP_CONCAT(r.feedback) AS feedbacks
           FROM mastermind_results AS r
           JOIN users AS u ON r.user_id = u.id
           GROUP BY u.username, month, day
@@ -331,7 +340,10 @@ async function getHighestScorerCounts() {
               if (row.month === currentMonth) return; // Skip the current month
 
               const guesses = row.guesses.split(',');  // Convert guesses to array
-              const dailyScore = calculateScore(guesses);  // Calculate score based on daily guesses
+              //const dailyScore = calculateScore(guesses);  // Calculate score based on daily guesses
+              const feedbacks = row.feedbacks.split(',').map(feedback => JSON.parse(feedback));
+              const success = feedbacks.some(feedbackArray => feedbackArray.every(entry => entry === 'correct'));
+              const dailyScore = calculateScore(guesses, success);
               const key = `${row.username}-${row.month}`;
 
               // Sum daily scores for each month and user
@@ -392,19 +404,19 @@ async function getHighestScorerCounts() {
 
 
 // Function to calculate score based on the number of guesses
-function calculateScore(guesses) {
+function calculateScore(guesses, success) {
+  if (!success) return 0;  // No score if the user didn't guess the word
   const length = guesses.length;
   switch (length) {
-      case 6: return 1;
-      case 5: return 2;
-      case 4: return 3;
-      case 3: return 4;
-      case 2: return 6;
-      case 1: return 8;
-      default: return 0;  // In case there are more than 6 guesses
+    case 6: return 1;
+    case 5: return 2;
+    case 4: return 3;
+    case 3: return 4;
+    case 2: return 6;
+    case 1: return 8;
+    default: return 0;  // In case there are more than 6 guesses
   }
 }
-
 /**
  * Fetch the earliest date from the results table
  * @returns {Promise<string>} Earliest date in YYYY-MM-DD format

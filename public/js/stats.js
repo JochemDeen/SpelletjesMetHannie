@@ -23,27 +23,37 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     function renderGuessDistribution(guessDistribution, latestGuessIndex) {
         const guessDistributionContainer = document.getElementById('guess-distribution');
-        guessDistributionContainer.innerHTML = ''; // Clear any existing content
-
+        guessDistributionContainer.innerHTML = ''; // Clear existing content
+    
+        // Find the maximum value for scaling
+        const maxGuesses = Math.max(...Object.values(guessDistribution));
+    
         for (let i = 1; i <= 6; i++) {
             const barWrapper = document.createElement('div');
             barWrapper.style.display = 'flex';
             barWrapper.style.alignItems = 'center';
             barWrapper.style.marginBottom = '10px';
-
+    
             const label = document.createElement('div');
             label.textContent = `${i}`;
             label.style.marginRight = '5px';
             label.style.fontWeight = 'bold';
-            label.style.width = '100px';
+            label.style.width = '100px'; // Fixed width for alignment
             label.style.textAlign = 'right';
-
+    
             const barContainer = document.createElement('div');
             barContainer.classList.add('bar');
-            barContainer.style.width = `${guessDistribution[i] * 10}%`;
+    
+            // Correctly scale the bar width relative to the maximum
+            const widthPercentage = (guessDistribution[i] / maxGuesses) * 100;
+            barContainer.style.width = `calc(${widthPercentage}*0.8%`; 
+    
+            // Display the count inside the bar
             barContainer.textContent = `${guessDistribution[i]}`;
+    
+            // Highlight the latest guess index bar
             barContainer.style.backgroundColor = (i === latestGuessIndex) ? 'green' : '#4d4d4d';
-
+    
             barWrapper.appendChild(label);
             barWrapper.appendChild(barContainer);
             guessDistributionContainer.appendChild(barWrapper);
