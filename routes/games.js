@@ -171,7 +171,7 @@ router.get('/api/get-monthly-scores', requireLogin, async (req, res) => {
 router.get('/api/get-highest-scorer-counts', requireLogin, async (req, res) => {
   logger.info('GET /api/get-highest-scorer-counts');
   try {
-      const highestScores = await getHighestScorerCounts();
+      const highestScores = await getHighestScorerCounts(); // Now returns the array directly
       res.json({ success: true, highestScores });
   } catch (error) {
       logger.error('Error fetching highest scorer counts:', error);

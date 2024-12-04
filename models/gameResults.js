@@ -399,7 +399,7 @@ async function getHighestScorerCounts() {
                   highestCount: highestScorerCounts[row.username] || 0
               }));
               logger.info(`Retrieved highest scorer counts for ${result.length} users.`);
-              resolve({ success: true, highestScores: result });
+              resolve(result);
           });
       });
   });
