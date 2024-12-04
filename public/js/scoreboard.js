@@ -1,67 +1,69 @@
 document.addEventListener('DOMContentLoaded', async () => {
     try {
-        // Fetch monthly scores
-        const response = await fetch('/api/get-monthly-scores');
-        const data = await response.json();
-        if (data.success && data.scores) {
-            renderMonthlyScores(data.scores);
-        }
-
-        // Fetch highest scorer counts
-        const responseHighest = await fetch('/api/get-highest-scorer-counts');
-        const highestData = await responseHighest.json();
-        if (highestData.success && highestData.highestScores && Array.isArray(highestData.highestScores.highestScores)) {
-            renderHighestScores(highestData.highestScores.highestScores);
-        }
+      // Fetch monthly scores
+      const response = await fetch('/api/get-monthly-scores');
+      const data = await response.json();
+      if (data.success && data.scores) {
+        renderMonthlyScores(data.scores);
+      } else {
+        // Handle case when there are no scores
+        renderNoScores();
+      }
+  
+      // Fetch highest scorer counts
+      const responseHighest = await fetch('/api/get-highest-scorer-counts');
+      const highestData = await responseHighest.json();
+      if (highestData.success && Array.isArray(highestData.highestScores)) {
+        renderHighestScores(highestData.highestScores);
+      }
     } catch (error) {
-        console.error('Failed to load scores:', error);
+      console.error('Failed to load scores:', error);
     }
-
+  
     function renderMonthlyScores(scores) {
-        // Group scores by month
-        const scoresByMonth = scores.reduce((acc, score) => {
-            if (!acc[score.month]) {
-                acc[score.month] = [];
-            }
-            acc[score.month].push(score);
-            return acc;
-        }, {});
-
-        // Render each month's scores using predefined HTML elements
-        for (const [month, monthScores] of Object.entries(scoresByMonth)) {
-            const monthHeader = document.querySelector(`[data-month-section] h2[data-month]`);
-            const orderedList = document.querySelector(`[data-month-section] ol[data-month-list]`);
-
-            if (monthHeader && orderedList) {
-                monthHeader.textContent = `Scores voor ${getMonthName(month)}`;
-
-                monthScores.sort((a, b) => b.score - a.score); // Sort by highest score
-
-                // Clear previous entries if any
-                orderedList.innerHTML = '';
-
-                monthScores.forEach((score, index) => {
-                    const listItem = document.createElement('li');
-
-                    const rank = document.createElement('span');
-                    rank.classList.add('rank');
-                    rank.textContent = `${index + 1}.`;
-
-                    const username = document.createElement('span');
-                    username.classList.add('username');
-                    username.textContent = score.username;
-
-                    const scoreValue = document.createElement('span');
-                    scoreValue.classList.add('score');
-                    scoreValue.textContent = score.score;
-
-                    listItem.appendChild(rank);
-                    listItem.appendChild(username);
-                    listItem.appendChild(scoreValue);
-                    orderedList.appendChild(listItem);
-                });
-            }
-        }
+      const monthHeader = document.querySelector(`[data-month-section] h2[data-month]`);
+      const orderedList = document.querySelector(`[data-month-section] ol[data-month-list]`);
+  
+      if (monthHeader && orderedList) {
+        const currentMonth = new Date().toISOString().slice(0, 7); // 'YYYY-MM'
+        monthHeader.textContent = `Scores voor ${getMonthName(currentMonth)}`;
+  
+        scores.sort((a, b) => b.score - a.score); // Sort by highest score
+  
+        // Clear previous entries if any
+        orderedList.innerHTML = '';
+  
+        scores.forEach((score, index) => {
+          const listItem = document.createElement('li');
+  
+          const rank = document.createElement('span');
+          rank.classList.add('rank');
+          rank.textContent = `${index + 1}.`;
+  
+          const username = document.createElement('span');
+          username.classList.add('username');
+          username.textContent = score.username;
+  
+          const scoreValue = document.createElement('span');
+          scoreValue.classList.add('score');
+          scoreValue.textContent = score.score;
+  
+          listItem.appendChild(rank);
+          listItem.appendChild(username);
+          listItem.appendChild(scoreValue);
+          orderedList.appendChild(listItem);
+        });
+      }
+    }
+  
+    function renderNoScores() {
+      const monthHeader = document.querySelector(`[data-month-section] h2[data-month]`);
+      const orderedList = document.querySelector(`[data-month-section] ol[data-month-list]`);
+      if (monthHeader && orderedList) {
+        const currentMonth = new Date().toISOString().slice(0, 7); // 'YYYY-MM'
+        monthHeader.textContent = `Er zijn nog geen scores voor ${getMonthName(currentMonth)}.`;
+        orderedList.innerHTML = '';
+      }
     }
 
     function renderHighestScores(highestScores) {

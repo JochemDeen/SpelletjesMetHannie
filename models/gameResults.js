@@ -275,43 +275,42 @@ async function getUserStats(user_id) {
 
 
 // Function to get monthly scores
-async function getMonthlyScores() {
+async function getMonthlyScores(month) {
   return new Promise((resolve, reject) => {
-      db.all(`
-          SELECT u.username,
-                strftime('%Y-%m', r.timestamp) AS month,
-                strftime('%Y-%m-%d', r.timestamp) AS day,
-                GROUP_CONCAT(r.guess, '|~|') AS guesses,
-                GROUP_CONCAT(r.feedback, '|~|') AS feedbacks
-          FROM mastermind_results AS r
-          JOIN users AS u ON r.user_id = u.id
-          GROUP BY u.username, month, day
-          ORDER BY month DESC
-      `, (err, rows) => {
-          if (err) return reject(err);
+    db.all(`
+      SELECT u.username,
+            strftime('%Y-%m', r.timestamp) AS month,
+            strftime('%Y-%m-%d', r.timestamp) AS day,
+            GROUP_CONCAT(r.guess, '|~|') AS guesses,
+            GROUP_CONCAT(r.feedback, '|~|') AS feedbacks
+      FROM mastermind_results AS r
+      JOIN users AS u ON r.user_id = u.id
+      WHERE strftime('%Y-%m', r.timestamp) = ?
+      GROUP BY u.username, month, day
+      ORDER BY month DESC
+    `, [month], (err, rows) => {
+      if (err) return reject(err);
 
-          // Step 1: Calculate daily scores and sum them per month for each user
-          const monthlyScores = {};
+      // Existing code to calculate scores
+      const monthlyScores = {};
 
-          rows.forEach(row => {
-            const guesses = row.guesses.split('|~|'); // Use the unique separator
-            const feedbacks = row.feedbacks.split('|~|').map(feedback => JSON.parse(feedback));
-            const success = feedbacks.some(feedbackArray => feedbackArray.every(entry => entry === 'correct'));
-            const dailyScore = calculateScore(guesses, success);
-        
-            // Aggregate daily scores into monthly totals
-            const key = `${row.username}-${row.month}`;
-            if (!monthlyScores[key]) {
-                monthlyScores[key] = { username: row.username, month: row.month, score: 0 };
-            }
-            monthlyScores[key].score += dailyScore;
-          });
+      rows.forEach(row => {
+        const guesses = row.guesses.split('|~|');
+        const feedbacks = row.feedbacks.split('|~|').map(feedback => JSON.parse(feedback));
+        const success = feedbacks.some(feedbackArray => feedbackArray.every(entry => entry === 'correct'));
+        const dailyScore = calculateScore(guesses, success);
 
-          // Convert aggregated results to an array for response
-          const scores = Object.values(monthlyScores);
-          logger.info(`Retrieved monthly scores for ${scores.length} users.`);
-          resolve(scores);
+        const key = `${row.username}-${row.month}`;
+        if (!monthlyScores[key]) {
+          monthlyScores[key] = { username: row.username, month: row.month, score: 0 };
+        }
+        monthlyScores[key].score += dailyScore;
       });
+
+      const scores = Object.values(monthlyScores);
+      logger.info(`Retrieved monthly scores for ${scores.length} users for month ${month}.`);
+      resolve(scores);
+    });
   });
 }
 
