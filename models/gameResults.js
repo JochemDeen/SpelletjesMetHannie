@@ -323,7 +323,7 @@ async function getHighestScorerCounts() {
   return new Promise((resolve, reject) => {
       db.all(`
           SELECT u.username, strftime('%Y-%m', r.timestamp) AS month, strftime('%Y-%m-%d', r.timestamp) AS day,
-                 GROUP_CONCAT(r.guess) AS guesses, GROUP_CONCAT(r.feedback) AS feedbacks
+                 GROUP_CONCAT(r.guess, '|~|') AS guesses, GROUP_CONCAT(r.feedback, '|~|') AS feedbacks
           FROM mastermind_results AS r
           JOIN users AS u ON r.user_id = u.id
           GROUP BY u.username, month, day
@@ -339,9 +339,16 @@ async function getHighestScorerCounts() {
           rows.forEach(row => {
               if (row.month === currentMonth) return; // Skip the current month
 
-              const guesses = row.guesses.split(',');  // Convert guesses to array
+              const guesses = row.guesses.split('|~|');  // Convert guesses to array
               //const dailyScore = calculateScore(guesses);  // Calculate score based on daily guesses
-              const feedbacks = row.feedbacks.split(',').map(feedback => JSON.parse(feedback));
+              const feedbacks = row.feedbacks.split('|~|').map(feedback => {
+                try {
+                  return JSON.parse(feedback);
+                } catch (e) {
+                  logger.error('Failed to parse feedback JSON:', e);
+                  return null; // or handle the error as needed
+                }
+              }).filter(feedback => feedback !== null);
               const success = feedbacks.some(feedbackArray => feedbackArray.every(entry => entry === 'correct'));
               const dailyScore = calculateScore(guesses, success);
               const key = `${row.username}-${row.month}`;
