@@ -41,7 +41,26 @@ let gameEnded = false;
       console.error('Failed to load game state:', error);
     }
   })();
-  
+
+  // mastermind.js
+  function celebrate() {
+    confetti({
+        particleCount: 100,
+        spread: 70,
+        origin: { y: 0.6 }
+    });
+}
+function showCongratulations() {
+  const congratsMessage = document.createElement('div');
+  congratsMessage.id = 'congrats-message';
+  congratsMessage.textContent = 'Gefeliciteerd!';
+  document.body.appendChild(congratsMessage);
+
+  // Remove the message after 3 seconds
+  setTimeout(() => {
+      congratsMessage.remove();
+  }, 3000);
+}
 
 async function validateWord(word) {
     try {
@@ -74,17 +93,20 @@ try {
     });
     const data = await response.json();
     if (data.correct) {
-    animateReveal(true,data.feedback,deltaDelay = 300);
-    document.getElementById('compare-link').style.display = 'inline';
-    gameEnded = true;
+      await animateReveal(true,data.feedback,deltaDelay = 300);
+      showCongratulations(); 
+      celebrate();
+
+      document.getElementById('compare-link').style.display = 'inline';
+      gameEnded = true;
     } else {
-    animateReveal(false, data.feedback,deltaDelay = 300);
-    currentRow++;
-    currentGuess = "";
-    if (currentRow === 6 ) {
-        document.getElementById('compare-link').style.display = 'inline';
-        gameEnded = true;
-    }
+      await animateReveal(false, data.feedback,deltaDelay = 300);
+      currentRow++;
+      currentGuess = "";
+      if (currentRow === 6 ) {
+          document.getElementById('compare-link').style.display = 'inline';
+          gameEnded = true;
+      }
     }
 } catch (error) {
     console.error('Failed to submit guess:', error);
@@ -187,37 +209,46 @@ function updateKeyColor(letter, feedback) {
 
 
 
-function animateReveal(isCorrect, feedback = [],deltaDelay = 0) {
-    const startIndex = currentRow * 5;
-    for (let i = 0; i < 5; i++) {
-      const letterBox = gameContainer.querySelector(`[data-index='${startIndex + i}']`);
-      const letter = currentGuess[i];
-      const delay = i * deltaDelay; // Delay each box by 300ms
+function animateReveal(isCorrect, feedback = [], deltaDelay = 0) {
+  return new Promise((resolve) => {
+      const startIndex = currentRow * 5;
+      let animationsCompleted = 0;
 
-      setTimeout(() => {
-        if (isCorrect) {
-          letterBox.style.backgroundColor = pastelGreen;
-          letterBox.style.color = 'white';
-        } else {
-          if (feedback[i] === 'correct') {
-            letterBox.style.backgroundColor = pastelGreen;
-            letterBox.style.color = 'white';
-          } else if (feedback[i] === 'misplaced') {
-            letterBox.style.backgroundColor = pastelOchre; 
-            letterBox.style.color = 'white';
-          } else {
-            letterBox.style.backgroundColor = gray;
-            letterBox.style.color = 'white';
-          }
+      for (let i = 0; i < 5; i++) {
+          const letterBox = gameContainer.querySelector(`[data-index='${startIndex + i}']`);
+          const letter = currentGuess[i];
+          const delay = i * deltaDelay; // Delay each box by deltaDelay ms
 
-          // Update keyboard color
-          updateKeyColor(letter, feedback[i]);
+          setTimeout(() => {
+              // Apply the visual updates
+              if (isCorrect) {
+                  letterBox.style.backgroundColor = pastelGreen;
+                  letterBox.style.color = 'white';
+              } else {
+                  if (feedback[i] === 'correct') {
+                      letterBox.style.backgroundColor = pastelGreen;
+                      letterBox.style.color = 'white';
+                  } else if (feedback[i] === 'misplaced') {
+                      letterBox.style.backgroundColor = pastelOchre;
+                      letterBox.style.color = 'white';
+                  } else {
+                      letterBox.style.backgroundColor = gray;
+                      letterBox.style.color = 'white';
+                  }
 
-        }
+                  // Update keyboard color
+                  updateKeyColor(letter, feedback[i]);
+              }
 
-        // Remove border if color is set
-        letterBox.style.border = "none";
-      }, delay);
-  }
+              // Remove border if color is set
+              letterBox.style.border = "none";
+
+              // Check if this is the last animation
+              if (i === 4) {
+                  // All letters have been revealed
+                  resolve();
+              }
+          }, delay);
+      }
+  });
 }
-

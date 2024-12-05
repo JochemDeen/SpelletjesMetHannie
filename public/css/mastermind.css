@@ -115,6 +115,31 @@
     margin-left: 25px; /* Default margin */
 }
 
+#congrats-message {
+  position: fixed;
+  top: 30%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background-color: #4CAF50; /* Green background */
+  color: white;
+  padding: 20px 40px;
+  font-size: 2em;
+  font-weight: bold;
+  border-radius: 10px;
+  z-index: 1000;
+  text-align: center;
+  opacity: 0;
+  animation: fadeInOut 3s forwards;
+}
+
+/* Fade-in and fade-out animation */
+@keyframes fadeInOut {
+  0% { opacity: 0; }
+  10% { opacity: 1; }
+  90% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
   /* Existing styles adjusted for mobile */
 @media (max-width: 768px) {
 
@@ -152,6 +177,8 @@
 
   
 }
+
+
 @media (max-width: 420px) {
   h1 {
     display: none;

@@ -88,8 +88,26 @@ h1, h2 {
     margin-top: 20px;
 }
 
+#guess-distribution .bar-wrapper {
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+#guess-distribution .label {
+    margin-right: 5px;
+    font-weight: bold;
+    width: 100px; /* Default width */
+    text-align: right;
+}
+
+
 /* Mobile Styles */
 @media (max-width: 600px) {
+    #guess-distribution .label {
+        width: 50px; /* Smaller width for mobile */
+    }
+
     #stats-summary, #average-stats {
         gap: 15px;
         font-size: 0.9em;

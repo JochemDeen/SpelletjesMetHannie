@@ -36,10 +36,11 @@ document.addEventListener('DOMContentLoaded', async () => {
     
             const label = document.createElement('div');
             label.textContent = `${i}`;
-            label.style.marginRight = '5px';
-            label.style.fontWeight = 'bold';
-            label.style.width = '100px'; // Fixed width for alignment
-            label.style.textAlign = 'right';
+            label.classList.add('label');
+            // label.style.marginRight = '5px';
+            // label.style.fontWeight = 'bold';
+            // label.style.width = '100px'; // Fixed width for alignment
+            // label.style.textAlign = 'right';
     
             const barContainer = document.createElement('div');
             barContainer.classList.add('bar');

@@ -195,6 +195,4 @@ router.get('/api/get-earliest-date', requireLogin, async (req, res) => {
 });
 
 
-  
-
 module.exports = router;

@@ -168,8 +168,8 @@ async function getUserStats(user_id) {
       }
 
       const totalGames = new Set(rows.map(row => row.timestamp.split('T')[0])).size;
-      const correctGames = rows.filter(row => JSON.parse(row.feedback).every(entry => entry === 'correct')).length;
-      const percentCorrect = totalGames > 0 ? ((correctGames / totalGames) * 100).toFixed(2) : 0;
+      let correctGames = 0;
+      let percentCorrect = 0;
 
       // Calculate total score for all guesses and for the current month
       const currentMonth = new Date().toISOString().split('T')[0].slice(0, 7); // "YYYY-MM"
@@ -183,48 +183,82 @@ async function getUserStats(user_id) {
         return acc;
       }, {});
 
+      const gameResultsByDate = [];
+
       Object.entries(gamesByDate).forEach(([date, gameRows]) => {
         const guesses = gameRows.map(row => row.guess);
         const success = gameRows.some(row => JSON.parse(row.feedback).every(entry => entry === 'correct'));
-        const dailyScore = calculateScore(guesses,success);
+        const dailyScore = calculateScore(guesses, success);
         totalScore += dailyScore;
 
         // Add to monthly score if within current month
         if (date.startsWith(currentMonth)) {
           monthlyScore += dailyScore;
         }
+
+        gameResultsByDate.push({ date, success });
+
+        // Update correctGames
+        if (success) {
+          correctGames++;
+        }
       });
 
+      // Update percentCorrect
+      percentCorrect = totalGames > 0 ? ((correctGames / totalGames) * 100).toFixed(2) : 0;
+
+      // Sort gameResultsByDate
+      gameResultsByDate.sort((a, b) => new Date(a.date) - new Date(b.date));
+
       // Calculate streaks
-      const dates = [...new Set(rows.map(row => row.timestamp.split('T')[0]))].sort();
       let currentStreak = 0;
       let maxStreak = 0;
       let streak = 0;
       let previousDate = null;
 
-      for (const date of dates) {
-        if (previousDate) {
-          const difference = new Date(date) - new Date(previousDate);
-          if (difference === 86400000) { // 1 day in milliseconds
-            streak++;
+      for (let i = 0; i < gameResultsByDate.length; i++) {
+        const { date, success } = gameResultsByDate[i];
+
+        if (success) {
+          if (previousDate) {
+            const difference = new Date(date) - previousDate;
+            if (difference === 86400000) { // 1 day in milliseconds
+              streak++;
+            } else {
+              streak = 1;
+            }
           } else {
             streak = 1;
           }
+          previousDate = new Date(date);
+          maxStreak = Math.max(maxStreak, streak);
         } else {
-          streak = 1;
+          // Reset streak on a loss
+          streak = 0;
+          previousDate = null;
         }
-        previousDate = date;
-        maxStreak = Math.max(maxStreak, streak);
-        currentStreak = streak;
+
+        // For current streak, if we are at the last date, set currentStreak
+        if (i === gameResultsByDate.length - 1) {
+          if (success) {
+            currentStreak = streak;
+          } else {
+            currentStreak = 0;
+          }
+        }
       }
 
       // Calculate guess distribution
-      const guessDistribution = Array(7).fill(0); // Index 1-6, index 0 unused
-      rows.forEach(row => {
-        if (JSON.parse(row.feedback).every(entry => entry === 'correct')) {
-          const gameGuesses = rows.filter(r => r.timestamp.split('T')[0] === row.timestamp.split('T')[0]).length;
-          if (gameGuesses <= 6) {
-            guessDistribution[gameGuesses]++;
+      const guessDistribution = Array(7).fill(0); // Index 0-6, index 0 unused
+
+      Object.entries(gamesByDate).forEach(([date, gameRows]) => {
+        const success = gameRows.some(row => JSON.parse(row.feedback).every(entry => entry === 'correct'));
+        if (success) {
+          const numGuesses = gameRows.length;
+          if (numGuesses <= 6) {
+            guessDistribution[numGuesses]++;
+          } else {
+            guessDistribution[6]++;
           }
         }
       });
@@ -232,8 +266,10 @@ async function getUserStats(user_id) {
       // Calculate medianGuess
       const guessCounts = [];
       Object.values(gamesByDate).forEach(gameRows => {
-        if (gameRows.some(row => JSON.parse(row.feedback).every(entry => entry === 'correct'))) {
-          guessCounts.push(gameRows.length);
+        const success = gameRows.some(row => JSON.parse(row.feedback).every(entry => entry === 'correct'));
+        if (success) {
+          const numGuesses = gameRows.length;
+          guessCounts.push(numGuesses);
         }
       });
 
@@ -271,8 +307,6 @@ async function getUserStats(user_id) {
     });
   });
 }
-
-
 
 // Function to get monthly scores
 async function getMonthlyScores(month) {
@@ -404,9 +438,6 @@ async function getHighestScorerCounts() {
       });
   });
 }
-
-
-
 
 
 // Function to calculate score based on the number of guesses
