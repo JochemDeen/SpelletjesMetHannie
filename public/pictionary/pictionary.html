@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8">
+  <title>Pictionary</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" type="image/png" href="/favicon-96x96.png" sizes="96x96" />
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <link rel="shortcut icon" href="/favicon.ico" />
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+  <link rel="manifest" href="/site.webmanifest" />
+  <link rel="stylesheet" href="/pictionary/css/pictionary.css">
+</head>
+<body>
+    <a href="/dashboard" class="home-button">
+        <img src="/images/home.png" alt="Home" />
+      </a>
+  <!-- Title Area -->
+  <h1 id="game-title">Pictionary!</h1>
+    <!-- Game State Container -->
+    <div id="game-state-container">
+        <!-- Scenario: Word Selection -->
+        <div id="word-selection" class="hidden">
+            <div id="word-options">
+                <!-- Words fetched dynamically will be added here -->
+            </div>
+        </div>
+
+        <!-- Scenario: Drawing Area -->
+        <div id="drawing-container" class="hidden">
+            <div id="draw-word-title"></div>
+
+            <!-- Timer -->
+            <div id="timer-bar"></div>
+            <canvas id="drawing-canvas" width="800" height="400"></canvas>
+            <div id="tools-container">
+                <div id="color-picker">
+                    <!-- Color buttons -->
+                    <button class="color" data-color="black" style="background-color: black;"></button>
+                    <button class="color" data-color="red" style="background-color: red;"></button>
+                    <button class="color" data-color="blue" style="background-color: blue;"></button>
+                    <button class="color" data-color="green" style="background-color: green;"></button>
+                    <button class="color" data-color="orange" style="background-color: orange;"></button>
+                    <button class="color" data-color="purple" style="background-color: purple;"></button>
+                    <button class="color" data-color="pink" style="background-color: pink;"></button>
+                  
+                </div>
+                <button id="finish-drawing">Finish Drawing</button>
+            </div>
+            
+        </div>
+
+        <!-- Scenario: Guess Submission -->
+        <div id="guess-submission" class="hidden">
+            <input type="text" id="guess-input" placeholder="Type your guess here..." />
+            <button id="submit-guess">Submit Guess</button>
+            <div id="guess-status">
+                <!-- Placeholder to show other users' statuses -->
+            </div>
+        </div>
+
+        <!-- Guesses Table (Hidden by Default) -->
+        <div id="guesses-table-container" class="hidden">
+            <h2>Guesses</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Guess Time</th>
+                        <th>User</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody id="guessesTableBody">
+                    <!-- Rows will be dynamically added here -->
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Scenario: Grading Guesses -->
+        <div id="grading-guesses" class="hidden">
+            <div id="guesses-list">
+                <!-- Dynamically loaded guesses -->
+            </div>
+            <button id="submit-grades">Submit Grades</button>
+        </div>
+
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script src="/pictionary/js/pictionary.js"></script>
+</body>
+</html>

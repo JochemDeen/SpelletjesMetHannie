@@ -8,6 +8,7 @@ const SQLiteStore = require('connect-sqlite3')(session);
 const path = require('path');
 const authRoutes = require('./routes/auth');
 const gameRoutes = require('./routes/games');
+const pictionaryRoutes = require('./routes/pictionary');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -38,6 +39,9 @@ app.use(session({
 
   // Use game routes
   app.use('/', gameRoutes);
+
+  // Use pictionary routes
+  app.use('/', pictionaryRoutes);
 
   // Catch-all route to handle all other requests
   app.get('*', (req, res) => {

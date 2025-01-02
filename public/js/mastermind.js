@@ -13,6 +13,7 @@ const keyboardRows = [
 let currentGuess = "";
 let currentRow = 0;
 let gameEnded = false;
+let submittedWords = []; // Track submitted words
 
 // Create the game grid and restore state if available
 (async function loadGameState() {
@@ -23,6 +24,7 @@ let gameEnded = false;
         currentRow = 0;
         data.state.guesses.forEach((guess, index) => {
             currentGuess = guess;
+            submittedWords.push(guess.toLowerCase());
             updateGrid();
             if (currentRow == data.state.currentRow && data.state.success) {
                 animateReveal(data.state.success, data.state.feedback[index], deltaDelay = 0);
@@ -148,7 +150,12 @@ function handleKeyPress(key) {
 
   if (key === 'enter') {
     if (currentGuess.length === 5) {
-        validateWord(currentGuess);
+      if (submittedWords.includes(currentGuess.toLowerCase())) {
+          showTemporaryMessage("Je hebt dit woord al geprobeerd.");
+      } else {
+          submittedWords.push(currentGuess.toLowerCase()); // Add to the submitted list
+          validateWord(currentGuess);
+      }
     } else {
       alert('Niet genoeg letters');
     }
@@ -164,8 +171,6 @@ function handleKeyPress(key) {
     }
   }
 }
-
-
 
 function updateGrid() {
   const startIndex = currentRow * 5;
@@ -205,8 +210,6 @@ function updateKeyColor(letter, feedback) {
       }
   }
 }
-
-
 
 
 function animateReveal(isCorrect, feedback = [], deltaDelay = 0) {
@@ -252,3 +255,40 @@ function animateReveal(isCorrect, feedback = [], deltaDelay = 0) {
       }
   });
 }
+// Function to display a brief on-screen message
+function showTemporaryMessage(message) {
+  const messageElement = document.createElement('div');
+  messageElement.textContent = message;
+  messageElement.style.position = 'fixed';
+  messageElement.style.bottom = '20px';
+  messageElement.style.left = '50%';
+  messageElement.style.transform = 'translateX(-50%)';
+  messageElement.style.backgroundColor = 'rgba(0, 0, 0, 0.7)';
+  messageElement.style.color = 'white';
+  messageElement.style.padding = '10px 20px';
+  messageElement.style.borderRadius = '5px';
+  messageElement.style.fontSize = '16px';
+  messageElement.style.zIndex = '1000';
+  document.body.appendChild(messageElement);
+
+  setTimeout(() => {
+      messageElement.remove();
+  }, 2000); // Remove after 2 seconds
+}
+
+document.addEventListener('keydown', (event) => {
+  if (gameEnded) return; // If the game is over, ignore further key presses
+
+  const key = event.key.toLowerCase();
+
+  if (key === 'enter') {
+    // If Enter is pressed
+    handleKeyPress('enter');
+  } else if (key === 'backspace' || key === 'delete') {
+    // If Backspace or Delete is pressed
+    handleKeyPress('backspace');
+  } else if (/^[a-z]$/.test(key)) {
+    // If the key is a single alphabetic character (a–z)
+    handleKeyPress(key);
+  }
+});

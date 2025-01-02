@@ -1,0 +1,172 @@
+:root {
+    --pastel-ochre: #d2b75f;
+    --pastel-green: #7fb582;
+    --pastel-red: #dc3545;
+    --white: #ffffff;
+    --gray: #6d6d6d;
+    --light-gray: #e0e0e0;
+  }
+  
+  body {
+    font-family: 'Arial', sans-serif;
+    background-color: var(--white);
+    margin: 0;
+    padding: 0;
+  }
+  
+  /* Title */
+  h1 {
+    text-align: center;
+    font-size: 2.5em;
+    color: #333;
+    margin: 20px 0;
+  }
+  
+  /* Drawing Area */
+  #drawing-canvas {
+    width: 80%;
+    height: 400px;
+    margin: 20px auto;
+    background-color: var(--white);
+    border: 2px solid var(--light-gray);
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: var(--gray);
+    font-size: 1.2em;
+    font-style: italic;
+  }
+  #draw-word-title {
+    font-size: 1.2em;
+    margin-bottom: 10px;    /* a bit of spacing above the canvas */
+    text-align: center;     /* center it if you like */
+  }
+  
+  .highlight-word {
+    font-weight: bold;
+    font-style: italic;
+    color: #195e9a;  /* some nice highlight color, e.g., a shade of blue */
+  }
+  /* Guesses Section */
+  #guesses-container {
+    width: 80%;
+    margin: 20px auto;
+  }
+  
+  .guess {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background-color: var(--white);
+    border: 1px solid var(--light-gray);
+    border-radius: 5px;
+    padding: 10px;
+    margin-bottom: 10px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+  
+  .guess span {
+    font-size: 1em;
+    color: #333;
+  }
+  
+  .traffic-light {
+    width: 15px;
+    height: 15px;
+    border-radius: 50%;
+  }
+  
+  .traffic-green {
+    background-color: var(--pastel-green);
+  }
+  
+  .traffic-orange {
+    background-color: var(--pastel-ochre);
+  }
+  
+  .traffic-red {
+    background-color: var(--pastel-red);
+  }
+
+  .hidden {
+    display: none;
+}
+
+#tools-container {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 10px;
+}
+
+#timer-bar {
+    width: 100%;
+    height: 20px;
+    background-color: rgb(31, 76, 183);
+    position: relative;
+    overflow: hidden;
+}
+
+.color {
+    width: 30px;
+    height: 30px;
+    border: 1px solid #ddd;
+    margin: 2px;
+    cursor: pointer;
+}
+  
+  /* Home Button */
+  .home-button {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+  }
+  
+  .home-button img {
+    width: 30px;
+    height: 30px;
+    transition: transform 0.2s ease-in-out;
+  }
+  
+  .home-button img:hover {
+    transform: scale(1.1);
+  }
+  
+  /* Responsive Design */
+  @media (max-width: 768px) {
+    #drawing-canvas {
+      width: 95%;
+      height: 300px;
+    }
+  
+    .guess {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 5px;
+    }
+  
+    .traffic-light {
+      width: 12px;
+      height: 12px;
+    }
+  }
+  
+  @media (max-width: 420px) {
+    h1 {
+      font-size: 1.8em;
+    }
+  
+    #drawing-canvas {
+      height: 250px;
+    }
+  
+    .guess span {
+      font-size: 0.9em;
+    }
+  
+    .home-button img {
+      width: 25px;
+      height: 25px;
+    }
+  }

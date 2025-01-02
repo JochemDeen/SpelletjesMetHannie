@@ -49,6 +49,10 @@ let validationWordsList = [];
 
 
 // Function to get or set the word of the day in the database
+function getRandomWord(list = wordsList) {
+  return list[Math.floor(Math.random() * list.length)];
+}
+
 async function getWordOfTheDay() {
   logger.info('Getting word of the day.');
 
@@ -62,7 +66,7 @@ async function getWordOfTheDay() {
         logger.info(`Word of the day for ${today} is: ${row.word}`);
         resolve(row.word);
       } else {
-        const wordOfTheDay = wordsList[Math.floor(Math.random() * wordsList.length)];
+        const wordOfTheDay = getRandomWord(wordsList);
         db.run('INSERT INTO mastermind_word (date, word) VALUES (?, ?)', [today, wordOfTheDay], (err) => {
           if (err) {
             return reject(err);
@@ -85,4 +89,6 @@ async function validateWord(word) {
 module.exports = {
   getWordOfTheDay,
   validateWord,
+  getRandomWord,
+
 };
