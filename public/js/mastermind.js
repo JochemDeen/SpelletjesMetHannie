@@ -77,7 +77,8 @@ async function validateWord(word) {
         if (data.valid) {
             submitGuess(word);
         } else {
-            alert(`${word} zit niet in het woordenboek`);
+            showTemporaryMessage(`${word} zit niet in het woordenboek`);
+            buzzCurrentGuess();
         }
     } catch (error) {
         console.error('Failed to validate word:', error);
@@ -169,6 +170,21 @@ function handleKeyPress(key) {
       currentGuess += key;
       updateGrid();
     }
+  }
+}
+
+function buzzCurrentGuess() {
+  const startIndex = currentRow * 5;
+  for (let i = 0; i < 5; i++) {
+    const letterBox = gameContainer.querySelector(`[data-index='${startIndex + i}']`);
+    // Add the buzz class
+    letterBox.classList.add('buzz');
+
+    // Remove the buzz class after the animation ends
+    // to ensure the effect can be triggered again later
+    letterBox.addEventListener('animationend', () => {
+      letterBox.classList.remove('buzz');
+    }, { once: true });
   }
 }
 
