@@ -158,8 +158,8 @@ try {
 router.get('/api/get-monthly-scores', requireLogin, async (req, res) => {
   logger.info('GET /api/get-monthly-scores');
   try {
-    const currentMonth = new Date().toISOString().slice(0, 7); // 'YYYY-MM'
-    const scores = await getMonthlyScores(currentMonth);
+    const month = req.query.month || new Date().toISOString().slice(0, 7);
+    const scores = await getMonthlyScores(month);
     res.json({ success: true, scores });
   } catch (error) {
     logger.error('Error fetching monthly scores:', error);

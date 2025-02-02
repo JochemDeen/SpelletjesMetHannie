@@ -19,42 +19,62 @@ document.addEventListener('DOMContentLoaded', async () => {
     } catch (error) {
       console.error('Failed to load scores:', error);
     }
+
+      // Render previous month winner
+    renderPreviousMonthWinner();
+
   
     function renderMonthlyScores(scores) {
       const monthHeader = document.querySelector(`[data-month-section] h2[data-month]`);
       const orderedList = document.querySelector(`[data-month-section] ol[data-month-list]`);
-  
+    
       if (monthHeader && orderedList) {
         const currentMonth = new Date().toISOString().slice(0, 7); // 'YYYY-MM'
         monthHeader.textContent = `Scores voor ${getMonthName(currentMonth)}`;
-  
-        scores.sort((a, b) => b.score - a.score); // Sort by highest score
-  
+    
+        // Sort descending by score; if scores are equal, return 0 (keeps order)
+        scores.sort((a, b) => {
+          if (b.score !== a.score) {
+            return b.score - a.score;
+          } else {
+            return 0;
+          }
+        });
+    
         // Clear previous entries if any
         orderedList.innerHTML = '';
-  
+    
+        let rank = 0;
+        let lastScore = null;
         scores.forEach((score, index) => {
+          // If the current score is less than the previous one, update the rank.
+          if (lastScore === null || score.score < lastScore) {
+            rank = index + 1;
+          }
+          lastScore = score.score;
+    
           const listItem = document.createElement('li');
-  
-          const rank = document.createElement('span');
-          rank.classList.add('rank');
-          rank.textContent = `${index + 1}.`;
-  
+    
+          const rankSpan = document.createElement('span');
+          rankSpan.classList.add('rank');
+          rankSpan.textContent = `${rank}.`;
+    
           const username = document.createElement('span');
           username.classList.add('username');
           username.textContent = score.username;
-  
+    
           const scoreValue = document.createElement('span');
           scoreValue.classList.add('score');
           scoreValue.textContent = score.score;
-  
-          listItem.appendChild(rank);
+    
+          listItem.appendChild(rankSpan);
           listItem.appendChild(username);
           listItem.appendChild(scoreValue);
           orderedList.appendChild(listItem);
         });
       }
     }
+    
   
     function renderNoScores() {
       const monthHeader = document.querySelector(`[data-month-section] h2[data-month]`);
@@ -65,6 +85,43 @@ document.addEventListener('DOMContentLoaded', async () => {
         orderedList.innerHTML = '';
       }
     }
+
+    // Render the previous month winner
+    async function renderPreviousMonthWinner() {
+      const previousMonth = getPreviousMonth();
+      try {
+        const response = await fetch(`/api/get-monthly-scores?month=${previousMonth}`);
+        const data = await response.json();
+        if (data.success && data.scores && data.scores.length > 0) {
+          const scores = data.scores;
+          // Sort descending by score (no secondary sort by name)
+          scores.sort((a, b) => {
+            if (b.score !== a.score) {
+              return b.score - a.score;
+            } else {
+              return 0;
+            }
+          });
+          // The highest score is in the first entry
+          const highestScore = scores[0].score;
+          // In case of ties, collect all winners
+          const winners = scores.filter(item => item.score === highestScore);
+          const winnerNames = winners.map(item => item.username).join(', ');
+          // Set the section text
+          const monthName = getMonthName(previousMonth);
+          document.getElementById('previous-month-winner-title').textContent = `Winnaar van ${monthName}:`;
+          document.getElementById('previous-month-winner-info').textContent = `${winnerNames} met ${highestScore} punten!`;
+        } else {
+          // No scores for previous month
+          const monthName = getMonthName(previousMonth);
+          document.getElementById('previous-month-winner-title').textContent = `Winnaar van ${monthName}:`;
+          document.getElementById('previous-month-winner-info').textContent = `Geen winnaar.`;
+        }
+      } catch (error) {
+        console.error('Failed to load previous month winner:', error);
+      }
+    }
+
 
     function renderHighestScores(highestScores) {
         const orderedList = document.getElementById('highest-scorer-list');
@@ -96,6 +153,13 @@ document.addEventListener('DOMContentLoaded', async () => {
             orderedList.appendChild(listItem);
         });
     }
+
+    function getPreviousMonth() {
+      const date = new Date();
+      date.setMonth(date.getMonth() - 1);
+      return date.toISOString().slice(0, 7);
+    }
+    
 
     function getMonthName(month) {
         const [year, monthNumber] = month.split('-');
