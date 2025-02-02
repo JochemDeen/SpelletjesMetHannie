@@ -18,7 +18,7 @@ router.post('/login', (req, res) => {
     const { username, password } = req.body;
     logger.info(`POST /login attempt for user: ${username}`);
 
-    db.get('SELECT * FROM users WHERE username = ?', [username], (err, user) => {
+    db.get('SELECT * FROM users WHERE username = ? COLLATE NOCASE', [username], (err, user) => {
       if (err) {
         logger.error(err.message);
         res.redirect('/login?error=1');
