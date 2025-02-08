@@ -72,22 +72,21 @@ h1 {
       text-align: center;
     }
 
-    .status-indicator {
+    .status-temp {
       position: absolute;
-      bottom: 10px; /* Default position */
+      bottom: 10px;
       right: 10px;
-      background-color: #ff4d4d; /* Default red */
       color: white;
       padding: 5px 10px;
       border-radius: 5px;
       font-size: 0.9em;
       font-weight: bold;
-    }
-    
+  }
+      
 
-    .status-green { background-color: #28a745; } /* Green light */
-    .status-orange { background-color: #ffc107; } /* Orange light */
-    .status-red { background-color: #dc3545; } /* Red light */
+    .status-green { background-color: #5bae6f; }
+    .status-yellow { background-color: #fbc31a; } 
+    .status-red { background-color: #e03e4e; }
 
 /* Responsive Styles */
 @media (max-width: 600px) {
@@ -112,7 +111,7 @@ h1 {
   }
 
   .game-card h2 {
-    margin-bottom: 30px; /* Extra spacing below the title */
+    margin-bottom: 40px; /* Extra spacing below the title */
   }
 
 }

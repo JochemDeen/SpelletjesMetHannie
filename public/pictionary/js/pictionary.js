@@ -2,7 +2,7 @@
 
 const titles = {
     DRAW: "Teken je woord!",
-    CHOOSE: "Kies een woord!",
+    CHOOSE: "Kies een moeilijkheidsgraad!",
     GUESS: "Raad het woord!",
     GRADE: "Beoordeel de antwoorden!",
     IDLE: "Pictionary!"
@@ -11,65 +11,79 @@ const gameTitleElement = document.getElementById("game-title");
 
 function updateGameTitle(state) {
     switch (state) {
-        case "draw":
+        case "drawing":
             gameTitleElement.textContent = titles.DRAW;
             break;
         case "choose":
             gameTitleElement.textContent = titles.CHOOSE;
             break;
-        case "guess":
+        case "guessing":
             gameTitleElement.textContent = titles.GUESS;
             break;
-        case "grade":
+        case "feedback":
             gameTitleElement.textContent = titles.GRADE;
+            break;
         default:
             gameTitleElement.textContent = titles.IDLE;
+            break;
     }
 }
 
 // Function to Fetch the Initial Game State
-async function fetchInitialGameState() {
-    // try {
-    //     const response = await fetch("/api/pictionary/state");
-    //     if (!response.ok) throw new Error("Failed to fetch initial game state.");
+async function fetchGameState() {
+    try {
+        const response = await fetch("/api/pictionary/state");
+        if (!response.ok) throw new Error("Failed to fetch initial game state.");
         
-    //     const data = await response.json();
-    //     return data.state; // Assuming response has { state: "draw/choose/guess/idle" }
-    // } catch (error) {
-    //     console.error("Error fetching game state:", error);
-    //     return "idle"; // Default to idle state
-    // }
-    const states = ["draw", "choose", "guess", "grade", "idle"];
-    // pick a random or fixed test state
-    state = states[Math.floor(Math.random() * states.length)];
-    state = "draw";
-    console.log("Initial state fetched:", state);
-    return state;
+        const data = await response.json();
+        console.log("Initial data fetched:", data);
+        return data.state; // Assuming response has { state: "draw/choose/guess/idle" }
+    } catch (error) {
+        console.error("Error fetching game state:", error);
+        return "idle"; // Default to idle state
+    }
   
 }
 
 // Function to Handle the Game State
 function handleGameState(state) {
     updateGameTitle(state);
+
+      // If the game is in the "scoring" state, redirect to the scoreboard
+      if (state === "scoring") {
+        window.location.href = "/pictionary/scoreboard";
+        return; 
+    }
   
     // 1. Hide all relevant containers first
     hideAllContainers();
   
     // 2. Show the container & call the function for the chosen state
     switch (state) {
-      case "draw":
+      case "drawing":
         document.getElementById("drawing-container").classList.remove("hidden");
         handleDraw(); // or pass the canvasRef or any other args if needed
         break;
       case "choose":
         document.getElementById("word-selection").classList.remove("hidden");
+        document.getElementById("difficulty-options").classList.remove("hidden");
         handleChoose();
         break;
-      case "guess":
-        document.getElementById("guess-submission").classList.remove("hidden");
+      case "guessing":
+        document.getElementById("guess-container").classList.remove("hidden");
+        document.getElementById("guessing").classList.remove("hidden");
+
+        document.getElementById("guess-submission-controls").classList.remove("hidden");
         handleGuess();
         break;
-      case "grade":
+    case "guessing-watching":
+        document.getElementById("guess-container").classList.remove("hidden");
+        document.getElementById("guessing").classList.remove("hidden");
+        document.getElementById("guess-submission-controls").classList.add("hidden"); // Hide input & button
+        handleGuess();
+        break;
+    
+      case "feedback":
         document.getElementById("grading-guesses").classList.remove("hidden");
         handleGrade();
         break;
@@ -103,17 +117,15 @@ const handleDraw = async () => {
   
     try{
     // 1. Start the drawing session and get the countdown duration
-    // const startPayload = { playerId, gameId };
-    // const startResponse = await axios.post('/api/pictionary/start-drawing', startPayload);
+    const startResponse = await axios.post('/api/pictionary/start-drawing');
 
-    // if (startResponse.status !== 200) {
-    //   throw new Error('Failed to initialize drawing session.');
-    // }
+    if (startResponse.status !== 200) {
+      throw new Error('Failed to initialize drawing session.');
+    }
 
-    // const countdownDuration = startResponse.data.countdown; // Duration in seconds
-    // MOCK DATA
-    const wordToDraw = "Olifant";
-    const countdownDuration = 60; // say 100 seconds
+    const countdownDuration = startResponse.data.countdown; // Duration in seconds
+    const wordToDraw = startResponse.data.word;
+
     wordTitleEl.innerHTML = `Teken een <span class="highlight-word">${wordToDraw}</span>, je hebt ${countdownDuration} seconden`;
     console.log(`Countdown started: ${countdownDuration} seconds`);
   
@@ -130,7 +142,7 @@ const handleDraw = async () => {
         clearInterval(timerInterval);
         console.log("Done button clicked. Drawing disabled, timer frozen.")
         // If you want to submit right away:
-        // submitDrawing(...);
+        submitDrawing(canvasRef, timerBar);
       });
 
     // 3. When the countdown finishes, submit the drawing automatically
@@ -140,7 +152,7 @@ const handleDraw = async () => {
         disableColors();
         console.log("Time's up – disabled drawing and button.");
   
-      //await submitDrawing(canvasRef, playerId, gameId, timerBar, onDrawingComplete);
+      await submitDrawing(canvasRef, timerBar);
     }, countdownDuration * 1000);
   } catch (error) {
     console.error('Error in handleDraw:', error.message);
@@ -152,6 +164,9 @@ function disableColors() {
     colorButtons.forEach(btn => {
       btn.classList.add('hidden');
     });
+
+    const eraserBtn = document.getElementById('eraser-button');
+    eraserBtn.classList.add('hidden');
 }
 function disableDrawing(canvasRef) {
     const canvas = canvasRef.current;
@@ -190,15 +205,27 @@ function startCountdown(duration) {
     const ctx = canvas.getContext('2d');
     let drawing = false;
     let selectedColor = '#000000'; // Default color
+    let selectedTool = "pen";
   
-    // Color buttons
-  document
-  .querySelectorAll("#color-picker .color")
-  .forEach((colorBtn) => {
-    colorBtn.addEventListener("click", () => {
-      selectedColor = colorBtn.dataset.color;
-      console.log("Color changed to:", selectedColor);
+// ===================
+  // HOOK UP THE COLORS
+  // ===================
+  document.querySelectorAll("#color-picker .color")
+    .forEach((colorBtn) => {
+        colorBtn.addEventListener("click", () => {
+            selectedTool = "pen";
+        selectedColor = colorBtn.dataset.color;
+        console.log("Color changed to:", selectedColor);
+        });
     });
+
+// ===================
+  // HOOK UP THE ERASER
+  // ===================
+  const eraserBtn = document.getElementById("eraser-button");
+  eraserBtn.addEventListener("click", () => {
+    selectedTool = "eraser";
+    console.log("Tool changed to eraser");
   });
 
   // 4. Add the listeners
@@ -244,6 +271,15 @@ function startCountdown(duration) {
         const x = (e.clientX - rect.left) * scaleX;
         const y = (e.clientY - rect.top) * scaleY;
 
+        if (selectedTool === "eraser") {
+            ctx.globalCompositeOperation = "destination-out"; // remove pixels
+            ctx.lineWidth = 20;
+          } else {
+            ctx.globalCompositeOperation = "source-over"; // normal drawing
+            ctx.strokeStyle = selectedColor;
+            ctx.lineWidth = 2;
+          }
+      
         ctx.lineTo(x, y);
         ctx.stroke();
         ctx.strokeStyle = selectedColor;
@@ -260,6 +296,8 @@ function startCountdown(duration) {
         e.preventDefault();
         drawing = true;
         ctx.beginPath();
+        ctx.lineWidth = selectedTool === "eraser" ? 25 : 6;
+
 
         const touch = e.touches[0];
         const rect = canvas.getBoundingClientRect();
@@ -284,8 +322,17 @@ function startCountdown(duration) {
         const x = (touch.clientX - rect.left) * scaleX;
         const y = (touch.clientY - rect.top) * scaleY;
 
+        if (selectedTool === "eraser") {
+            ctx.globalCompositeOperation = "destination-out"; // remove pixels
+            ctx.lineWidth = 20;
+          } else {
+            ctx.globalCompositeOperation = "source-over"; // normal drawing
+            ctx.strokeStyle = selectedColor;
+            ctx.lineWidth = 10;
+          }
+
+
         ctx.strokeStyle = selectedColor;
-        ctx.lineWidth = 2;
         ctx.lineCap = 'round';
         ctx.lineTo(x, y);
         ctx.stroke();
@@ -298,30 +345,49 @@ function startCountdown(duration) {
       }
   };
 
-  const submitDrawing = async (canvasRef, playerId, gameId, timerBar, onDrawingComplete) => {
+  function exportCanvasWithWhiteBackground(canvas) {
+    const width = canvas.width;
+    const height = canvas.height;
+    // Create a new canvas element
+    const tempCanvas = document.createElement('canvas');
+    tempCanvas.width = width;
+    tempCanvas.height = height;
+    const ctx = tempCanvas.getContext('2d');
+  
+    // Fill with white
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0, 0, width, height);
+  
+    // Draw the original canvas on top
+    ctx.drawImage(canvas, 0, 0);
+  
+    // Export the resulting image as a data URL
+    return tempCanvas.toDataURL('image/png');
+  }
+
+  const submitDrawing = async (canvasRef, timerBar) => {
     try {
       // Stop the timer bar
       timerBar.style.width = '0%';
-  
-      // Extract the drawing from the canvas as base64
+    
+      // Extract the drawing from the canvas as a base64 string
       const canvas = canvasRef.current;
-      const drawingData = canvas.toDataURL('image/png');
-  
+      const drawingData = exportCanvasWithWhiteBackground(canvas);
+    
       const payload = {
-        playerId,
-        gameId,
-        drawing: drawingData,
-        timestamp: new Date().toISOString(),
+        drawing: drawingData,  // Send the drawing data under the key 'drawing'
+        timestamp: new Date().toISOString(), // optional if needed
       };
-  
+    
       // Send the drawing to the backend
       const response = await axios.post('/api/pictionary/submit-drawing', payload);
-  
+    
       if (response.status === 200) {
         console.log('Drawing submitted successfully:', response.data);
-  
-        // Notify parent or update state
-        if (onDrawingComplete) onDrawingComplete(response.data);
+        // 🔄 Refresh game state after submission
+        const newState = await fetchGameState();
+        handleGameState(newState);
+        
       } else {
         console.warn('Unexpected response while submitting drawing:', response);
       }
@@ -332,55 +398,164 @@ function startCountdown(duration) {
 
   async function handleChoose() {
     try {
-        // Step 1: Fetch words from backend
-        const response = await fetch('/api/pictionary/get-words');
-        const words = await response.json();
+        // Step 1: Ask user for difficulty selection
+        const difficulty = await showDifficultySelectionUI();
 
-        // Step 2: Show words to the user for selection (assume frontend UI handles this)
-        const selectedWord = await showWordSelectionUI(words); // Function that lets user pick a word
+        // Step 2: Send the difficulty to backend and get the assigned word
+        const response = await fetch('/api/pictionary/set-difficulty', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ difficulty })
+        });
 
-        if (selectedWord) {
-            // Step 3: Send the selected word to backend
-            const result = await fetch('/api/pictionary/submit-word', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ word: selectedWord })
-            });
+        const data = await response.json();
 
-            if (result.ok) {
-                console.log('Word submitted successfully');
-            } else {
-                console.error('Failed to submit word');
-            }
+        if (response.ok) {
+            console.log(`Assigned word: ${data.word}, Max Points: ${data.maxPoints}`);
+
+            // 🔄 Immediately update game state
+            handleGameState(data.state);
+        } else {
+            console.error('Failed to set difficulty');
         }
     } catch (error) {
         console.error('Error in handleChoose:', error);
     }
 }
 
-async function handleGuess() {
-    try {
-        // Step 1: Get the guess input
-        const guessInput = document.getElementById('guessInput').value;
+async function showDifficultySelectionUI() {
+  return new Promise(async (resolve) => {
+      const selectionContainer = document.getElementById("word-selection");
+      const optionsDiv = document.getElementById("difficulty-options");
 
-        if (!guessInput) {
-            alert('Please enter a guess before submitting!');
+      // Clear previous options
+      optionsDiv.innerHTML = "";
+
+      // Fetch max points
+      let maxScores = {};
+      try {
+          const response = await fetch("/api/pictionary/max-scores");
+          maxScores = await response.json();
+      } catch (error) {
+          console.error("Failed to fetch max scores:", error);
+      }
+
+      // Difficulty options in Dutch
+      const difficulties = [
+          { label: "Makkelijk", value: "easy", maxPoints: maxScores.easy || "?", icon: "🟢" },
+          { label: "Gemiddeld", value: "medium", maxPoints: maxScores.medium || "?", icon: "🟡" },
+          { label: "Moeilijk", value: "hard", maxPoints: maxScores.hard || "?", icon: "🔴" }
+      ];
+
+      // Create buttons
+      difficulties.forEach(({ label, value, maxPoints, icon }) => {
+          const btn = document.createElement("button");
+          btn.classList.add("difficulty-option", `difficulty-${value}`);
+          btn.innerHTML = `
+              <span class="difficulty-icon">${icon}</span>
+              <span>${label}</span>
+              <small>(Max: ${maxPoints} punten)</small>
+          `;
+
+          btn.addEventListener("click", () => {
+              selectionContainer.classList.add("hidden");
+              resolve(value);
+          });
+
+          optionsDiv.appendChild(btn);
+      });
+
+      // Show selection container
+      selectionContainer.classList.remove("hidden");
+  });
+}
+function showWordSelectionUI(words) {
+    return new Promise((resolve) => {
+      // Grab the container from your HTML
+      const wordSelectionContainer = document.getElementById("word-selection");
+      const wordOptionsDiv = document.getElementById("word-options");
+  
+      // Clear any previous items
+      wordOptionsDiv.innerHTML = "";
+  
+      // Show the container
+      wordSelectionContainer.classList.remove("hidden");
+    
+      // Create a div for the actual list of words
+      const wordsList = document.createElement("div");
+      wordsList.classList.add("words-list");
+      wordOptionsDiv.appendChild(wordsList);
+  
+      // Add a clickable box for each word
+      words.forEach((word) => {
+        const wordDiv = document.createElement("div");
+        wordDiv.classList.add("word-option");
+        wordDiv.textContent = word;
+        
+        // On click, hide the container & resolve the chosen word
+        wordDiv.addEventListener("click", () => {
+          wordSelectionContainer.classList.add("hidden");
+          resolve(word);
+        });
+  
+        wordsList.appendChild(wordDiv);
+      });
+    });
+  }
+
+async function handleGuess() {
+    document.getElementById("guess-submission").classList.remove("hidden");
+    document.getElementById("guesses-table-container").classList.remove("hidden");
+
+    document.getElementById('guess-input').value = "";
+
+    // Step 1: Fetch the image to be guessed
+    const response = await fetch('/api/pictionary/get-image');
+    const data = await response.json();
+    const drawerName = data.drawerName;
+    const imageSrc = data.imageSrc;
+  
+
+    const imageCanvasDiv = document.getElementById("image-canvas");
+    imageCanvasDiv.innerHTML = `
+    <div style="text-align: center; margin-bottom: 10px; font-size: 18px; font-weight: bold; color: #333;">
+        Tekening door ${drawerName}
+    </div>
+    <img src="${imageSrc}" alt="Drawing  by ${drawerName}" 
+        style="max-width: 100%; height: auto; border: 1px solid #ddd; border-radius: 8px;" />
+    `;
+
+    updateGuessesTable(); // Update the guesses table first
+}
+async function submitGuess() {
+    try {
+        const guessInputEl = document.getElementById('guess-input');
+        const guessValue = guessInputEl.value.trim();
+
+
+        if (!guessValue) {
+            alert('Je hebt niks ingevuld!');
             return;
         }
 
-        // Step 2: Submit the guess to the backend
+        // Step 3: Submit the guess to the backend
+        console.log('Submitting guess:', guessValue);
         const response = await fetch('/api/pictionary/submit-guess', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ guess: guessInput })
+            body: JSON.stringify({ guess: guessValue })
         });
-
         if (!response.ok) {
             console.error('Failed to submit guess');
             return;
+        } else{
+          // 🔄 Refresh game state after submission
+          const newState = await fetchGameState();
+          handleGameState(newState);
+
         }
 
-        // Step 3: Update guesses table
+        // Step 4: Update guesses table
         await updateGuessesTable();
         console.log('Guess submitted and table updated');
     } catch (error) {
@@ -389,16 +564,35 @@ async function handleGuess() {
 }
 
 async function handleGrade() {
-    try {
-        // Step 1: Fetch guesses to be graded
-        const response = await fetch('/api/pictionary/get-guesses-to-grade');
-        const guesses = await response.json();
 
-        // Step 2: Display guesses for grading
+    const wordTitleEl = document.getElementById("grading-guesses-title");
+
+    try {
+        // Step 1: Fetch the image to be guessed
+        const response = await fetch('/api/pictionary/get-image');
+        const data = await response.json();
+        const drawerName = data.drawerName;
+        const imageSrc = data.imageSrc;
+        const wordToDraw = data.word;
+
+        wordTitleEl.innerHTML = `Teken een <span class="highlight-word">${wordToDraw}</span>`;
+    
+        const imageCanvasDiv = document.getElementById("image-canvas-guessing");
+        imageCanvasDiv.innerHTML = `
+        <img src="${imageSrc}" alt="Drawing by ${drawerName}" 
+            style="max-width: 100%; height: auto; border: 1px solid #ddd; border-radius: 8px;" />
+        `;
+        // Step 2: Fetch guesses to be graded
+        const response_guesses = await fetch('/api/pictionary/get-guesses-to-grade');
+        const data_guesses = await response_guesses.json();
+        const guesses = data_guesses.guesses;
+        console.log('Guesses to grade:', guesses);
+       
+        // Step 3: Display guesses for grading
         const gradedGuesses = await showGradingUI(guesses); 
         // Example: `showGradingUI` collects feedback for each guess { id, grade }
 
-        // Step 3: Send the feedback to the backend
+        // Step 4: Send the feedback to the backend
         const result = await fetch('/api/pictionary/submit-grades', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -407,8 +601,11 @@ async function handleGrade() {
 
         if (result.ok) {
             console.log('Grades submitted successfully');
+            // 🔄 Refresh game state after submission
+            const newState = await fetchGameState();
+            handleGameState(newState);
         } else {
-            console.error('Failed to submit grades');
+           console.error('Failed to submit grades');
         }
     } catch (error) {
         console.error('Error in handleGrade:', error);
@@ -416,54 +613,118 @@ async function handleGrade() {
 }
 
 async function showGradingUI(guesses) {
-    const feedback = [];
+    const gradingContainer = document.getElementById('grading-guesses');
+    const guessesList = document.getElementById('guesses-list');
+    const submitButton = document.getElementById('submit-grades');
 
-    for (const guess of guesses) {
-        const grade = prompt(`Grade this guess: "${guess.text}" (true/false/close):`);
-        if (['true', 'false', 'close'].includes(grade)) {
-            feedback.push({ id: guess.id, grade });
-        } else {
-            alert('Invalid input, try again');
-            return showGradingUI(guesses); // Retry grading
+    // Clear existing content
+    guessesList.innerHTML = '';
+
+    // Create grading elements for each guess
+    guesses.forEach((guess) => {
+        const guessContainer = document.createElement('div');
+        guessContainer.classList.add('guess-container');
+
+        const guessText = document.createElement('span');
+        guessText.textContent = guess.text;
+        guessText.classList.add('guess-text');
+        guessContainer.appendChild(guessText);
+
+        const gradingButtons = document.createElement('div');
+        gradingButtons.classList.add('grading-buttons');
+
+        for (let i = 1; i <= 5; i++) {
+            const gradeButton = document.createElement('button');
+            gradeButton.textContent = i;
+            gradeButton.dataset.id = guess.action_id;
+            gradeButton.dataset.grade = i;
+            gradeButton.classList.add('grade-button');
+            gradeButton.addEventListener('click', () => {
+                document.querySelectorAll(`button[data-id="${guess.action_id}"]`).forEach((btn) => {
+                    btn.classList.remove('selected');
+                });
+                gradeButton.classList.add('selected');
+                if (i === 5) {
+                    guessContainer.querySelector('.correct-indicator').classList.remove('hidden');
+                } else {
+                    guessContainer.querySelector('.correct-indicator').classList.add('hidden');
+                }
+            });
+            gradingButtons.appendChild(gradeButton);
         }
-    }
 
-    return feedback;
+        guessContainer.appendChild(gradingButtons);
+
+        const correctIndicator = document.createElement('span');
+        correctIndicator.textContent = '✔';
+        correctIndicator.classList.add('correct-indicator', 'hidden');
+        guessContainer.appendChild(correctIndicator);
+
+        guessesList.appendChild(guessContainer);
+    });
+
+    gradingContainer.classList.remove('hidden');
+
+    return new Promise((resolve) => {
+        submitButton.addEventListener('click', () => {
+            const feedback = [];
+            let valid = true;
+
+            guesses.forEach((guess) => {
+                const selectedButton = document.querySelector(
+                    `button[data-id="${guess.action_id}"].selected`
+                );
+                if (selectedButton) {
+                    feedback.push({
+                        action_id: guess.action_id,
+                        feedback: parseInt(selectedButton.dataset.grade, 10),
+                    });
+                } else {
+                    valid = false;
+                }
+            });
+
+            if (!valid) {
+                alert('Please grade all guesses before submitting.');
+            } else {
+                gradingContainer.classList.add('hidden');
+                console.log('Grades submitted:', feedback);
+                resolve(feedback);
+            }
+        });
+    });
 }
+
 
 async function updateGuessesTable() {
     try {
-        // Step 1: Fetch the updated guesses from backend
         const guessesResponse = await fetch('/api/pictionary/get-guesses');
-        if (!guessesResponse.ok) {
-            console.error('Failed to fetch guesses');
-            return;
-        }
+        const data = await guessesResponse.json();
+        const guesses = data.guesses; 
+        console.log('Guesses fetched:', guesses);
+    
 
-        const guesses = await guessesResponse.json();
-
-        // Step 2: Get the table element where guesses will be displayed
         const tableBody = document.getElementById('guessesTableBody');
         if (!tableBody) {
             console.error('Guesses table body not found');
             return;
         }
 
-        // Step 3: Clear the existing table rows
         tableBody.innerHTML = '';
 
-        // Step 4: Populate the table with the latest guesses
         guesses.forEach((guess, index) => {
             const row = document.createElement('tr');
 
-            // Columns: Index, Guess Time, Status (if available)
-            row.innerHTML = `
-                <td>${index + 1}</td>
-                <td>${guess.time || 'N/A'}</td>
-                <td>${guess.user || 'Unknown'}</td>
-                <td>${guess.status || 'Pending'}</td>
-            `;
+            // Format the date more nicely
+            const formattedTime = formatGuessTime(guess.time);
 
+            row.innerHTML = `
+            <td>${guess.round_number}</td>
+            <td>${guess.username || 'Onbekend'}</td>
+            <td>${formattedTime || 'N/A'}</td>
+            <td>${guess.text || '***'}</td>
+            <td>${guess.feedback || 'Wachten'}</td>
+            `;
             tableBody.appendChild(row);
         });
 
@@ -472,6 +733,26 @@ async function updateGuessesTable() {
         console.error('Error in updateGuessesTable:', error);
     }
 }
+function formatGuessTime(isoString) {
+  // isoString might be "2025-01-01 10:00" or "2025-01-01T10:00:00Z"
+  // If you need a quick parse hack:
+  // 1) Convert "2025-01-01 10:00" -> "2025-01-01T10:00"
+  let normalized = isoString.replace(" ", "T");
+  // Then parse
+  const d = new Date(normalized);
+  
+  if (isNaN(d.getTime())) return isoString; // fallback if invalid
+  
+  // Format like "1-jan 10:00"
+  // (Using Dutch style, but you can adapt)
+  const day = d.getDate();
+  const month = d.toLocaleString('nl-NL', { month: 'short' }); // jan, feb, etc.
+  const hour = String(d.getHours()).padStart(2, '0');
+  const minute = String(d.getMinutes()).padStart(2, '0');
+  
+  return `${day}-${month} ${hour}:${minute}`;
+}
+
 function handleIdle() {
     console.log("Handling 'Idle' state...");
     // Add logic for the default state
@@ -479,9 +760,10 @@ function handleIdle() {
 
 // Main Game Initialization
 async function initGame() {
-    const initialState = await fetchInitialGameState(); // Fetch the starting state
-    handleGameState(initialState); // Handle the initial game state
+    const initialState = await fetchGameState(); 
+    handleGameState(initialState);
 }
 
 // Run the Game Initialization when the page loads
 window.addEventListener("DOMContentLoaded", initGame);
+document.getElementById('submit-guess').addEventListener('click', submitGuess);

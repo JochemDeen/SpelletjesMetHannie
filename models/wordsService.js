@@ -49,8 +49,32 @@ let validationWordsList = [];
 
 
 // Function to get or set the word of the day in the database
-function getRandomWord(list = wordsList) {
-  return list[Math.floor(Math.random() * list.length)];
+// function getRandomWord(list = wordsList) {
+//   return list[Math.floor(Math.random() * list.length)];
+// }
+
+const fileMap = {
+  easy: path.join(__dirname, "../data/Pictionary_easy.csv"),
+  medium: path.join(__dirname, "../data/Pictionary_medium.csv"),
+  hard: path.join(__dirname, "../data/Pictionary_hard.csv")
+};
+
+
+function getRandomWord(difficulty = "easy") {
+  const filePath = fileMap[difficulty] || fileMap.easy;
+
+  try {
+    const data = fs.readFileSync(filePath, "utf-8");
+    const words = data.split("\n").map(word => word.trim()).filter(word => word.length > 0);
+
+    if (words.length === 0) return "No words available";
+
+    const randomIndex = Math.floor(Math.random() * words.length);
+    return words[randomIndex];
+  } catch (error) {
+    console.error(`Error reading file: ${filePath}`, error);
+    return "Error";
+  }
 }
 
 async function getWordOfTheDay() {

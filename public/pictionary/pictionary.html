@@ -11,18 +11,27 @@
   <link rel="manifest" href="/site.webmanifest" />
   <link rel="stylesheet" href="/pictionary/css/pictionary.css">
 </head>
-<body>
+<body>    
+    <!-- Home Button -->
     <a href="/dashboard" class="home-button">
         <img src="/images/home.png" alt="Home" />
-      </a>
-  <!-- Title Area -->
+    </a>
+      <!-- Title Area -->
   <h1 id="game-title">Pictionary!</h1>
+
+
+    <!-- Navigation Links -->
+    <div id="nav-links">
+        <a href="/pictionary/scoreboard" id="scoreboard-link">Scoreboard</a>
+    </div>
+
     <!-- Game State Container -->
     <div id="game-state-container">
         <!-- Scenario: Word Selection -->
         <div id="word-selection" class="hidden">
-            <div id="word-options">
-                <!-- Words fetched dynamically will be added here -->
+            <h3>Kies een moeilijkheidsgraad:</h3>
+            <div id="difficulty-options">
+                <!-- Buttons will be generated dynamically -->
             </div>
         </div>
 
@@ -36,53 +45,76 @@
             <div id="tools-container">
                 <div id="color-picker">
                     <!-- Color buttons -->
-                    <button class="color" data-color="black" style="background-color: black;"></button>
-                    <button class="color" data-color="red" style="background-color: red;"></button>
-                    <button class="color" data-color="blue" style="background-color: blue;"></button>
-                    <button class="color" data-color="green" style="background-color: green;"></button>
-                    <button class="color" data-color="orange" style="background-color: orange;"></button>
-                    <button class="color" data-color="purple" style="background-color: purple;"></button>
-                    <button class="color" data-color="pink" style="background-color: pink;"></button>
-                  
-                </div>
-                <button id="finish-drawing">Finish Drawing</button>
+                    <button class="color" data-color="rgb(0, 0, 0)" style="background-color: rgb(0, 0, 0);"></button>
+                    <button class="color" data-color="rgb(255, 69, 58)" style="background-color: rgb(255, 69, 58);"></button>
+                    <button class="color" data-color="rgb(0, 122, 255)" style="background-color: rgb(0, 122, 255);"></button>
+                    <button class="color" data-color="rgb(52, 199, 89)" style="background-color: rgb(52, 199, 89);"></button>
+                    <button class="color" data-color="rgb(90, 200, 250)" style="background-color: rgb(90, 200, 250);"></button>
+                    <button class="color" data-color="rgb(255, 182, 193)" style="background-color: rgb(255, 182, 193);"></button>
+                    <button class="color" data-color="rgb(255, 204, 0)" style="background-color: rgb(255, 204, 0);"></button>
+                    <button class="color" data-color="rgb(255, 149, 0)" style="background-color: rgb(255, 149, 0);"></button>
+                    <button class="color" data-color="rgb(162, 118, 83)" style="background-color: rgb(162, 118, 83);"></button>
+                    <button class="color" data-color="rgb(142, 142, 147)" style="background-color: rgb(142, 142, 147);"></button>
+                    <button class="eraser" data-tool="eraser" id="eraser-button">
+                    <img src="/images/eraser-icon.png" alt="Eraser" />
+                </button>
+            </div>
+
+                <button id="finish-drawing">Klaar!</button>
             </div>
             
         </div>
 
         <!-- Scenario: Guess Submission -->
-        <div id="guess-submission" class="hidden">
-            <input type="text" id="guess-input" placeholder="Type your guess here..." />
-            <button id="submit-guess">Submit Guess</button>
-            <div id="guess-status">
-                <!-- Placeholder to show other users' statuses -->
+        <div id="guess-container" class="hidden">
+
+            <div id="guessing" class="hidden">
+                <div id="image-canvas"></div>
+                <div id="guess-status">
+                    <!-- Placeholder to show other users' statuses -->
+                </div>
+            </div>
+        
+            <!-- Scenario: Guess Submission Controls (Hidden by Default) -->
+            <div id="guess-submission" class="hidden">
+                <div id="guess-submission-controls">
+                    <input type="text" id="guess-input" placeholder="Schrijf hier je keuze..." />
+                    <button id="submit-guess">Plaats je keuze</button>
+                </div>
             </div>
         </div>
 
         <!-- Guesses Table (Hidden by Default) -->
         <div id="guesses-table-container" class="hidden">
-            <h2>Guesses</h2>
             <table>
-                <thead>
-                    <tr>
-                        <th>#</th>
-                        <th>Guess Time</th>
-                        <th>User</th>
-                        <th>Status</th>
-                    </tr>
-                </thead>
-                <tbody id="guessesTableBody">
-                    <!-- Rows will be dynamically added here -->
-                </tbody>
+              <thead>
+                <tr>
+                  <th>Ronde</th>
+                  <th>Naam</th>
+                  <th>Tijd</th>
+                  <th>Beurt</th>
+                  <th>Beoordeling</th>
+                </tr>
+              </thead>
+              <tbody id="guessesTableBody">
+                <!-- Rows will be dynamically added here -->
+              </tbody>
             </table>
-        </div>
+          </div>
 
         <!-- Scenario: Grading Guesses -->
         <div id="grading-guesses" class="hidden">
+            <div id="grading-guesses-title"></div>
+            <div id="image-canvas-guessing"></div>
+            <div id="grading-scale-label">
+                <span class="fout-label">Fout</span>
+                <span class="goed-label">Goed</span>
+            </div>
+        
             <div id="guesses-list">
                 <!-- Dynamically loaded guesses -->
             </div>
-            <button id="submit-grades">Submit Grades</button>
+            <button id="submit-grades">Beoordelen</button>
         </div>
 
     </div>

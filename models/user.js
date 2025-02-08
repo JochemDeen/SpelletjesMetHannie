@@ -1,16 +1,7 @@
+// models/users.js
 const sqlite3 = require('sqlite3').verbose();
-const db = new sqlite3.Database('database.sqlite');
+const db = require('./db'); // Use shared database connection
 
-// Create the users table if it doesn't exist
-db.serialize(() => {
-  db.run(`
-    CREATE TABLE IF NOT EXISTS users (
-      id INTEGER PRIMARY KEY AUTOINCREMENT,
-      username TEXT UNIQUE,
-      passwordHash TEXT
-    )
-  `);
-});
 
 // Function to get username by user_id
 async function getUsernameById(user_id) {
@@ -23,8 +14,20 @@ async function getUsernameById(user_id) {
     });
   });
 }
+async function getAllUserIds() {
+  return new Promise((resolve, reject) => {
+    const sql = `SELECT id FROM users`;
+    db.all(sql, [], (err, rows) => {
+      if (err) {
+        return reject(err);
+      }
+      resolve(rows.map(row => row.id));
+    });
+  });
+}
 
 module.exports = {
   db,
   getUsernameById,
+  getAllUserIds
 };
