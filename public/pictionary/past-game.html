@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8">
+  <title>Pictionary - Vorige Spel</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="/pictionary/css/pictionary.css">
+  <link rel="stylesheet" href="/css/compare.css">
+  <link rel="stylesheet" href="/pictionary/css/past-game.css">
+
+</head>
+<body>
+    <a href="/dashboard" class="home-button">
+        <img src="/images/home.png" alt="Home" />
+    </a>
+
+    <h1>Pictionary - Vorige Spel</h1>
+
+    <div class="date-navigation">
+        <button id="prevDateButton" class="nav-arrow"><<</button>
+        <span id="game-info"></span>
+        <button id="nextDateButton" class="nav-arrow">>></button>
+    </div>
+    <div id="game-state-container">
+        <div id="guess-container">
+            <div id="image-canvas"></div>
+        </div>
+
+        <div id="guesses-table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>Ronde</th>
+                  <th>Naam</th>
+                  <th>Tijd</th>
+                  <th>Beurt</th>
+                  <th>Beoordeling</th>
+                </tr>
+              </thead>
+              <tbody id="guessesTableBody"></tbody>
+            </table>
+        </div>
+    </div>
+    <img id="shareButton" src="/images/whatsapp.png" alt="Share on WhatsApp" />
+
+
+    <script src="/pictionary/js/past-game.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+</body>
+</html>
+
+<script>
+    document.getElementById("shareButton").addEventListener("click", function() {
+      html2canvas(document.getElementById("game-state-container")).then(canvas => {
+          canvas.toBlob(blob => {
+              const file = new File([blob], "screenshot.png", { type: "image/png" });
+  
+              if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                  navigator.share({
+                      files: [file],
+                      text: "",
+                  }).then(() => {
+                      console.log("Shared successfully");
+                  }).catch(error => {
+                      console.error("Error sharing:", error);
+                  });
+              } else {
+                  alert("Sharing not supported on this browser. Please use a compatible device.");
+              }
+          });
+      });
+  });
+  
+  </script>

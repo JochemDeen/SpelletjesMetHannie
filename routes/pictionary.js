@@ -23,6 +23,60 @@ router.get('/pictionary/scoreboard', requireLogin, (req, res) => {
     logger.info(`GET /pictionary/scoreboard for user: ${req.session.userId}`);
     res.sendFile('pictionary-scoreboard.html', { root: path.join(__dirname, '../public/pictionary') });
   });
+
+// past games Page
+router.get('/pictionary/past-games', requireLogin, (req, res) => {
+    logger.info(`GET /pictionary/past-games for user: ${req.session.userId}`);
+    res.sendFile('pictionary-past-games.html', { root: path.join(__dirname, '../public/pictionary') });
+  });
+
+// ----------------------
+// Last game page
+// ----------------------
+router.get('/api/pictionary/get-game', requireLogin, async (req, res) => {
+  const { game_id } = req.query;
+  if (!game_id) return res.status(400).json({ error: "Missing game_id parameter" });
+  logger.info(`GET /api/pictionary/get-game for user: ${req.session.userId} with game_id: ${game_id}`);
+
+  try {
+      const gameData = await Pictionary.getGameById(game_id);
+      if (!gameData) return res.status(404).json({ error: "Game not found" });
+
+      const drawer = await Users.getUsernameById(gameData.drawer_user_id);
+      let guesses = await Pictionary.getGuesses(game_id);
+
+      // Add navigation logic
+      const prevGame = await Pictionary.getPreviousGameId(game_id);
+      const nextGame = await Pictionary.getNextGameId(game_id);
+
+      guesses = await Promise.all(guesses.map(async guess => {
+        logger.info(`Fetching username for user ${guess.user_id}`);
+        const username = await Users.getUsernameById(guess.user_id);
+        return { ...guess, username };
+      }));
+  
+      logger.info(`Game data fetched for game ${game_id}`);
+      res.json({
+          game_id,
+          date: gameData.created_at,
+          word: gameData.word,
+          difficulty: gameData.difficulty,
+          drawer,
+          imageSrc: gameData.image_path,
+          guesses,
+          prev_game_id: prevGame,
+          next_game_id: nextGame
+      });
+  } catch (error) {
+      console.error("Error fetching past game:", error);
+      res.status(500).json({ error: "Failed to fetch past game" });
+  }
+});
+
+// ----------------------
+// Scores page
+// ----------------------
+
 // Get last game score
 router.get('/api/pictionary/last-game-score', async (req, res) => {
   logger.info(`GET /api/pictionary/last-game-score for user: ${req.session.userId}`);
@@ -41,7 +95,7 @@ router.get('/api/pictionary/last-game-score', async (req, res) => {
       const lastGameScore = await Pictionary.getGameScore(lastGameId);
       logger.info(`Last game score: ${JSON.stringify(lastGameScore)}`);
       if (lastGameScore) {
-          res.json({ success: true, score: lastGameScore, word: word, drawer: drawer_username });
+          res.json({ success: true, score: lastGameScore, word: word, drawer: drawer_username, game_id: lastGameId });
       } else {
           res.json({ success: false, message: 'Geen score beschikbaar' });
       }
@@ -142,6 +196,7 @@ router.get('/api/pictionary/state', requireLogin, async (req, res) => {
       game_id: gameState.game_id,
       state: gameState.state,
       status: gameState.status,
+      difficulty: gameState.difficulty,
     };
     res.json(safeGameState);
 
@@ -194,10 +249,11 @@ router.post('/api/pictionary/set-difficulty', requireLogin, async (req, res) => 
 
       // Generate and assign the word
       const word = wordsService.getRandomPictionaryWord(difficulty);
-      logger.info(`Assigned word for game ${gameId}: ${word}`);
+      logger.info(`Assigned word for game ${gameId}: ${word} (difficulty: ${difficulty})`);
 
-      // Store the chosen word and update game state to 'drawing'
+      // Store the chosen word, difficulty and update game state to 'drawing'
       await Pictionary.setChosenWord(gameId, word);
+      await Pictionary.setDifficulty(gameId, difficulty);
       await Pictionary.setGameState(gameId, 'drawing');
       //await Pictionary.updateGameState(gameId, 'drawing');
 
@@ -213,87 +269,6 @@ router.post('/api/pictionary/set-difficulty', requireLogin, async (req, res) => 
       res.status(500).json({ error: 'Failed to set difficulty' });
   }
 });
-
-// ----------------------
-// Fetch Word Options
-// ----------------------
-// Optionally pass a difficulty via query string, e.g. ?difficulty=easy
-// router.get('/api/pictionary/get-words', requireLogin, async (req, res) => {
-//   const difficulty = req.query.difficulty || 'easy';
-//   logger.info(`GET /api/pictionary/get-words with difficulty: ${difficulty}`);
-
-//   try {
-//     // Get the active global game.
-//     let gameState = await Pictionary.getActiveGame();
-//     if (!gameState) {
-//       const activeUsers = await Users.getAllUserIds();
-//       logger.info(`Active users: ${JSON.stringify(activeUsers)}`);
-//       const newGameId = await Pictionary.createNewGame(activeUsers);
-//       gameState = await Pictionary.getGameById(newGameId);
-//     }
-//     const gameId = gameState.game_id;
-    
-//     let words;
-//     // Check if current_words is already set (and not an empty array "[]")
-//     if (gameState.current_words && gameState.current_words !== "[]") {
-//       words = JSON.parse(gameState.current_words);
-//       logger.info(`Returning existing words for game ${gameId}: ${words}`);
-//     } else {
-//       // Generate 3 random words (adjusted to 3 words as you mentioned)
-//       words = Array.from({ length: 3 }, () => wordsService.getRandomPictionaryWord(difficulty));
-//       logger.info(`Generated words for game ${gameId}: ${words}`);
-//       const wordsJSON = JSON.stringify(words);
-//       // Save generated words to the database
-//       await Pictionary.updateCurrentWords(gameId, wordsJSON);
-//     }
-    
-//     // Return the words as part of an object
-//     res.json({ words });
-//   } catch (error) {
-//     logger.error('Error generating words:', error.message);
-//     res.status(500).json({ error: 'Failed to generate words' });
-//   }
-// });
-// // ----------------------
-// // Submit Selected Word
-// // ----------------------
-// router.post('/api/pictionary/submit-word', requireLogin, async (req, res) => {
-//   const { word } = req.body;
-//   const userId = req.session.userId;
-//   logger.info(`POST /api/pictionary/submit-word by user: ${userId}`);
-
-//   try {
-//     // Use the global active game approach
-//     let gameState = await Pictionary.getActiveGame();
-//     if (!gameState) {
-//       const activeUsers = await Users.getAllUserIds();
-//       logger.info(`Active users: ${JSON.stringify(activeUsers)}`);
-//       const newGameId = await Pictionary.createNewGame(activeUsers);
-//       gameState = await Pictionary.getGameById(newGameId);
-//     }
-//     const gameId = gameState.game_id;
-
-//     // Retrieve current words from the database
-//     const currentWords = await Pictionary.getCurrentWords(gameId);
-//     const words = JSON.parse(currentWords);
-
-//     // Validate the submitted word against the generated list
-//     if (!words.includes(word)) {
-//       logger.warn(`Invalid word submission by user ${userId}: ${word}`);
-//       return res.status(400).json({ error: 'Invalid word submission' });
-//     }
-
-//     // Save the chosen word and update the game state to 'drawing'
-//     await Pictionary.setChosenWord(gameId, word);
-
-//     logger.info(`Word "${word}" submitted for game ${gameId} by user ${userId}`);
-//     res.json({ status: 'success', message: 'Word submitted successfully' });
-//   } catch (error) {
-//     // Log the full error for debugging purposes
-//     logger.error('Error submitting word:', error.stack || error);
-//     res.status(500).json({ error: 'Failed to submit word' });
-//   }
-// });
 
 // ----------------------
 // Get Image (Drawing)
@@ -321,7 +296,7 @@ router.get('/api/pictionary/get-image', requireLogin, async (req, res) => {
     //If current user is the drawer, also return the word
     if (gameState.drawer_user_id === userId) {
       logger.info(`Returning image and word for drawer ${userId}`);
-      return res.json({ drawerName, imageSrc, word: gameState.word });
+      return res.json({ drawerName, imageSrc, word: gameState.word ,difficulty: gameState.difficulty});
     }
     
     res.json({ drawerName, imageSrc });
@@ -371,9 +346,8 @@ router.get('/api/pictionary/get-guesses', requireLogin, async (req, res) => {
     logger.info(`Guesses fetched for game ${gameId}: ${guesses.length}`);
 
     //add user name to the guesses based on guess.user_id and function Users.getUsernameById
-    const { getUsernameById } = require('../models/user');
     guesses = await Promise.all(guesses.map(async guess => {
-      const username = await getUsernameById(guess.user_id);
+      const username = await Users.getUsernameById(guess.user_id);
       return { ...guess, username };
     }));
     

@@ -260,6 +260,33 @@ async function checkForEndOfFeedback(gameId) {
     });
 }
 
+// Set the difficulty of an ongoing game
+async function setDifficulty(gameId, difficulty) {
+    return new Promise((resolve, reject) => {
+        const allowedDifficulties = ['easy', 'medium', 'hard'];
+        
+        if (!allowedDifficulties.includes(difficulty)) {
+            logger.error(`Invalid difficulty level: ${difficulty}`);
+            return reject(new Error(`Invalid difficulty level: ${difficulty}`));
+        }
+
+        const sql = `UPDATE games SET difficulty = ? WHERE game_id = ? AND status = 'ongoing'`;
+        
+        db.run(sql, [difficulty, gameId], function (err) {
+            if (err) {
+                logger.error(`Failed to update difficulty for game ${gameId}:`, err.message);
+                return reject(err);
+            }
+            if (this.changes === 0) {
+                logger.warn(`Game ${gameId} not found or already completed.`);
+                return resolve(false);
+            }
+            logger.info(`Game ${gameId} difficulty set to ${difficulty}`);
+            resolve(true);
+        });
+    });
+}
+
 // Get the latest completed game_id
 async function getLatestGameId() {
     return new Promise((resolve, reject) => {
@@ -277,6 +304,47 @@ async function getLatestGameId() {
     });
 }
 
+async function getPreviousGameId(gameId) {
+    return new Promise((resolve, reject) => {
+        const sql = `
+            SELECT game_id 
+            FROM games 
+            WHERE status = 'completed' 
+            AND game_id < ? 
+            ORDER BY game_id DESC 
+            LIMIT 1
+        `;
+        
+        db.get(sql, [gameId], (err, row) => {
+            if (err) {
+                logger.error(`Error fetching previous game ID for game ${gameId}:`, err.message);
+                return reject(err);
+            }
+            resolve(row ? row.game_id : null);
+        });
+    });
+}
+
+async function getNextGameId(gameId) {
+    return new Promise((resolve, reject) => {
+        const sql = `
+            SELECT game_id 
+            FROM games 
+            WHERE status = 'completed' 
+            AND game_id > ? 
+            ORDER BY game_id ASC 
+            LIMIT 1
+        `;
+
+        db.get(sql, [gameId], (err, row) => {
+            if (err) {
+                logger.error(`Error fetching next game ID for game ${gameId}:`, err.message);
+                return reject(err);
+            }
+            resolve(row ? row.game_id : null);
+        });
+    });
+}
 
 module.exports = {
     getActiveGame,
@@ -286,5 +354,8 @@ module.exports = {
     checkForEndOfGuessing,
     checkForEndOfFeedback,
     setGameState,
-    getLatestGameId
+    getLatestGameId,
+    setDifficulty,
+    getPreviousGameId,
+    getNextGameId
   };

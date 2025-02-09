@@ -96,6 +96,9 @@ function generateFeedback(guess, wordOfTheDay) {
   if (!guess || !wordOfTheDay || guess.length !== wordOfTheDay.length) {
       throw new Error('Invalid guess or word of the day. They must be non-empty and of equal length.');
   }
+
+  guess = guess.toLowerCase();
+  wordOfTheDay = wordOfTheDay.toLowerCase();
   
   const feedback = new Array(guess.length).fill('incorrect');
   const usedIndices = new Set();

@@ -23,7 +23,7 @@ db.serialize(() => {
         current_words TEXT DEFAULT '[]',
         state TEXT NOT NULL,          -- Possible values: 'choose', 'drawing', 'guessing', 'feedback', 'completed'
         status TEXT DEFAULT 'ongoing',-- 'ongoing', 'completed', 'abandoned'
-        difficulty TEXT CHECK(difficulty IN ('easy', 'medium', 'difficult')) DEFAULT 'easy',
+        difficulty TEXT CHECK(difficulty IN ('easy', 'medium', 'hard')) DEFAULT 'easy',
         countdown_seconds INTEGER DEFAULT 60,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         completed_at DATETIME,

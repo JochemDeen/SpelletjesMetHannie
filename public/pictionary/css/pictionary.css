@@ -550,3 +550,7 @@
     font-size: 24px;
     margin-bottom: 8px;
 }
+
+.disabled {
+  display: none;
+}

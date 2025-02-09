@@ -41,11 +41,23 @@ document.addEventListener('DOMContentLoaded', async () => {
                                       <span class="score">${entry.score}</span>`;
                 lastGameList.appendChild(listItem);
             });
+            // Add a link to view this game
+            const viewGameContainer = document.createElement("div");
+            viewGameContainer.classList.add("view-game-container");
+    
+            const viewGameLink = document.createElement("a");
+            viewGameLink.href = `/pictionary/past-game.html?game_id=${data.game_id}`;
+            viewGameLink.textContent = "Bekijk dit spel";
+            viewGameLink.classList.add("view-game-button");
+    
+            viewGameContainer.appendChild(viewGameLink);
+            lastGameList.appendChild(viewGameContainer);
         } else {
             lastGameHeader.textContent = `Laatste Spel`;
             lastGameList.innerHTML = `<li>Geen score beschikbaar</li>`;
             wordTitleEl.innerHTML = '';
         }
+        
     }
 
     function renderMonthlyScores(scores) {

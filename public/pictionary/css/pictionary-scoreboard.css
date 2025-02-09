@@ -99,3 +99,31 @@ h1, h2 {
   .home-button img:hover {
     transform: scale(1.1);
   }
+
+  .view-game-container {
+    display: flex;
+    justify-content: center;
+    margin-top: 10px;
+}
+.view-game-button {
+    font-size: 0.9rem;
+    color: #4a90e2;
+    text-decoration: none;
+    font-weight: 500;
+    transition: color 0.2s ease-in-out, opacity 0.2s ease-in-out;
+}
+
+.view-game-button:hover {
+    color: #357ABD;
+    opacity: 0.8;
+    text-decoration: underline;
+}
+
+@media (max-width: 600px) {
+    .view-game-container {
+        margin-top: 8px;
+    }
+    .view-game-button {
+        font-size: 0.85rem;
+    }
+}

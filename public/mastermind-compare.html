@@ -40,7 +40,7 @@
             if (navigator.canShare && navigator.canShare({ files: [file] })) {
                 navigator.share({
                     files: [file],
-                    text: "Check this out!",
+                    text: "",
                 }).then(() => {
                     console.log("Shared successfully");
                 }).catch(error => {

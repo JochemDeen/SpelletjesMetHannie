@@ -514,17 +514,16 @@ async function handleGuess() {
     const data = await response.json();
     const drawerName = data.drawerName;
     const imageSrc = data.imageSrc;
+    const difficulty = data.difficulty === 'easy' ? 'Makkelijk' : data.difficulty === 'medium' ? 'Gemiddeld' : 'Moeilijk';
   
-
     const imageCanvasDiv = document.getElementById("image-canvas");
     imageCanvasDiv.innerHTML = `
     <div style="text-align: center; margin-bottom: 10px; font-size: 18px; font-weight: bold; color: #333;">
-        Tekening door ${drawerName}
+      Tekening door ${drawerName} (Moeilijkheid: ${difficulty})
     </div>
-    <img src="${imageSrc}" alt="Drawing  by ${drawerName}" 
-        style="max-width: 100%; height: auto; border: 1px solid #ddd; border-radius: 8px;" />
+    <img src="${imageSrc}" alt="Drawing by ${drawerName}" 
+      style="max-width: 100%; height: auto; border: 1px solid #ddd; border-radius: 8px;" />
     `;
-
     updateGuessesTable(); // Update the guesses table first
 }
 async function submitGuess() {
