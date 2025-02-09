@@ -193,7 +193,7 @@ router.post('/api/pictionary/set-difficulty', requireLogin, async (req, res) => 
       const maxPoints = await Pictionary.getMaxScore(difficulty);
 
       // Generate and assign the word
-      const word = wordsService.getRandomWord(difficulty);
+      const word = wordsService.getRandomPictionaryWord(difficulty);
       logger.info(`Assigned word for game ${gameId}: ${word}`);
 
       // Store the chosen word and update game state to 'drawing'
@@ -240,7 +240,7 @@ router.post('/api/pictionary/set-difficulty', requireLogin, async (req, res) => 
 //       logger.info(`Returning existing words for game ${gameId}: ${words}`);
 //     } else {
 //       // Generate 3 random words (adjusted to 3 words as you mentioned)
-//       words = Array.from({ length: 3 }, () => wordsService.getRandomWord(difficulty));
+//       words = Array.from({ length: 3 }, () => wordsService.getRandomPictionaryWord(difficulty));
 //       logger.info(`Generated words for game ${gameId}: ${words}`);
 //       const wordsJSON = JSON.stringify(words);
 //       // Save generated words to the database

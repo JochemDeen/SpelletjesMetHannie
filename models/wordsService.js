@@ -49,9 +49,9 @@ let validationWordsList = [];
 
 
 // Function to get or set the word of the day in the database
-// function getRandomWord(list = wordsList) {
-//   return list[Math.floor(Math.random() * list.length)];
-// }
+function getRandomWord(list = wordsList) {
+  return list[Math.floor(Math.random() * list.length)];
+}
 
 const fileMap = {
   easy: path.join(__dirname, "../data/Pictionary_easy.csv"),
@@ -60,7 +60,7 @@ const fileMap = {
 };
 
 
-function getRandomWord(difficulty = "easy") {
+function getRandomPictionaryWord(difficulty = "easy") {
   const filePath = fileMap[difficulty] || fileMap.easy;
 
   try {
@@ -113,6 +113,6 @@ async function validateWord(word) {
 module.exports = {
   getWordOfTheDay,
   validateWord,
-  getRandomWord,
-
+  getRandomPictionaryWord,
+  getRandomWord
 };
