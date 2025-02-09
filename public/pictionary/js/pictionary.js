@@ -518,8 +518,9 @@ async function handleGuess() {
   
     const imageCanvasDiv = document.getElementById("image-canvas");
     imageCanvasDiv.innerHTML = `
-    <div style="text-align: center; margin-bottom: 10px; font-size: 18px; font-weight: bold; color: #333;">
-      Tekening door ${drawerName} (Moeilijkheid: ${difficulty})
+    <div style="text-align: center; margin-bottom: 10px; font-size: 18px; color: #333;">
+      Tekening door <span style="font-weight: bold;">${drawerName}</span><br>
+      <span style="font-size: 14px;">(Moeilijkheidsgraad: ${difficulty})</span>
     </div>
     <img src="${imageSrc}" alt="Drawing by ${drawerName}" 
       style="max-width: 100%; height: auto; border: 1px solid #ddd; border-radius: 8px;" />

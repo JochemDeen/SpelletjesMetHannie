@@ -13,6 +13,10 @@
     margin: 0;
     padding: 0;
   }
+
+  #game-state-container {
+    padding: 0 0;
+  }
   
   /* Title */
   h1 {
@@ -20,6 +24,10 @@
     font-size: 2.5em;
     color: #333;
     margin: 20px 0;
+  }
+
+  h3 {
+    margin: 0 0 4px 0;
   }
   
   /* Drawing Area */
@@ -57,7 +65,6 @@
 
   #image-canvas {
     text-align: center; 
-    margin: 20px auto;
   }
   #image-canvas img {
     max-width: 400px; /* or whatever you prefer */
@@ -91,6 +98,7 @@
   }
   
   #guesses-table-container td {
+    font-size: medium;
     padding: 8px 10px;
     text-align: center;
     color: #555555; /* Neutral text color */
@@ -106,18 +114,16 @@
     transition: background-color 0.3s ease, color 0.3s ease;
   }
   
-  /* Fun borders for a playful look */
   #guesses-table-container th,
   #guesses-table-container td {
     border: 1px solid #dddddd;
   }
   
-  /* Add a subtle header border to distinguish it */
   #guesses-table-container th {
     border-bottom: 3px solid #ffa500;
   }
   #guess-container {
-    margin: 20px auto;
+    margin: 5px auto;
     padding: 20px;
     width: 80%;
     max-width: 700px;
@@ -471,6 +477,11 @@
       width: 12px;
       height: 12px;
     }
+    #guesses-table-container th{
+      padding: 6px 8px;
+      font-size: 12px;
+    }
+  
   }
   
   @media (max-width: 420px) {

@@ -299,7 +299,7 @@ router.get('/api/pictionary/get-image', requireLogin, async (req, res) => {
       return res.json({ drawerName, imageSrc, word: gameState.word ,difficulty: gameState.difficulty});
     }
     
-    res.json({ drawerName, imageSrc });
+    res.json({ drawerName, imageSrc, difficulty: gameState.difficulty });
   } catch (error) {
     logger.error('Error fetching image:', error.message);
     res.status(500).json({ error: 'Failed to fetch image.' });

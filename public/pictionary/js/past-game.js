@@ -51,7 +51,8 @@ document.addEventListener("DOMContentLoaded", async function () {
         document.getElementById("image-canvas").innerHTML = `
             <h3>Tekening door ${data.drawer}</h3>
             <img src="${data.imageSrc}" alt="Drawing by ${data.drawer}" style="max-width: 100%; height: auto; border: 1px solid #ddd; border-radius: 8px;" />
-            <p>Getekend woord: <strong>${data.word}</strong> (Moeilijkheid: ${difficulty})</p>
+            <p style="font-size: 20px;margin: 6px 0 0 0">Getekend woord: <strong>${data.word}</strong></p>
+            <p style="font-size: 14px;margin: 0 0">(Moeilijkheidsgraad: ${difficulty})</p>
         `;
 
         // Show guesses
@@ -59,10 +60,11 @@ document.addEventListener("DOMContentLoaded", async function () {
         tableBody.innerHTML = "";
         data.guesses.forEach((guess) => {
             const row = document.createElement("tr");
+            const formattedTime = formatGuessTime(guess.time);
             row.innerHTML = `
                 <td>${guess.round_number}</td>
                 <td>${guess.username}</td>
-                <td>${guess.time}</td>
+                <td>${formattedTime}</td>
                 <td>${guess.text}${guess.feedback == 5 ? ' ⭐' : ''}</td>
                 <td>${guess.feedback}</td>
             `;
@@ -78,3 +80,23 @@ const formatDate = (date) => {
     const day = String(date.getDate()).padStart(2, '0');
     return `${year}-${month}-${day}`;
 };
+function formatGuessTime(isoString) {
+    // isoString might be "2025-01-01 10:00" or "2025-01-01T10:00:00Z"
+    // If you need a quick parse hack:
+    // 1) Convert "2025-01-01 10:00" -> "2025-01-01T10:00"
+    let normalized = isoString.replace(" ", "T");
+    // Then parse
+    const d = new Date(normalized);
+    
+    if (isNaN(d.getTime())) return isoString; // fallback if invalid
+    
+    // Format like "1-jan 10:00"
+    // (Using Dutch style, but you can adapt)
+    const day = d.getDate();
+    const month = d.toLocaleString('nl-NL', { month: 'short' }); // jan, feb, etc.
+    const hour = String(d.getHours()).padStart(2, '0');
+    const minute = String(d.getMinutes()).padStart(2, '0');
+    
+    return `${day}-${month} ${hour}:${minute}`;
+  }
+  
