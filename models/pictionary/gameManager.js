@@ -7,6 +7,8 @@ const db = require('../db');
 // Returns the current global active game (if any), ignoring the current user.
 async function getActiveGame() {
     return new Promise((resolve, reject) => {
+        logger.info("Fetching active game...");
+
         const sql = `
             SELECT g.*, u.username AS drawer_name
             FROM games g
@@ -15,6 +17,7 @@ async function getActiveGame() {
             ORDER BY created_at DESC
             LIMIT 1
         `;
+
         db.get(sql, [], async (err, row) => {
             if (err) {
                 logger.error('Failed to fetch active game:', err.message);
@@ -22,8 +25,11 @@ async function getActiveGame() {
             }
 
             if (row) {
+                logger.info(`Active game found: ${JSON.stringify(row)}`);
                 return resolve(row);
             }
+
+            logger.info("No active game found. Checking recent completed games...");
 
             const now = new Date();
 
@@ -35,25 +41,30 @@ async function getActiveGame() {
                 ORDER BY completed_at DESC 
                 LIMIT 1
             `;
+
             db.get(lastCompletedGameSql, [], (err, lastGame) => {
                 if (err) {
                     logger.error('Failed to fetch last completed game:', err.message);
                     return reject(err);
                 }
 
-                let lastGameEndedMoreThan12hAgo = false;
+                let lastGameEndedLessThan12hAgo = false;
 
                 if (lastGame?.completed_at) {
                     const completedAt = new Date(lastGame.completed_at);
                     const diffHoursCompleted = (now - completedAt) / (1000 * 60 * 60); // Convert ms to hours
+
                     logger.info(`Last game completed at: ${completedAt}, ${diffHoursCompleted.toFixed(2)} hours ago`);
 
-                    if (diffHoursCompleted > 12) {
-                        lastGameEndedMoreThan12hAgo = true;
+                    if (diffHoursCompleted < 12) {
+                        lastGameEndedLessThan12hAgo = true;
+                        logger.info(`✅ Condition met: Last game ended less than 12 hours ago.`);
                     }
+                } else {
+                    logger.info("No completed games found.");
                 }
 
-                // Fetch the oldest "ongoing" game by creation date
+                // Fetch the last created game
                 const lastCreatedGameSql = `
                     SELECT game_id, created_at 
                     FROM games 
@@ -61,37 +72,47 @@ async function getActiveGame() {
                     ORDER BY created_at DESC 
                     LIMIT 1
                 `;
+
                 db.get(lastCreatedGameSql, [], (err, lastCreatedGame) => {
                     if (err) {
                         logger.error('Failed to fetch last created game:', err.message);
                         return reject(err);
                     }
 
-                    let lastGameStartedMoreThan24hAgo = false;
+                    let lastGameStartedLessThan24hAgo = false;
 
                     if (lastCreatedGame?.created_at) {
                         const createdAt = new Date(lastCreatedGame.created_at);
                         const diffHoursCreated = (now - createdAt) / (1000 * 60 * 60); // Convert ms to hours
+
                         logger.info(`Last game created at: ${createdAt}, ${diffHoursCreated.toFixed(2)} hours ago`);
 
-                        if (diffHoursCreated > 24) {
-                            lastGameStartedMoreThan24hAgo = true;
+                        if (diffHoursCreated < 24) {
+                            lastGameStartedLessThan24hAgo = true;
+                            logger.info(`✅ Condition met: Last game started less than 24 hours ago.`);
                         }
+                    } else {
+                        logger.info("No created games found.");
                     }
 
-                    // Check both conditions
-                    if (lastGameEndedMoreThan12hAgo || lastGameStartedMoreThan24hAgo) {
-                        logger.info('Game conditions met. Returning "scoring" state.');
-                        return resolve({ game_id: lastGame?.game_id || lastCreatedGame?.game_id, state: 'scoring', status: 'completed' });
+                    // If either condition is met, return "scoring" state
+                    if (lastGameEndedLessThan12hAgo || lastGameStartedLessThan24hAgo) {
+                        logger.info("✅ Returning 'scoring' state due to recent game.");
+                        return resolve({
+                            game_id: lastGame?.game_id || lastCreatedGame?.game_id,
+                            state: 'scoring',
+                            status: 'completed'
+                        });
                     }
 
-                    // No active game and no recent completed game that meets conditions, return null
+                    // If neither condition is met, return null
+                    logger.info("❌ No conditions met. Returning null.");
                     resolve(null);
                 });
             });
         });
     });
-}  
+}
   // Creates a new game using all active users.
   // Uses your "next user" logic based on the last finished game.
   async function createNewGame(activeUsers) {
