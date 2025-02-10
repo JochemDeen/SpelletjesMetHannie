@@ -527,9 +527,9 @@ router.post('/api/pictionary/start-drawing', requireLogin, async (req, res) => {
     }
 
     // Check if the drawing session has already been started.
-    if (gameState.completed_at) {
+    if (gameState.drawing_completed_at) {
       // Calculate remaining time
-      const endTime = new Date(gameState.completed_at);
+      const endTime = new Date(gameState.drawing_completed_at);
       const now = new Date();
       const remainingTime = Math.max(0, Math.round((endTime - now) / 1000));
       logger.info(`Drawing session already started. Remaining time: ${remainingTime} seconds.`);

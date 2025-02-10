@@ -20,15 +20,18 @@ async function getMaxScore(difficulty) {
     
 
 async function getGameScore(gameId) {
-
     return new Promise((resolve, reject) => {
         db.all(
-            `SELECT u.username, s.score 
-             FROM scores s
-             JOIN users u ON s.user_id = u.id
-             WHERE s.game_id = ? 
-             ORDER BY s.score DESC`,
-            [gameId],
+            `SELECT u.username, COALESCE(s.score, 0) AS score
+             FROM users u
+             LEFT JOIN scores s ON u.id = s.user_id AND s.game_id = ?
+             WHERE u.id IN (
+                 SELECT user_id FROM actions WHERE game_id = ?
+                 UNION
+                 SELECT drawer_user_id FROM games WHERE game_id = ?
+             )
+             ORDER BY score DESC`,
+            [gameId, gameId, gameId],
             (err, rows) => {
                 if (err) {
                     logger.error('Error fetching last game scores:', err.message);

@@ -27,20 +27,32 @@ document.addEventListener('DOMContentLoaded', async () => {
         const lastGameHeader = document.getElementById('last-game-header');
         const lastGameList = document.getElementById('last-game-list');
         const wordTitleEl = document.getElementById("last-game-title");
-
+    
         if (data.success && Array.isArray(data.score) && data.score.length > 0) {
             lastGameHeader.textContent = `Laatste Spel: `;
-             wordTitleEl.innerHTML = `Teken een <span class="highlight-word">${data.word}</span>  door ${data.drawer}`;
-
-             lastGameList.innerHTML = '';
-
+            wordTitleEl.innerHTML = `Teken een <span class="highlight-word">${data.word}</span> door ${data.drawer}`;
+    
+            lastGameList.innerHTML = '';
+    
+            // Sort scores in descending order
+            data.score.sort((a, b) => b.score - a.score);
+    
+            let currentRank = 1;
+            let previousScore = null;
+    
             data.score.forEach((entry, index) => {
+                if (previousScore !== null && entry.score < previousScore) {
+                    currentRank = index + 1;
+                }
+                previousScore = entry.score;
+    
                 const listItem = document.createElement('li');
-                listItem.innerHTML = `<span class="rank">${index + 1}.</span>
+                listItem.innerHTML = `<span class="rank">${currentRank}.</span>
                                       <span class="username">${entry.username}</span>
                                       <span class="score">${entry.score}</span>`;
                 lastGameList.appendChild(listItem);
             });
+    
             // Add a link to view this game
             const viewGameContainer = document.createElement("div");
             viewGameContainer.classList.add("view-game-container");
@@ -57,20 +69,31 @@ document.addEventListener('DOMContentLoaded', async () => {
             lastGameList.innerHTML = `<li>Geen score beschikbaar</li>`;
             wordTitleEl.innerHTML = '';
         }
-        
     }
 
     function renderMonthlyScores(scores) {
         const monthHeader = document.getElementById('current-month-header');
         const orderedList = document.getElementById('monthly-score-list');
-
+    
         const currentMonth = new Date().toISOString().slice(0, 7);
         monthHeader.textContent = `Scores voor ${getMonthName(currentMonth)}`;
-
+    
         orderedList.innerHTML = '';
+    
+        // Sort scores in descending order
+        scores.sort((a, b) => b.total_score - a.total_score);
+    
+        let currentRank = 1;
+        let previousScore = null;
+    
         scores.forEach((score, index) => {
+            if (previousScore !== null && score.total_score < previousScore) {
+                currentRank = index + 1;
+            }
+            previousScore = score.total_score;
+    
             const listItem = document.createElement('li');
-            listItem.innerHTML = `<span class="rank">${index + 1}.</span>
+            listItem.innerHTML = `<span class="rank">${currentRank}.</span>
                                   <span class="username">${score.username}</span>
                                   <span class="score">${score.total_score}</span>`;
             orderedList.appendChild(listItem);

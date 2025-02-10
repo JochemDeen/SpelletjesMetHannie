@@ -79,6 +79,9 @@
     background-color: #ffffff; /* White container background */
     overflow: hidden; /* Rounded edges */
     border: 1px solid #e0e0e0; /* Subtle border */
+    overflow-x: auto;
+    white-space: nowrap;
+    max-width: 100%;
   }
   
   #guesses-table-container table {
@@ -92,6 +95,7 @@
   #guesses-table-container th {
     background-color: #ffcc00; /* Bright yellow header */
     color: #333333; /* Dark text for readability */
+    border-bottom: 3px solid #ffa500;
     text-transform: uppercase;
     padding: 12px 10px;
     font-weight: bold;
@@ -116,7 +120,8 @@
   
   #guesses-table-container th,
   #guesses-table-container td {
-    border: 1px solid #dddddd;
+    border: none; 
+    /*border: 1px solid #dddddd;*/
   }
   
   #guesses-table-container th {

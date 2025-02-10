@@ -25,7 +25,9 @@ async function getActiveGame() {
                 return resolve(row);
             }
 
-            // If no active game, check if the last completed game was less than 24 hours ago
+            const now = new Date();
+
+            // Fetch the last completed game
             const lastCompletedGameSql = `
                 SELECT game_id, completed_at 
                 FROM games 
@@ -39,24 +41,57 @@ async function getActiveGame() {
                     return reject(err);
                 }
 
-                if (lastGame) {
-                    const completedAt = new Date(lastGame.completed_at);
-                    const now = new Date();
-                    const diffHours = (now - completedAt) / (1000 * 60 * 60); // Convert ms to hours
+                let lastGameEndedMoreThan12hAgo = false;
 
-                    if (diffHours < 24) {
-                        logger.info(`Last game ended ${diffHours.toFixed(2)} hours ago. Returning "scoring" state.`);
-                        return resolve({ game_id: lastGame.game_id, state: 'scoring', status: 'completed' });
+                if (lastGame?.completed_at) {
+                    const completedAt = new Date(lastGame.completed_at);
+                    const diffHoursCompleted = (now - completedAt) / (1000 * 60 * 60); // Convert ms to hours
+                    logger.info(`Last game completed at: ${completedAt}, ${diffHoursCompleted.toFixed(2)} hours ago`);
+
+                    if (diffHoursCompleted > 12) {
+                        lastGameEndedMoreThan12hAgo = true;
                     }
                 }
 
-                // No active game and no recent completed game, return null
-                resolve(null);
+                // Fetch the oldest "ongoing" game by creation date
+                const lastCreatedGameSql = `
+                    SELECT game_id, created_at 
+                    FROM games 
+                    WHERE status = 'ongoing' 
+                    ORDER BY created_at DESC 
+                    LIMIT 1
+                `;
+                db.get(lastCreatedGameSql, [], (err, lastCreatedGame) => {
+                    if (err) {
+                        logger.error('Failed to fetch last created game:', err.message);
+                        return reject(err);
+                    }
+
+                    let lastGameStartedMoreThan24hAgo = false;
+
+                    if (lastCreatedGame?.created_at) {
+                        const createdAt = new Date(lastCreatedGame.created_at);
+                        const diffHoursCreated = (now - createdAt) / (1000 * 60 * 60); // Convert ms to hours
+                        logger.info(`Last game created at: ${createdAt}, ${diffHoursCreated.toFixed(2)} hours ago`);
+
+                        if (diffHoursCreated > 24) {
+                            lastGameStartedMoreThan24hAgo = true;
+                        }
+                    }
+
+                    // Check both conditions
+                    if (lastGameEndedMoreThan12hAgo || lastGameStartedMoreThan24hAgo) {
+                        logger.info('Game conditions met. Returning "scoring" state.');
+                        return resolve({ game_id: lastGame?.game_id || lastCreatedGame?.game_id, state: 'scoring', status: 'completed' });
+                    }
+
+                    // No active game and no recent completed game that meets conditions, return null
+                    resolve(null);
+                });
             });
         });
     });
-}
-  
+}  
   // Creates a new game using all active users.
   // Uses your "next user" logic based on the last finished game.
   async function createNewGame(activeUsers) {
@@ -211,6 +246,27 @@ async function setGameState(gameId, state) {
         });
     });
 }
+async function CompleteGame(gameId) {
+    return new Promise((resolve, reject) => {
+        // Check if the game is already completed
+        const checkSql = `SELECT status FROM games WHERE game_id = ?`;
+        db.get(checkSql, [gameId], (err, game) => {
+            if (err) return reject(err);
+            if (!game) return reject(new Error(`Game ${gameId} not found.`));
+
+            if (game.status === 'completed') {
+                return resolve(false); // Already completed, no need to update
+            }
+
+            const updateSql = `UPDATE games SET state = 'completed', status = 'completed', completed_at = datetime('now') WHERE game_id = ?`;
+            db.run(updateSql, [gameId], (err) => {
+                if (err) return reject(err);
+                logger.info(`Game ${gameId} marked as completed.`);
+                resolve(true);
+            });
+        });
+    });
+}
 
 async function checkForEndOfFeedback(gameId) {
     return new Promise((resolve, reject) => {
@@ -225,7 +281,7 @@ async function checkForEndOfFeedback(gameId) {
                 SELECT feedback FROM actions
                 WHERE game_id = ? AND round_number = ? AND action = 'guess'
             `;
-            db.all(feedbackSql, [gameId, currentRound], (err, rows) => {
+            db.all(feedbackSql, [gameId, currentRound], async (err, rows) => {  
                 if (err) return reject(err);
                 if (rows.length === 0) return resolve(false);
 
@@ -235,15 +291,13 @@ async function checkForEndOfFeedback(gameId) {
                 if (allFeedbackGiven) {
                     if (hasCorrectGuess) {
                         // Game completed, trigger scoring
-                        db.run(`UPDATE games SET state = 'completed' WHERE game_id = ?`, [gameId], async (err) => {
-                            if (err) return reject(err);
-                            logger.info(`Game ${gameId} completed.`);
-                        });
-                        db.run(`UPDATE games SET status = 'completed' WHERE game_id = ?`, [gameId], async (err) => {
-                            if (err) return reject(err);
-                            logger.info(`Game ${gameId} completed.`);
+                        try {
+                            await CompleteGame(gameId);
                             resolve(true);
-                        });
+                        } catch (error) {
+                            reject(error);
+                        }
+
                     } else {
                         // No correct guess, increment round
                         db.run(`UPDATE games SET current_round = current_round + 1 WHERE game_id = ?`, [gameId], (err) => {
@@ -259,6 +313,8 @@ async function checkForEndOfFeedback(gameId) {
         });
     });
 }
+
+
 
 // Set the difficulty of an ongoing game
 async function setDifficulty(gameId, difficulty) {

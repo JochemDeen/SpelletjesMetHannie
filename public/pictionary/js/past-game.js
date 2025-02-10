@@ -76,9 +76,11 @@ document.addEventListener("DOMContentLoaded", async function () {
 });
 const formatDate = (date) => {
     const year = date.getFullYear();
-    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const month = date.toLocaleString('nl-NL', { month: 'short' }); // jan, feb, etc.
+
+    //const month = String(date.getMonth() + 1).padStart(2, '0');
     const day = String(date.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
+    return `${day} ${month} ${year}`;
 };
 function formatGuessTime(isoString) {
     // isoString might be "2025-01-01 10:00" or "2025-01-01T10:00:00Z"
@@ -97,6 +99,6 @@ function formatGuessTime(isoString) {
     const hour = String(d.getHours()).padStart(2, '0');
     const minute = String(d.getMinutes()).padStart(2, '0');
     
-    return `${day}-${month} ${hour}:${minute}`;
+    return `${hour}:${minute}`;
   }
   

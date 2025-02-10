@@ -9,7 +9,7 @@ const db = require('../db');
 const DRAWING_TIMER_SECONDS = 180; // Duration in seconds
 
 // Start the drawing phase by setting the drawing timer.
-// The game’s "completed_at" field is set to the time when drawing should end.
+// The game’s "drawing_completed_at" field is set to the time when drawing should end.
 async function startDrawing(game_id) {
     if (!game_id) {
       throw new Error('Game ID is required.');
@@ -32,7 +32,7 @@ async function startDrawing(game_id) {
             
             const updateSql = `
                 UPDATE games
-                SET state = 'drawing', completed_at = ?
+                SET state = 'drawing', drawing_completed_at = ?
                 WHERE game_id = ?
             `;
             
@@ -85,7 +85,7 @@ function saveDrawingToFile(game_id, base64Data) {
   
     // First, check if we're still within the allowed submission time.
     return new Promise((resolve, reject) => {
-      const sql = `SELECT completed_at FROM games WHERE game_id = ?`;
+      const sql = `SELECT drawing_completed_at FROM games WHERE game_id = ?`;
       db.get(sql, [game_id], async (err, row) => {
         if (err) {
           logger.error('Failed to fetch game completion time:', err.message);
@@ -94,10 +94,10 @@ function saveDrawingToFile(game_id, base64Data) {
         if (!row) {
           return reject(new Error('Game not found.'));
         }
-        logger.info(`Game ${game_id} completed at ${row.completed_at}`);
+        logger.info(`Game ${game_id} completed at ${row.drawing_completed_at}`);
         logger.info(`Current time is ${new Date()}`);
   
-        const endTime = new Date(row.completed_at);
+        const endTime = new Date(row.drawing_completed_at);
         const gracePeriod = 5 * 1000; // 5 seconds grace period
         const currentTime = new Date();
         if (currentTime > new Date(endTime.getTime() + gracePeriod)) {

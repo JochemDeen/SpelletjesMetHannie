@@ -26,7 +26,8 @@ db.serialize(() => {
         difficulty TEXT CHECK(difficulty IN ('easy', 'medium', 'hard')) DEFAULT 'easy',
         countdown_seconds INTEGER DEFAULT 60,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-        completed_at DATETIME,
+        drawing_completed_at DATETIME,
+        completed_at, DATETIME,
         guessers TEXT NOT NULL,
         FOREIGN KEY (drawer_user_id) REFERENCES users(id)
       )

@@ -723,8 +723,7 @@ async function updateGuessesTable() {
             <td>${guess.username || 'Onbekend'}</td>
             <td>${formattedTime || 'N/A'}</td>
             <td>${guess.text || '***'}</td>
-            <td>${guess.feedback || 'Wachten'}</td>
-            `;
+            <td>${guess.feedback ? guess.feedback : '<span style="font-size: 10px;">⏳</span>'}</td>`;
             tableBody.appendChild(row);
         });
 
@@ -750,7 +749,7 @@ function formatGuessTime(isoString) {
   const hour = String(d.getHours()).padStart(2, '0');
   const minute = String(d.getMinutes()).padStart(2, '0');
   
-  return `${day}-${month} ${hour}:${minute}`;
+  return `${hour}:${minute}`;
 }
 
 function handleIdle() {
