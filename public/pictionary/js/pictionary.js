@@ -746,11 +746,11 @@ function formatGuessTime(isoString) {
   
   // Format like "1-jan 10:00"
   // (Using Dutch style, but you can adapt)
-  const day = d.getDate();
-  const month = d.toLocaleString('nl-NL', { month: 'short' }); // jan, feb, etc.
-  const hour = String(d.getHours()).padStart(2, '0');
-  const minute = String(d.getMinutes()).padStart(2, '0');
-  
+  const day = localTime.getDate();
+  const month = localTime.toLocaleString('nl-NL', { month: 'short' });
+  const hour = String(localTime.getHours()).padStart(2, '0');
+  const minute = String(localTime.getMinutes()).padStart(2, '0');
+
   return `${hour}:${minute}`;
 }
 

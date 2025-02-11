@@ -86,19 +86,20 @@ function formatGuessTime(isoString) {
     // isoString might be "2025-01-01 10:00" or "2025-01-01T10:00:00Z"
     // If you need a quick parse hack:
     // 1) Convert "2025-01-01 10:00" -> "2025-01-01T10:00"
-    let normalized = isoString.replace(" ", "T");
-    // Then parse
-    const d = new Date(normalized);
+    let normalized = isoString.replace(" ", "T") + "Z";  // Ensure it's treated as UTC
+    const d = new Date(normalized);  // Now it will correctly parse as UTC
+    const localTime = new Date(d.getTime() + d.getTimezoneOffset() * 60000);  // Convert to local
+  
     
     if (isNaN(d.getTime())) return isoString; // fallback if invalid
     
     // Format like "1-jan 10:00"
     // (Using Dutch style, but you can adapt)
-    const day = d.getDate();
-    const month = d.toLocaleString('nl-NL', { month: 'short' }); // jan, feb, etc.
-    const hour = String(d.getHours()).padStart(2, '0');
-    const minute = String(d.getMinutes()).padStart(2, '0');
-    
+    const day = localTime.getDate();
+    const month = localTime.toLocaleString('nl-NL', { month: 'short' });
+    const hour = String(localTime.getHours()).padStart(2, '0');
+    const minute = String(localTime.getMinutes()).padStart(2, '0');
+      
     return `${hour}:${minute}`;
   }
   
