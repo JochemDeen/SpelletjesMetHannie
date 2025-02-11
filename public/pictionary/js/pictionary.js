@@ -716,12 +716,12 @@ async function updateGuessesTable() {
             const row = document.createElement('tr');
 
             // Format the date more nicely
-            const formattedTime = formatGuessTime(guess.time);
+            const { displayTime, fullDate } = formatGuessTime(guess.time);
 
             row.innerHTML = `
             <td>${guess.round_number}</td>
             <td>${guess.username || 'Onbekend'}</td>
-            <td>${formattedTime || 'N/A'}</td>
+            <td title="${fullDate}">${displayTime || 'N/A'}</td>
             <td>${guess.text || '***'}</td>
             <td>${guess.feedback ? guess.feedback : '<span style="font-size: 10px;">⏳</span>'}</td>`;
             tableBody.appendChild(row);
@@ -733,25 +733,24 @@ async function updateGuessesTable() {
     }
 }
 function formatGuessTime(isoString) {
-  // isoString might be "2025-01-01 10:00" or "2025-01-01T10:00:00Z"
-  // If you need a quick parse hack:
-  // 1) Convert "2025-01-01 10:00" -> "2025-01-01T10:00"
-  // Then parse
-  let normalized = isoString.replace(" ", "T") + "Z";  // Ensure it's treated as UTC
-  const d = new Date(normalized);  // Now it will correctly parse as UTC
-  const localTime = new Date(d.getTime() + d.getTimezoneOffset() * 60000);  // Convert to local
+  if (!isoString) return { displayTime: 'N/A', fullDate: 'N/A' }; // Handle missing time
 
-  
-  if (isNaN(d.getTime())) return isoString; // fallback if invalid
-  
-  // Format like "1-jan 10:00"
+  let normalized = isoString.replace(" ", "T") + "Z";  // Normalize for UTC parsing
+  const d = new Date(normalized);
+
+  if (isNaN(d.getTime())) return { displayTime: 'N/A', fullDate: 'N/A' }; // Fallback if invalid
+// Format like "1-jan 10:00"
   // (Using Dutch style, but you can adapt)
-  const day = localTime.getDate();
-  const month = localTime.toLocaleString('nl-NL', { month: 'short' });
-  const hour = String(localTime.getHours()).padStart(2, '0');
-  const minute = String(localTime.getMinutes()).padStart(2, '0');
+  const day = d.getDate();
+  const month = d.toLocaleString('nl-NL', { month: 'short' });
+  const hour = String(d.getHours()).padStart(2, '0');
+  const minute = String(d.getMinutes()).padStart(2, '0');
 
-  return `${hour}:${minute}`;
+  // Format for display
+  const displayTime = `${hour}:${minute}`;
+  const fullDate = `${day}-${month} ${hour}:${minute}`;
+
+  return { displayTime, fullDate };
 }
 
 function handleIdle() {
