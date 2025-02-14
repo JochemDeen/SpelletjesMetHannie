@@ -31,6 +31,10 @@ async function updatePictionaryStatus() {
                 text = "Wachten";
                 statusClass = "status-yellow";
                 break;
+            case "Off":
+                text = "Uit";
+                statusClass = "status-gray";
+                break;
             default:
                 text = "Wachten";
                 statusClass = "status-yellow";

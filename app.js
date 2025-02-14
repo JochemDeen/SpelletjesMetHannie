@@ -9,6 +9,7 @@ const path = require('path');
 const authRoutes = require('./routes/auth');
 const gameRoutes = require('./routes/games');
 const pictionaryRoutes = require('./routes/pictionary');
+const settingsRoutes = require('./routes/settings');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -42,6 +43,9 @@ app.use(session({
 
   // Use pictionary routes
   app.use('/', pictionaryRoutes);
+
+  // Use settings routes
+  app.use('/settings', settingsRoutes);
 
   // Catch-all route to handle all other requests
   app.get('*', (req, res) => {

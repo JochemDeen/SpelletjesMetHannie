@@ -82,9 +82,23 @@ h1 {
       font-size: 0.9em;
       font-weight: bold;
   }
-      
+  .settings-icon {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    font-size: 2rem;
+    color: #333;
+    text-decoration: none;
+    z-index: 1000; /* ensures it stays on top */
+    transition: color 0.3s ease;
+  }
+  
+  .settings-icon:hover {
+    color: #555;
+  }
 
     .status-green { background-color: #5bae6f; }
+    .status-gray { background-color: #b0b0b0; }
     .status-yellow { background-color: #fbc31a; } 
     .status-red { background-color: #e03e4e; }
 

@@ -20,5 +20,18 @@ db.run(
       return logger.info('Error adding user:', err.message);
     }
     logger.info(`User ${username} added with ID ${this.lastID}`);
+    
+    // Insert default setting for pictionary (default = "1" for on)
+    db.run(
+      "INSERT INTO user_settings (user_id, setting_key, setting_value) VALUES (?, 'pictionaryEnabled', '1')",
+      [this.lastID],
+      function(err) {
+        if (err) {
+          logger.error('Error setting default pictionary setting:', err.message);
+        } else {
+          logger.info('Default pictionary setting set to on.');
+        }
+      }
+    );
   }
 );

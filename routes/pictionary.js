@@ -147,7 +147,7 @@ router.get('/api/pictionary/state', requireLogin, async (req, res) => {
         return res.json({ game_id: gameState.game_id, state: 'scoring', status: 'completed' });
       }
       logger.info('Creating new game.');
-      const activeUsers = await Users.getAllUserIds();
+      const activeUsers = await Users.getActivePictionaryUserIds();
       logger.info(`Active users: ${JSON.stringify(activeUsers)}`);
       if (!activeUsers || activeUsers.length === 0) {
         return res.status(400).json({ error: 'No active users found to create a game.' });
@@ -161,6 +161,23 @@ router.get('/api/pictionary/state', requireLogin, async (req, res) => {
       }
     }
     const gameId = gameState.game_id;
+    const currentUserId = req.session.userId;
+
+    // Define "player users" as either being the drawer or one of the guessers.
+    const isPlayer = (gameState.drawer_user_id === currentUserId) ||
+      (gameState.guessers && gameState.guessers.includes(currentUserId));
+
+    // If the user is not a participant in the game, return idle.
+    if (!isPlayer) {
+      logger.info(`User ${currentUserId} is not a participant. Returning idle state.`);
+      return res.json({
+        game_id: gameState.game_id,
+        state: 'Off',
+        status: gameState.status,
+        difficulty: gameState.difficulty,
+      });
+    }
+
 
     //if game state is choose and current user is not the drawer, change state to "idle"
     if (gameState.state === 'choose' && gameState.drawer_user_id !== req.session.userId) {

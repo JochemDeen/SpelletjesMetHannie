@@ -16,6 +16,8 @@ pids
 # Database files
 *.sqlite
 
+#Drawings
+public/images/drawings/
 
 # OS files
 .DS_Store
@@ -26,3 +28,10 @@ npm-debug.log*
 # IDE files
 .idea/
 .vscode/
+data/dutch_words_pictionary_full.csv
+data/goodreads_library_export2.csv
+data/Pictionary_easy.numbers
+data/Pictionary_hard.numbers
+data/Pictionary_medium.numbers
+data/Pictionary_words.csv
+data/Pictionary_words.numbers

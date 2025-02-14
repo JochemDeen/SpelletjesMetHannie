@@ -1,0 +1,138 @@
+/* Global Styles */
+body {
+    font-family: 'Roboto', Arial, sans-serif;
+    background-color: #f9f9f9;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  /* Header Styles */
+  header {
+    position: relative;
+    width: 100%;
+    background-color: #fff;
+    padding: 20px 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    text-align: center;
+  }
+  
+  header h1 {
+    margin: 0;
+    font-size: 1.8em;
+  }
+  
+  /* Home Button at Top Right */
+  .home-button {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+  }
+  
+  .home-button img {
+    height: 30px;
+  }
+  
+  /* Main Content */
+  main {
+    width: 100%;
+    max-width: 600px;
+    padding: 20px;
+  }
+  
+  /* Section Styles */
+  section {
+    background: #fff;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    text-align: center;
+  }
+  
+  section h2 {
+    margin-top: 0;
+  }
+  
+  /* Toggle Switch Styles */
+  .toggle-container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 20px 0;
+  }
+  
+  .toggle-label {
+    margin-left: 10px;
+    font-size: 1.2em;
+  }
+  
+  /* Switch */
+  .switch {
+    position: relative;
+    display: inline-block;
+    width: 60px;
+    height: 34px;
+  }
+  
+  .switch input { 
+    opacity: 0;
+    width: 0;
+    height: 0;
+  }
+  
+  .slider {
+    position: absolute;
+    cursor: pointer;
+    background-color: #ccc;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    transition: 0.4s;
+    border-radius: 34px;
+  }
+  
+  .slider:before {
+    position: absolute;
+    content: "";
+    height: 26px;
+    width: 26px;
+    left: 4px;
+    bottom: 4px;
+    background-color: white;
+    transition: 0.4s;
+    border-radius: 50%;
+  }
+  
+  input:checked + .slider {
+    background-color: #5bae6f;
+  }
+  
+  input:checked + .slider:before {
+    transform: translateX(26px);
+  }
+  
+  /* Message Styles */
+  #message {
+    margin-top: 15px;
+    font-size: 1em;
+    color: #333;
+  }
+  
+  /* Responsive Adjustments */
+  @media (max-width: 600px) {
+    header h1 {
+      font-size: 1.5em;
+    }
+    .home-button {
+      top: 5px;
+      left: 5px;
+  }
+  .home-button img {
+      width: 28px;
+      height: 25px;
+  }
+
+  }

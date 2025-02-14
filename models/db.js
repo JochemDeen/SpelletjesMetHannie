@@ -95,7 +95,23 @@ db.serialize(() => {
     }
   });
 
-});
+  // Create a settings table if it doesn't exist
+  db.run(`
+    CREATE TABLE IF NOT EXISTS user_settings (
+      user_id INTEGER,
+      setting_key TEXT,
+      setting_value TEXT,
+      PRIMARY KEY (user_id, setting_key),
+      FOREIGN KEY (user_id) REFERENCES users(id)
+    )
+  `, (err) => {
+    if (err) {
+      logger.error('Failed to create settings table:', err.message);
+    } else {
+      logger.info('Settings table created or already exists');
+    }
+  });
 
+});
 
 module.exports = db;
