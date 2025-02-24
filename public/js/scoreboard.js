@@ -34,11 +34,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     
         // Sort descending by score; if scores are equal, return 0 (keeps order)
         scores.sort((a, b) => {
-          if (b.score !== a.score) {
-            return b.score - a.score;
-          } else {
-            return 0;
-          }
+            const diff = b.score - a.score; 
+            if (diff !== 0) return diff; 
+            return Math.random() - 0.5; // Randomize order for equal scores
         });
     
         // Clear previous entries if any
@@ -96,11 +94,9 @@ document.addEventListener('DOMContentLoaded', async () => {
           const scores = data.scores;
           // Sort descending by score (no secondary sort by name)
           scores.sort((a, b) => {
-            if (b.score !== a.score) {
-              return b.score - a.score;
-            } else {
-              return 0;
-            }
+              const diff = b.score - a.score; 
+              if (diff !== 0) return diff; 
+              return Math.random() - 0.5; // Randomize order for equal scores
           });
           // The highest score is in the first entry
           const highestScore = scores[0].score;
@@ -124,36 +120,48 @@ document.addEventListener('DOMContentLoaded', async () => {
 
 
     function renderHighestScores(highestScores) {
-        const orderedList = document.getElementById('highest-scorer-list');
-        if (!orderedList) return;
-
-        highestScores.sort((a, b) => b.highestCount - a.highestCount); // Sort by highest count
-
-        // Clear previous entries if any
-        orderedList.innerHTML = '';
-
-        highestScores.forEach((entry, index) => {
-            const listItem = document.createElement('li');
-
-            const rank = document.createElement('span');
-            rank.classList.add('rank');
-            rank.textContent = `${index + 1}.`;
-
-            const username = document.createElement('span');
-            username.classList.add('username');
-            username.textContent = entry.username;
-
-            const highestCount = document.createElement('span');
-            highestCount.classList.add('score');
-            highestCount.textContent = entry.highestCount;
-
-            listItem.appendChild(rank);
-            listItem.appendChild(username);
-            listItem.appendChild(highestCount);
-            orderedList.appendChild(listItem);
-        });
-    }
-
+      const orderedList = document.getElementById('highest-scorer-list');
+      if (!orderedList) return;
+  
+      // Sort scores in descending order
+      highestScores.sort((a, b) => {
+        const diff = b.highestCount - a.highestCount; 
+        if (diff !== 0) return diff; 
+        return Math.random() - 0.5; // Randomize when scores are the same
+    });
+      // Clear previous entries if any
+      orderedList.innerHTML = '';
+  
+      let rank = 0;
+      let lastScore = null;
+  
+      highestScores.forEach((entry, index) => {
+          // If the current score is less than the previous one, update the rank.
+          if (lastScore === null || entry.highestCount < lastScore) {
+              rank = index + 1;
+          }
+          lastScore = entry.highestCount;
+  
+          const listItem = document.createElement('li');
+  
+          const rankSpan = document.createElement('span');
+          rankSpan.classList.add('rank');
+          rankSpan.textContent = `${rank}.`;
+  
+          const username = document.createElement('span');
+          username.classList.add('username');
+          username.textContent = entry.username;
+  
+          const highestCount = document.createElement('span');
+          highestCount.classList.add('score');
+          highestCount.textContent = entry.highestCount;
+  
+          listItem.appendChild(rankSpan);
+          listItem.appendChild(username);
+          listItem.appendChild(highestCount);
+          orderedList.appendChild(listItem);
+      });
+  }
     function getPreviousMonth() {
       const date = new Date();
       date.setMonth(date.getMonth() - 1);
