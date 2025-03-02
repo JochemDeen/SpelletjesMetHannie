@@ -101,8 +101,9 @@ document.addEventListener('DOMContentLoaded', async () => {
           // The highest score is in the first entry
           const highestScore = scores[0].score;
           // In case of ties, collect all winners
-          const winners = scores.filter(item => item.score === highestScore);
-          const winnerNames = winners.map(item => item.username).join(', ');
+          const winners = scores.filter(item => item.score === highestScore).map(item => item.username);
+          const winnerNames = formatWinnerNames(winners);
+          //const winnerNames = winners.map(item => item.username).join(', ');
           // Set the section text
           const monthName = getMonthName(previousMonth);
           document.getElementById('previous-month-winner-title').textContent = `Winnaar van ${monthName}:`;
@@ -175,3 +176,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         return date.toLocaleString('en-US', { month: 'long', year: 'numeric' });
     }
 });
+
+// Helper function to format winner names naturally
+function formatWinnerNames(names) {
+  if (names.length === 1) return names[0];
+  if (names.length === 2) return `${names[0]} en ${names[1]}`;
+  return `${names.slice(0, -1).join(', ')} en ${names[names.length - 1]}`;
+}
