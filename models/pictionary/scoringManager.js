@@ -72,10 +72,13 @@ async function getPreviousMonthWinner() {
 
     return new Promise((resolve, reject) => {
         db.get(
-            `SELECT u.username, MAX(s.score) AS score 
+            `SELECT u.username, SUM(s.score) AS score 
              FROM scores s
              JOIN users u ON s.user_id = u.id
-             WHERE strftime('%Y-%m', s.created_at) = ?`,
+             WHERE strftime('%Y-%m', s.created_at) = ?
+             GROUP BY u.id
+             ORDER BY score DESC
+             LIMIT 1`,
             [monthStr],
             (err, row) => {
                 if (err) {
@@ -88,6 +91,7 @@ async function getPreviousMonthWinner() {
         );
     });
 }
+
 async function updateScoring(gameId) {
     return new Promise((resolve, reject) => {
         db.get(
