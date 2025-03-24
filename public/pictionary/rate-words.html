@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8">
+  <title>Beoordeel Pictionary Woorden</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" crossorigin="anonymous">
+  <link rel="stylesheet" href="/css/stylesdb.css">
+  <link rel="stylesheet" href="/pictionary/css/rate-words.css">
+  <link rel="icon" type="image/png" href="/favicon-96x96.png" sizes="96x96" />
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <link rel="shortcut icon" href="/favicon.ico" />
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+  <link rel="manifest" href="/site.webmanifest" />
+</head>
+<body>
+  <header>
+    <a href="/" class="back-icon">
+      <i class="fas fa-arrow-left"></i> Terug
+    </a>
+    <h1>Beoordeel Pictionary Woorden</h1>
+  </header>
+
+  <div class="content-container">
+    <div class="info-box">
+      <p>
+        <i class="fas fa-info-circle"></i>
+        Beoordeel de moeilijkheidsgraad van deze woorden voor Pictionary. Je kunt ook nieuwe woorden voorstellen!
+      </p>
+    </div>
+
+    <!-- Word Rating Section -->
+    <div class="rating-section" id="ratingSection">
+      <div class="card word-card">
+        <div id="wordToRate" class="word-to-rate">Laden...</div>
+        <div class="rating-options">
+          <button class="rating-btn" data-rating="easy">Gemakkelijk</button>
+          <button class="rating-btn" data-rating="medium">Gemiddeld</button>
+          <button class="rating-btn" data-rating="hard">Moeilijk</button>
+          <button class="rating-btn drop-btn" data-rating="drop">Woord Verwijderen</button>
+        </div>
+        <div class="rating-controls">
+          <button id="skipBtn" class="text-btn">
+            <i class="fas fa-forward"></i> Overslaan
+          </button>
+        </div>
+      </div>
+      
+      <div class="rating-progress">
+        <span id="ratedCount">0</span> woorden beoordeeld
+        <div class="progress-bar">
+          <div id="progressFill" class="progress-fill" style="width: 0%"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Word Suggestion Section -->
+    <div class="divider">
+      <span>OF</span>
+    </div>
+
+    <div class="suggestion-section">
+      <h2>Stel een nieuw woord voor</h2>
+      <div class="card suggestion-card">
+        <div class="suggestion-form">
+          <div class="form-group">
+            <label for="suggestedWord">Woord</label>
+            <input type="text" id="suggestedWord" placeholder="Voer een woord in">
+          </div>
+          <div class="form-group">
+            <label>Geschatte moeilijkheidsgraad</label>
+            <div class="suggestion-options">
+              <label class="suggestion-option">
+                <input type="radio" name="difficulty" value="easy" checked>
+                <span>Gemakkelijk</span>
+              </label>
+              <label class="suggestion-option">
+                <input type="radio" name="difficulty" value="medium">
+                <span>Gemiddeld</span>
+              </label>
+              <label class="suggestion-option">
+                <input type="radio" name="difficulty" value="hard">
+                <span>Moeilijk</span>
+              </label>
+            </div>
+          </div>
+          <button id="suggestBtn" class="suggest-btn">Woord voorstellen</button>
+        </div>
+        <div id="suggestionMessage" class="suggestion-message"></div>
+      </div>
+    </div>
+  </div>
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+  <script src="/pictionary/js/rate-words.js"></script>
+</body>
+</html>

@@ -112,6 +112,48 @@ db.serialize(() => {
     }
   });
 
+  // Create tables if they don't exist
+    // Create user word ratings table
+    db.run(`
+      CREATE TABLE IF NOT EXISTS pictionary_word_ratings (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL,
+        word TEXT NOT NULL,
+        word_id TEXT,
+        rating TEXT NOT NULL,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (user_id) REFERENCES users(id)
+      )
+    `, err => {
+      if (err) {
+        logger.error('Failed to create word ratings table:', err.message);
+      }else{
+        logger.info('Word ratings table created or already exists ');
+      }
+      
+      // Create word suggestions table
+      db.run(`
+        CREATE TABLE IF NOT EXISTS pictionary_word_suggestions (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          user_id INTEGER NOT NULL,
+          word TEXT NOT NULL,
+          difficulty TEXT NOT NULL,
+          status TEXT DEFAULT 'pending',
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          used_count INTEGER DEFAULT 0,
+          FOREIGN KEY (user_id) REFERENCES users(id)
+        )
+      `, err => {
+        if (err) {
+          logger.error('Failed to create word suggestions table:', err.message);
+        }
+        else {
+          logger.info('Word suggestions table created or already exists');
+        }
+      });
+    });
+
 });
 
 module.exports = db;

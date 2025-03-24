@@ -168,6 +168,15 @@ function disableColors() {
     const eraserBtn = document.getElementById('eraser-button');
     eraserBtn.classList.add('hidden');
 }
+
+// 3. Add the function to disable thickness controls, similar to disableColors
+function disableThicknessControls() {
+  const thicknessButtons = document.querySelectorAll('#thickness-controls .thickness-btn');
+  thicknessButtons.forEach(btn => {
+    btn.classList.add('hidden');
+  });
+}
+
 function disableDrawing(canvasRef) {
     const canvas = canvasRef.current;
     // Easiest way: remove event listeners
@@ -178,6 +187,16 @@ function disableDrawing(canvasRef) {
     canvas.removeEventListener("touchstart", canvasRef.startTouchDrawing);
     canvas.removeEventListener("touchmove", canvasRef.moveTouchDrawing);
     canvas.removeEventListener("touchend", canvasRef.stopTouchDrawing);
+    // Remove the custom cursor
+    if (canvasRef.customCursor) {
+      canvasRef.customCursor.remove();
+    }
+
+    // Restore default cursor
+    canvas.style.cursor = 'default';
+    disableColors();
+    disableThicknessControls();
+  
     }
 
 function startCountdown(duration) {
@@ -206,6 +225,99 @@ function startCountdown(duration) {
     let drawing = false;
     let selectedColor = '#000000'; // Default color
     let selectedTool = "pen";
+    let brushThickness = 6; // Default medium thickness
+
+    // Add history for undo functionality
+  let drawingHistory = [];
+  let currentHistoryIndex = -1;
+
+  // Create a cursor canvas element for custom cursor
+  const cursorCanvas = document.createElement('canvas');
+  const cursorCtx = cursorCanvas.getContext('2d');
+  cursorCanvas.width = 40;  // Size of the cursor canvas
+  cursorCanvas.height = 40;
+  // Create a div to hold the custom cursor
+  const customCursor = document.createElement('div');
+  customCursor.id = 'custom-cursor';
+  customCursor.style.position = 'absolute';
+  customCursor.style.pointerEvents = 'none';
+  customCursor.style.zIndex = '1000';
+  customCursor.style.top = '0';
+  customCursor.style.left = '0';
+  customCursor.style.transform = 'translate(-50%, -50%)';
+  customCursor.style.display = 'none';
+  document.body.appendChild(customCursor);
+
+    // Function to update the custom cursor
+    function updateCustomCursor() {
+      // Clear the cursor canvas
+      cursorCtx.clearRect(0, 0, cursorCanvas.width, cursorCanvas.height);
+      
+      // Draw the cursor based on current tool and thickness
+      if (selectedTool === "eraser") {
+        // Eraser cursor - draw a circle with a red border
+        cursorCtx.beginPath();
+        cursorCtx.arc(cursorCanvas.width/2, cursorCanvas.height/2, 10, 0, 2 * Math.PI);
+        cursorCtx.strokeStyle = 'rgba(255, 0, 0, 0.8)';
+        cursorCtx.lineWidth = 2;
+        cursorCtx.stroke();
+        cursorCtx.fillStyle = 'rgba(255, 255, 255, 0.5)';
+        cursorCtx.fill();
+        
+        // Add a cross in the middle
+        cursorCtx.beginPath();
+        cursorCtx.moveTo(cursorCanvas.width/2 - 5, cursorCanvas.height/2);
+        cursorCtx.lineTo(cursorCanvas.width/2 + 5, cursorCanvas.height/2);
+        cursorCtx.moveTo(cursorCanvas.width/2, cursorCanvas.height/2 - 5);
+        cursorCtx.lineTo(cursorCanvas.width/2, cursorCanvas.height/2 + 5);
+        cursorCtx.strokeStyle = 'red';
+        cursorCtx.lineWidth = 1;
+        cursorCtx.stroke();
+      } else {
+        // Pen cursor - draw a circle with the selected color
+        cursorCtx.beginPath();
+        cursorCtx.arc(cursorCanvas.width/2, cursorCanvas.height/2, brushThickness/2, 0, 2 * Math.PI);
+        cursorCtx.fillStyle = selectedColor;
+        cursorCtx.fill();
+        
+        // Add a white border for better visibility on dark colors
+        cursorCtx.strokeStyle = 'rgba(255, 255, 255, 0.8)';
+        cursorCtx.lineWidth = 1;
+        cursorCtx.stroke();
+      }
+      
+      // Update the custom cursor with the new image
+      customCursor.style.width = cursorCanvas.width + 'px';
+      customCursor.style.height = cursorCanvas.height + 'px';
+      customCursor.style.backgroundImage = `url(${cursorCanvas.toDataURL()})`;
+      customCursor.style.backgroundSize = 'contain';
+    }
+  
+    // Initial cursor update
+    updateCustomCursor();
+    canvas.addEventListener('mousemove', (e) => {
+      const rect = canvas.getBoundingClientRect();
+      customCursor.style.left = (e.clientX) + 'px';
+      customCursor.style.top = (e.clientY) + 'px';
+    });
+    
+    // Show the custom cursor when over the canvas
+    canvas.addEventListener('mouseenter', () => {
+      customCursor.style.display = 'block';
+      canvas.style.cursor = 'none'; // Hide the default cursor
+    });
+    
+    // Hide the custom cursor when leaving the canvas
+    canvas.addEventListener('mouseleave', () => {
+      customCursor.style.display = 'none';
+      canvas.style.cursor = 'default'; // Restore the default cursor
+    });
+    
+  
+  
+  // Save initial canvas state (blank)
+  saveCanvasState();
+
   
 // ===================
   // HOOK UP THE COLORS
@@ -215,6 +327,7 @@ function startCountdown(duration) {
         colorBtn.addEventListener("click", () => {
             selectedTool = "pen";
         selectedColor = colorBtn.dataset.color;
+        updateCustomCursor(); // Update cursor after color change
         console.log("Color changed to:", selectedColor);
         });
     });
@@ -225,8 +338,31 @@ function startCountdown(duration) {
   const eraserBtn = document.getElementById("eraser-button");
   eraserBtn.addEventListener("click", () => {
     selectedTool = "eraser";
+    updateCustomCursor(); // Update cursor for eraser
     console.log("Tool changed to eraser");
   });
+
+  // HOOK UP THE THICKNESS CONTROLS
+  document.querySelectorAll(".thickness-btn").forEach((thicknessBtn) => {
+    thicknessBtn.addEventListener("click", () => {
+      brushThickness = parseInt(thicknessBtn.dataset.thickness);
+      
+      // Visual feedback - add active class to selected button
+      document.querySelectorAll(".thickness-btn").forEach(btn => {
+        btn.classList.remove("active");
+      });
+      thicknessBtn.classList.add("active");
+      updateCustomCursor(); // Update cursor with new thickness
+      
+      console.log("Brush thickness changed to:", brushThickness);
+    });
+  });
+  // Set the medium brush as active by default
+  const mediumBrush = document.getElementById("medium-brush");
+  if (mediumBrush) {
+    mediumBrush.classList.add("active");
+  }
+  
 
   // 4. Add the listeners
   canvas.addEventListener("mousedown", startMouseDrawing);
@@ -244,6 +380,45 @@ function startCountdown(duration) {
   canvasRef.startTouchDrawing = startTouchDrawing;
   canvasRef.moveTouchDrawing = moveTouchDrawing;
   canvasRef.stopTouchDrawing = stopTouchDrawing;
+  canvasRef.customCursor = customCursor;
+
+  // HOOK UP THE UNDO BUTTON
+  const undoButton = document.getElementById('undo-button');
+  if (undoButton) {
+    undoButton.addEventListener('click', handleUndo);
+  }
+
+  // Function to save the current canvas state
+  function saveCanvasState() {
+    // If we're not at the end of the history array, remove everything after current index
+    if (currentHistoryIndex < drawingHistory.length - 1) {
+      drawingHistory = drawingHistory.slice(0, currentHistoryIndex + 1);
+    }
+    
+    // Limit history size to prevent memory issues
+    if (drawingHistory.length >= 20) {
+      drawingHistory.shift(); // Remove the oldest state
+    } else {
+      currentHistoryIndex++;
+    }
+    
+    // Save current canvas state to history
+    drawingHistory.push(canvas.toDataURL());
+  }
+
+    // Function to handle undo button
+    function handleUndo() {
+      if (currentHistoryIndex > 0) {
+        currentHistoryIndex--;
+        const image = new Image();
+        image.src = drawingHistory[currentHistoryIndex];
+        image.onload = function() {
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          ctx.drawImage(image, 0, 0);
+        };
+      }
+    }
+  
 
     function startMouseDrawing(e) {
         drawing = true;
@@ -258,6 +433,20 @@ function startCountdown(duration) {
         const y = (e.clientY - rect.top) * scaleY;
 
         ctx.moveTo(x, y);
+        if (selectedTool !== "eraser") {
+          ctx.globalCompositeOperation = "source-over";
+          ctx.fillStyle = selectedColor;
+          
+          // Draw a small circle at the starting point
+          ctx.beginPath();
+          ctx.arc(x, y, brushThickness/2, 0, Math.PI * 2);
+          ctx.fill();
+          
+          // Reset path and move to starting point again
+          ctx.beginPath();
+          ctx.moveTo(x, y);
+        }
+    
       }
     
       function moveMouseDrawing(e) {
@@ -273,11 +462,19 @@ function startCountdown(duration) {
 
         if (selectedTool === "eraser") {
             ctx.globalCompositeOperation = "destination-out"; // remove pixels
-            ctx.lineWidth = 20;
+            ctx.lineWidth = 20;// Eraser is always thick
           } else {
             ctx.globalCompositeOperation = "source-over"; // normal drawing
             ctx.strokeStyle = selectedColor;
-            ctx.lineWidth = 2;
+            ctx.lineWidth = brushThickness;
+
+            // Set line properties for smoother lines
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+            
+            // Add some anti-aliasing/smoothing effect
+            ctx.shadowColor = selectedColor;
+            ctx.shadowBlur = 1; // Small blur for anti-aliasing
           }
       
         ctx.lineTo(x, y);
@@ -288,6 +485,7 @@ function startCountdown(duration) {
     
       function stopMouseDrawing() {
         drawing = false;
+        saveCanvasState(); 
         // optional: ctx.closePath();
       }
     
@@ -296,9 +494,6 @@ function startCountdown(duration) {
         e.preventDefault();
         drawing = true;
         ctx.beginPath();
-        ctx.lineWidth = selectedTool === "eraser" ? 25 : 6;
-
-
         const touch = e.touches[0];
         const rect = canvas.getBoundingClientRect();
         const scaleX = canvas.width / rect.width;
@@ -308,6 +503,21 @@ function startCountdown(duration) {
         const y = (touch.clientY - rect.top) * scaleY;
 
         ctx.moveTo(x, y);
+        
+        // For touch, also draw a dot at start
+        if (selectedTool !== "eraser") {
+          ctx.globalCompositeOperation = "source-over";
+          ctx.fillStyle = selectedColor;
+          
+          // Draw a small circle at the starting point
+          ctx.beginPath();
+          ctx.arc(x, y, brushThickness/2, 0, Math.PI * 2);
+          ctx.fill();
+          
+          // Reset path and move to starting point again
+          ctx.beginPath();
+          ctx.moveTo(x, y);
+        }
       }
     
       function moveTouchDrawing(e) {
@@ -328,20 +538,37 @@ function startCountdown(duration) {
           } else {
             ctx.globalCompositeOperation = "source-over"; // normal drawing
             ctx.strokeStyle = selectedColor;
-            ctx.lineWidth = 10;
+            ctx.lineWidth = brushThickness;
+
+            // Set line properties for smoother lines
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+            
+            // Add some anti-aliasing/smoothing effect
+            ctx.shadowColor = selectedColor;
+            ctx.shadowBlur = 1; // Small blur for anti-aliasing
+
           }
-
-
-        ctx.strokeStyle = selectedColor;
-        ctx.lineCap = 'round';
         ctx.lineTo(x, y);
         ctx.stroke();
+        
+        // For touch devices, move the custom cursor to follow the touch point
+        customCursor.style.left = (touch.clientX) + 'px';
+        customCursor.style.top = (touch.clientY) + 'px';
+        customCursor.style.display = 'block';
       }
     
       function stopTouchDrawing(e) {
         e.preventDefault();
-        drawing = false;
-        // optional: ctx.closePath();
+        if (drawing) {
+          drawing = false;
+          // Reset shadow to avoid affecting other operations
+          ctx.shadowBlur = 0;
+          saveCanvasState(); // Save state after completing a stroke
+          
+          // Hide custom cursor when touch ends
+          customCursor.style.display = 'none';
+        }    
       }
   };
 

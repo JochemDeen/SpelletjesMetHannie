@@ -1,0 +1,104 @@
+==================================================================
+          PICTIONARY WORD RATING ADMIN MANUAL
+==================================================================
+
+This manual documents the command-line tools for managing Pictionary 
+words, user suggestions, and difficulty ratings.
+
+------------------------------------------------------------------
+                       BASIC COMMANDS
+------------------------------------------------------------------
+
+REVIEW SUGGESTED WORDS:
+  node scripts/review-suggestions.js
+  - Shows user-suggested words with 3+ ratings
+  - Displays statistics and recommendations
+  - Provides exact commands to accept/reject
+
+REVIEW WORDS TO REMOVE:
+  node scripts/words-to-remove.js
+  - Shows words with high "drop" ratings
+  - Displays removal commands for each word
+
+REVIEW DIFFICULTY CHANGES:
+  node scripts/words-to-change.js
+  - Shows words that may need difficulty changes
+  - Displays commands to change difficulty levels
+
+AUTO-PROCESS WORDS:
+  node scripts/auto-process.js
+  - Automatically processes words with 4+ ratings and 70%+ consensus
+  - Handles suggestions, difficulty changes, and removals
+
+ADD TEST DATA:
+  node scripts/add-test-data.js
+  - Adds sample data for testing the admin scripts
+
+------------------------------------------------------------------
+                      WORD MANAGEMENT
+------------------------------------------------------------------
+
+ACCEPT A SUGGESTION:
+  node scripts/accept-suggestion.js [suggestion-id] [difficulty]
+  Example: node scripts/accept-suggestion.js 5 medium
+
+REJECT A SUGGESTION:
+  node scripts/reject-suggestion.js [suggestion-id]
+  Example: node scripts/reject-suggestion.js 3
+
+REMOVE A WORD:
+  node scripts/remove-word.js "[word]"
+  Example: node scripts/remove-word.js "Difficult Word"
+
+CHANGE DIFFICULTY:
+  node scripts/change-difficulty.js "[word]" [from] [to]
+  Example: node scripts/change-difficulty.js "Computer" medium hard
+
+ADD A NEW WORD:
+  node scripts/add-word.js "[word]" [difficulty]
+  Example: node scripts/add-word.js "New Word" easy
+
+------------------------------------------------------------------
+                    RECOMMENDATION LOGIC
+------------------------------------------------------------------
+
+SUGGESTIONS:
+  - If 50%+ of ratings are "drop" -> Reject
+  - If 50%+ agree on a difficulty -> Accept with that difficulty
+  - Otherwise -> Consider (shows recommended difficulty)
+
+DIFFICULTY CHANGES:
+  - Easy words rated medium/hard (60%+) -> Move to harder category
+  - Medium words rated easy (60%+) -> Move to easy
+  - Medium words rated hard (60%+) -> Move to hard
+  - Hard words rated easy/medium (60%+) -> Move to easier category
+
+WORD REMOVAL:
+  - Words with 50%+ "drop" ratings -> Consider removing
+
+------------------------------------------------------------------
+                      DATABASE TABLES
+------------------------------------------------------------------
+
+RATINGS TABLE: pictionary_word_ratings
+  - Stores individual user ratings for words
+  - Rating values: 'easy', 'medium', 'hard', 'drop'
+
+SUGGESTIONS TABLE: pictionary_word_suggestions
+  - Stores user-suggested words
+  - Status values: 'pending', 'accepted', 'rejected'
+
+------------------------------------------------------------------
+                     TROUBLESHOOTING
+------------------------------------------------------------------
+
+ISSUE: Scripts can't find modules
+FIX: Run from project root directory
+
+ISSUE: Can't connect to database
+FIX: Ensure database.sqlite exists in project root
+
+ISSUE: Not enough data for testing
+FIX: Run node scripts/add-test-data.js to add sample data
+
+------------------------------------------------------------------

@@ -110,9 +110,16 @@ async function validateWord(word) {
 
 }
 
+// Export the file paths for other modules to use
+function getPictionaryWordFiles() {
+  return fileMap;
+}
+
+
 module.exports = {
   getWordOfTheDay,
   validateWord,
   getRandomPictionaryWord,
-  getRandomWord
+  getRandomWord,
+  getPictionaryWordFiles
 };

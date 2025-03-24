@@ -58,6 +58,22 @@
                     <button class="eraser" data-tool="eraser" id="eraser-button">
                     <img src="/images/eraser-icon.png" alt="Eraser" />
                 </button>
+                <div id="thickness-controls">
+                    <button id="thin-brush" class="thickness-btn" data-thickness="2">
+                      <div class="thickness-dot thin"></div>
+                    </button>
+                    <button id="medium-brush" class="thickness-btn active" data-thickness="6">
+                      <div class="thickness-dot medium"></div>
+                    </button>
+                    <button id="thick-brush" class="thickness-btn" data-thickness="12">
+                      <div class="thickness-dot thick"></div>
+                    </button>
+                  </div>
+                
+                <button id="undo-button" class="drawing-control-btn">
+                    <span>↩️ Ongedaan maken</span>
+                  </button>
+                  
             </div>
 
                 <button id="finish-drawing">Klaar!</button>

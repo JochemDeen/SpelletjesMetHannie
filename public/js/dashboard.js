@@ -51,9 +51,28 @@ async function updatePictionaryStatus() {
         statusElement.className = "status-temp status-red";
     }
 }
+function setupUpdateNotification() {
+    const closeButton = document.getElementById('closeUpdate');
+    const updateContainer = document.getElementById('updateContainer');
+    
+    if (closeButton && updateContainer) {
+        closeButton.addEventListener('click', () => {
+            updateContainer.style.display = 'none';
+            
+            // Optional: Save to localStorage to keep it closed for future visits
+            localStorage.setItem('updateDismissed', 'true');
+        });
+        
+        // Check if user has previously dismissed this notification
+        if (localStorage.getItem('updateDismissed') === 'true') {
+            updateContainer.style.display = 'none';
+        }
+    }
+}
 
 // Run function once and refresh every 15 seconds
 document.addEventListener("DOMContentLoaded", () => {
     updatePictionaryStatus();
+    setupUpdateNotification();
     setInterval(updatePictionaryStatus, 15000);
 });

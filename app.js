@@ -10,6 +10,7 @@ const authRoutes = require('./routes/auth');
 const gameRoutes = require('./routes/games');
 const pictionaryRoutes = require('./routes/pictionary');
 const settingsRoutes = require('./routes/settings');
+const rateRoutes = require('./routes/ratings');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -43,6 +44,9 @@ app.use(session({
 
   // Use pictionary routes
   app.use('/', pictionaryRoutes);
+
+  // Use rating routes
+  app.use('/', rateRoutes);
 
   // Use settings routes
   app.use('/settings', settingsRoutes);
