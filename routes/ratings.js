@@ -14,7 +14,7 @@ router.get('/pictionary/rate-words', requireLogin, (req, res) => {
     res.sendFile('rate-words.html', { root: path.join(__dirname, '../public/pictionary') });
 });
 
-// Get a random word for rating with three-tier selection priority
+// Get a random word for rating with multi-tier selection priority
 router.get('/api/pictionary/random-word-to-rate', requireLogin, async (req, res) => {
     const userId = req.session.userId;
     logger.info(`GET /api/pictionary/random-word-to-rate for user: ${userId}`);
@@ -65,16 +65,41 @@ router.get('/api/pictionary/random-word-to-rate', requireLogin, async (req, res)
         return res.json({ success: true, word: word.word, word_id: word.id });
       }
       
-      // Final fallback: If all words have been rated, get a random word
+      // NEW - Tier 4: If all words have been rated, try to find words where the user's
+      // opinion differs from the majority (to prompt reconsideration)
+      const differingOpinionWord = await RatingsManager.getWordWithDifferingOpinion(userId);
+      
+      if (differingOpinionWord) {
+        logger.info(`Serving differing opinion word "${differingOpinionWord.word}" to user ${userId}`);
+        // Only send minimal info to the frontend to prevent bias,
+        // but log the full details for analysis
+        logger.debug(`User rating: ${differingOpinionWord.userRating}, Majority: ${differingOpinionWord.majorityRating}`);
+        return res.json({ 
+          success: true, 
+          word: differingOpinionWord.word, 
+          word_id: differingOpinionWord.id,
+          allWordsRated: true,
+          differsFromMajority: true
+        });
+      }
+      
+      // Final fallback: If all words have been rated and no differing opinions,
+      // get a random word with a message
       const randomWord = await RatingsManager.getRandomWordWithPreference(userId);
-      logger.info(`Serving random word "${randomWord.word}" to user ${userId}`);
-      return res.json({ success: true, word: randomWord.word, word_id: randomWord.id });
+      logger.info(`Serving random word "${randomWord.word}" to user ${userId} (all words rated)`);
+      return res.json({ 
+        success: true, 
+        word: randomWord.word, 
+        word_id: randomWord.id,
+        allWordsRated: true
+      });
       
     } catch (error) {
       logger.error('Error fetching random word to rate:', error.message);
       res.status(500).json({ success: false, error: 'Failed to fetch random word' });
     }
   });
+  
 // Rate a word
 router.post('/api/pictionary/rate-word', requireLogin, async (req, res) => {
   const { word, word_id, rating } = req.body;

@@ -449,75 +449,190 @@ async function getOtherUserSuggestion(userId) {
  * @param {number} userId - The current user's ID
  * @returns {Promise<object|null>} Word object or null if no matching words
  */
+/**
+ * Get a word that has been rated by other users but not by the current user
+ * Prioritizes words with more ratings to gather consensus on popular words
+ * 
+ * @param {number} userId - The current user's ID
+ * @returns {Promise<object|null>} Word object or null if no matching words
+ */
 async function getWordRatedByOthersButNotUser(userId) {
-    return new Promise((resolve, reject) => {
-      // Get words rated by others but not by this user
-      const query = `
-        SELECT 
-          r.word,
-          r.word_id,
-          COUNT(DISTINCT r.user_id) as rating_count,
-          SUBSTR(r.word_id, 1, INSTR(r.word_id, '_') - 1) as difficulty
-        FROM 
-          pictionary_word_ratings r
-        WHERE 
-          r.word NOT IN (
-            SELECT word FROM pictionary_word_ratings WHERE user_id = ?
-          )
-        GROUP BY 
-          LOWER(r.word)
-        HAVING 
-          COUNT(DISTINCT r.user_id) >= 1
-        ORDER BY 
-          COUNT(DISTINCT r.user_id) DESC,
-          RANDOM()
-        LIMIT 1
-      `;
+  return new Promise((resolve, reject) => {
+    // Get words rated by others but not by this user
+    const query = `
+      SELECT 
+        r.word,
+        r.word_id,
+        COUNT(DISTINCT r.user_id) as rating_count,
+        SUBSTR(r.word_id, 1, INSTR(r.word_id, '_') - 1) as difficulty
+      FROM 
+        pictionary_word_ratings r
+      WHERE 
+        LOWER(r.word) NOT IN (
+          SELECT LOWER(word) FROM pictionary_word_ratings WHERE user_id = ?
+        )
+        AND r.user_id != ?  /* Explicitly exclude words rated by this user */
+      GROUP BY 
+        LOWER(r.word)
+      HAVING 
+        COUNT(DISTINCT r.user_id) >= 1
+      ORDER BY 
+        COUNT(DISTINCT r.user_id) DESC,
+        RANDOM()
+      LIMIT 1
+    `;
+    
+    db.get(query, [userId, userId], async (err, row) => {
+      if (err) {
+        reject(err);
+        return;
+      }
       
-      db.get(query, [userId], async (err, row) => {
-        if (err) {
-          reject(err);
-          return;
-        }
-        
-        if (!row) {
-          // No words found that others have rated but this user hasn't
-          resolve(null);
-          return;
-        }
-        
-        // Check if this is a standard word or a suggestion
-        const isSuggestion = row.word_id.startsWith('suggested_');
-        
-        if (isSuggestion) {
-          // For suggestions, we already have all the info
-          resolve({
-            word: row.word,
-            id: row.word_id,
-            difficulty: row.difficulty || 'medium',
-            isUserSuggestion: true
-          });
-        } else {
-          // For standard words, ensure the word still exists in the word files
-          try {
-            const wordInfo = await getWordInfoFromLists(row.word);
-            
-            if (wordInfo) {
-              // Word exists in word lists
-              resolve(wordInfo);
-            } else {
-              // Word no longer exists in word lists
-              resolve(null);
-            }
-          } catch (error) {
-            // Error checking word lists
-            logger.error(`Error checking word lists for "${row.word}":`, error);
+      if (!row) {
+        // No words found that others have rated but this user hasn't
+        resolve(null);
+        return;
+      }
+      
+      // Check if this is a standard word or a suggestion
+      const isSuggestion = row.word_id.startsWith('suggested_');
+      
+      if (isSuggestion) {
+        // For suggestions, we already have all the info
+        resolve({
+          word: row.word,
+          id: row.word_id,
+          difficulty: row.difficulty || 'medium',
+          isUserSuggestion: true
+        });
+      } else {
+        // For standard words, ensure the word still exists in the word files
+        try {
+          const wordInfo = await getWordInfoFromLists(row.word);
+          
+          if (wordInfo) {
+            // Word exists in word lists
+            resolve(wordInfo);
+          } else {
+            // Word no longer exists in word lists
             resolve(null);
           }
+        } catch (error) {
+          // Error checking word lists
+          logger.error(`Error checking word lists for "${row.word}":`, error);
+          resolve(null);
         }
-      });
+      }
     });
-  }
+  });
+}
+
+  // Add this new function to ratingsManager.js
+
+/**
+ * Get words where the user's rating differs from the majority opinion
+ * This is useful when a user has rated all words, to show them words
+ * where they might want to reconsider their rating
+ * 
+ * @param {number} userId - The current user's ID
+ * @returns {Promise<object|null>} Word object or null if no matching words
+ */
+async function getWordWithDifferingOpinion(userId) {
+  return new Promise((resolve, reject) => {
+    // This query finds words where the user's rating differs from the most common rating
+    const query = `
+      WITH user_ratings AS (
+        SELECT word, rating FROM pictionary_word_ratings WHERE user_id = ?
+      ),
+      majority_ratings AS (
+        SELECT 
+          word, 
+          rating as majority_rating,
+          COUNT(*) as count
+        FROM 
+          pictionary_word_ratings
+        WHERE 
+          word IN (SELECT word FROM user_ratings)
+        GROUP BY 
+          word, rating
+      ),
+      top_ratings AS (
+        SELECT 
+          word,
+          majority_rating,
+          MAX(count) as max_count
+        FROM 
+          majority_ratings
+        GROUP BY 
+          word
+      )
+      SELECT 
+        ur.word,
+        ur.rating as user_rating,
+        tr.majority_rating,
+        r.word_id
+      FROM 
+        user_ratings ur
+      JOIN 
+        top_ratings tr ON ur.word = tr.word
+      JOIN 
+        pictionary_word_ratings r ON r.word = ur.word
+      WHERE 
+        ur.rating != tr.majority_rating
+      GROUP BY 
+        ur.word
+      ORDER BY 
+        RANDOM()
+      LIMIT 1
+    `;
+    
+    db.get(query, [userId], async (err, row) => {
+      if (err) {
+        reject(err);
+        return;
+      }
+      
+      if (!row) {
+        // No words found where user opinion differs
+        resolve(null);
+        return;
+      }
+
+      // Check if this is a standard word or a suggestion
+      const isSuggestion = row.word_id.startsWith('suggested_');
+      
+      if (isSuggestion) {
+        // For suggestions, return with flag
+        resolve({
+          word: row.word,
+          id: row.word_id,
+          isUserSuggestion: true,
+          differsFromMajority: true,
+          userRating: row.user_rating,
+          majorityRating: row.majority_rating
+        });
+      } else {
+        // For standard words, ensure it still exists
+        try {
+          const wordInfo = await getWordInfoFromLists(row.word);
+          
+          if (wordInfo) {
+            // Add differing opinion information
+            wordInfo.differsFromMajority = true;
+            wordInfo.userRating = row.user_rating;
+            wordInfo.majorityRating = row.majority_rating;
+            resolve(wordInfo);
+          } else {
+            resolve(null);
+          }
+        } catch (error) {
+          logger.error(`Error checking word lists for "${row.word}":`, error);
+          resolve(null);
+        }
+      }
+    });
+  });
+}
 
 module.exports = { 
   checkWordExists,
@@ -532,5 +647,6 @@ module.exports = {
   getRandomWordWithPreference,
   getRandomRegularWord,
   getOtherUserSuggestion,
-  getWordRatedByOthersButNotUser
+  getWordRatedByOthersButNotUser,
+  getWordWithDifferingOpinion
 }

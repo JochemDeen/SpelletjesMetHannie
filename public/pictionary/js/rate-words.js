@@ -20,6 +20,11 @@ document.addEventListener('DOMContentLoaded', () => {
   // Load a random word to rate
   async function loadRandomWord() {
     wordToRate.textContent = 'Laden...';
+    // Remove any existing message elements
+    const existingMessage = document.getElementById('rating-message');
+    if (existingMessage) {
+      existingMessage.remove();
+    }
     
     try {
       const response = await fetch('/api/pictionary/random-word-to-rate');
@@ -32,19 +37,72 @@ document.addEventListener('DOMContentLoaded', () => {
       
       if (data.success) {
         currentWord = data.word;
-        currentWordId = data.word_id; // If the backend provides an ID
+        currentWordId = data.word_id;
         wordToRate.textContent = currentWord;
+        
         // If we're showing words the user hasn't seen, add this to the seen set
         seenWords.add(currentWord);
+        
+        // Handle the case where all words have been rated
+        if (data.allWordsRated) {
+          // Create a message element
+          const messageDiv = document.createElement('div');
+          messageDiv.id = 'rating-message';
+          messageDiv.className = 'info-message';
+          
+          // Style the message
+          messageDiv.style.marginTop = '10px';
+          messageDiv.style.padding = '8px 12px';
+          messageDiv.style.borderRadius = '4px';
+          messageDiv.style.fontSize = '14px';
+          messageDiv.style.textAlign = 'center';
+          
+          if (data.differsFromMajority) {
+            // This is a word where the user's opinion differs from the majority
+            // but we don't show the actual ratings to avoid bias
+            messageDiv.style.backgroundColor = '#d1ecf1';
+            messageDiv.style.border = '1px solid #bee5eb';
+            messageDiv.style.color = '#0c5460';
+            
+            messageDiv.innerHTML = `
+              <i class="fas fa-sync-alt"></i>
+              Je hebt alle woorden al beoordeeld! We laten je nu woorden zien die je eerder hebt beoordeeld.
+            `;
+          } else {
+            // All words rated message for random words
+            messageDiv.style.backgroundColor = '#d4edda';
+            messageDiv.style.border = '1px solid #c3e6cb';
+            messageDiv.style.color = '#155724';
+            
+            messageDiv.innerHTML = `
+              <i class="fas fa-check-circle"></i>
+              Je hebt alle woorden beoordeeld! Je kunt ze opnieuw beoordelen of nieuwe woorden voorstellen.
+            `;
+          }
+          
+          // Add the message below the word card
+          const wordCard = document.querySelector('.word-card');
+          wordCard.parentNode.insertBefore(messageDiv, wordCard.nextSibling);
+        }
       } else {
         throw new Error(data.error || 'Error loading word');
       }
     } catch (error) {
       console.error('Error loading random word:', error);
-      
+      wordToRate.textContent = 'Fout bij het laden van woord';
     }
   }
-  
+
+  // Helper function to translate rating codes to Dutch text
+  function translateRating(rating) {
+    switch(rating) {
+      case 'easy': return 'Gemakkelijk';
+      case 'medium': return 'Gemiddeld';
+      case 'hard': return 'Moeilijk';
+      case 'drop': return 'Verwijderen';
+      default: return rating;
+    }
+  }
   // Submit a rating for the current word
   async function submitRating(rating) {
     if (!currentWord) return;
