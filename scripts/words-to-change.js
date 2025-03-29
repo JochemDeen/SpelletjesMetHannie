@@ -4,7 +4,7 @@ const wordAdmin = require('../utils/wordAdmin');
 async function reviewDifficultyChanges() {
   try {
     console.log('Fetching words that might need difficulty changes...');
-    const words = await wordAdmin.getWordsToChangeDifficulty(5, 60); // 5+ ratings, 60% threshold
+    const words = await wordAdmin.getWordsToChangeDifficulty(3, 60); // 5+ ratings, 60% threshold
     
     if (words.length === 0) {
       console.log('No words with enough ratings to consider changing difficulty.');

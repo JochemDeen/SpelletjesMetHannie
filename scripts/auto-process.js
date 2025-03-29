@@ -1,28 +1,36 @@
 // scripts/auto-process.js
 const wordAdmin = require('../utils/wordAdmin');
 
-// Threshold constants
-const MIN_RATINGS = 4;           // Minimum number of ratings to consider
-const CONSENSUS_THRESHOLD = 70;  // Percentage required for auto-processing
-const DROP_THRESHOLD = 60;       // Percentage of drop ratings to auto-reject
+// Default threshold constants
+const DEFAULT_MIN_RATINGS = 4;
+const DEFAULT_CONSENSUS_THRESHOLD = 70;
+const DEFAULT_DROP_THRESHOLD = 60;
 
 async function autoProcessWords() {
+  // Parse command line arguments for thresholds
+  const args = parseCommandLineArgs();
+  
+  // Set thresholds based on arguments or defaults
+  const minRatings = args.minRatings || DEFAULT_MIN_RATINGS;
+  const consensusThreshold = args.consensusThreshold || DEFAULT_CONSENSUS_THRESHOLD;
+  const dropThreshold = args.dropThreshold || DEFAULT_DROP_THRESHOLD;
+  
   try {
     console.log('===== AUTO-PROCESSING WORDS =====');
     console.log('Processing words with high consensus automatically...');
-    console.log('Minimum ratings required: ' + MIN_RATINGS);
-    console.log('Consensus threshold: ' + CONSENSUS_THRESHOLD + '%');
-    console.log('Drop threshold: ' + DROP_THRESHOLD + '%');
+    console.log('Minimum ratings required: ' + minRatings);
+    console.log('Consensus threshold: ' + consensusThreshold + '%');
+    console.log('Drop threshold: ' + dropThreshold + '%');
     console.log('==================================');
     
     // 1. Auto-process suggestions
-    await autoProcessSuggestions();
+    await autoProcessSuggestions(minRatings, consensusThreshold, dropThreshold);
     
     // 2. Auto-process words to change difficulty
-    await autoProcessDifficultyChanges();
+    await autoProcessDifficultyChanges(minRatings, consensusThreshold);
     
     // 3. Auto-process words to remove
-    await autoProcessWordsToRemove();
+    await autoProcessWordsToRemove(minRatings, dropThreshold);
     
     console.log('Auto-processing complete!');
     
@@ -33,12 +41,12 @@ async function autoProcessWords() {
   }
 }
 
-async function autoProcessSuggestions() {
+async function autoProcessSuggestions(minRatings, consensusThreshold, dropThreshold) {
   console.log('\n== Processing Suggestions ==');
   
   try {
     // Get all suggestions with enough ratings
-    const suggestions = await wordAdmin.getSuggestionsForReview(MIN_RATINGS);
+    const suggestions = await wordAdmin.getSuggestionsForReview(minRatings);
     
     if (suggestions.length === 0) {
       console.log('No suggestions with enough ratings to process.');
@@ -52,7 +60,7 @@ async function autoProcessSuggestions() {
       const dropPercentage = (suggestion.drop_count / suggestion.rating_count * 100);
       
       // If high drop percentage, auto-reject
-      if (dropPercentage >= DROP_THRESHOLD) {
+      if (dropPercentage >= dropThreshold) {
         console.log(`Auto-rejecting "${suggestion.word}" (${dropPercentage.toFixed(1)}% drop ratings)`);
         await wordAdmin.rejectSuggestion(suggestion.id);
         processedCount++;
@@ -71,7 +79,7 @@ async function autoProcessSuggestions() {
       const topPercentage = (ratings[0].count / suggestion.rating_count * 100);
       
       // If there's strong consensus, auto-accept
-      if (topPercentage >= CONSENSUS_THRESHOLD) {
+      if (topPercentage >= consensusThreshold) {
         console.log(`Auto-accepting "${suggestion.word}" as ${topDifficulty} (${topPercentage.toFixed(1)}% consensus)`);
         await wordAdmin.acceptSuggestion(suggestion.id, topDifficulty);
         processedCount++;
@@ -87,12 +95,12 @@ async function autoProcessSuggestions() {
   }
 }
 
-async function autoProcessDifficultyChanges() {
+async function autoProcessDifficultyChanges(minRatings, consensusThreshold) {
   console.log('\n== Processing Difficulty Changes ==');
   
   try {
     // Get words that might need difficulty changes
-    const words = await wordAdmin.getWordsToChangeDifficulty(MIN_RATINGS, CONSENSUS_THRESHOLD);
+    const words = await wordAdmin.getWordsToChangeDifficulty(minRatings, consensusThreshold);
     
     if (words.length === 0) {
       console.log('No words with enough ratings to change difficulty.');
@@ -125,12 +133,12 @@ async function autoProcessDifficultyChanges() {
   }
 }
 
-async function autoProcessWordsToRemove() {
+async function autoProcessWordsToRemove(minRatings, dropThreshold) {
   console.log('\n== Processing Words to Remove ==');
   
   try {
     // Get words that might need to be removed (high drop ratings)
-    const words = await wordAdmin.getWordsToRemove(MIN_RATINGS);
+    const words = await wordAdmin.getWordsToRemove(minRatings);
     
     if (words.length === 0) {
       console.log('No words with enough drop ratings to remove.');
@@ -142,7 +150,7 @@ async function autoProcessWordsToRemove() {
     
     for (const word of words) {
       // Only auto-remove if drop percentage is above threshold
-      if (word.drop_percentage >= DROP_THRESHOLD) {
+      if (word.drop_percentage >= dropThreshold) {
         console.log(`Auto-removing "${word.word}" (${word.drop_percentage.toFixed(1)}% drop ratings)`);
         const removed = await wordAdmin.removeWord(word.word);
         
@@ -161,6 +169,26 @@ async function autoProcessWordsToRemove() {
   } catch (error) {
     console.error('Error processing words to remove:', error);
   }
+}
+
+function parseCommandLineArgs() {
+  const args = {
+    minRatings: null,
+    consensusThreshold: null,
+    dropThreshold: null
+  };
+  
+  process.argv.slice(2).forEach(arg => {
+    if (arg.startsWith('--min-ratings=')) {
+      args.minRatings = parseInt(arg.split('=')[1]);
+    } else if (arg.startsWith('--consensus=')) {
+      args.consensusThreshold = parseInt(arg.split('=')[1]);
+    } else if (arg.startsWith('--drop=')) {
+      args.dropThreshold = parseInt(arg.split('=')[1]);
+    }
+  });
+  
+  return args;
 }
 
 autoProcessWords();

@@ -1,0 +1,80 @@
+==================================================================
+          PICTIONARY WORD DASHBOARD DOCUMENTATION
+==================================================================
+
+OVERVIEW
+------------------------------------------------------------------
+The Word Dashboard is a unified script that combines the functionality
+of reviewing suggestions, monitoring difficulty changes, and managing
+word removals. It also provides comprehensive statistics about your
+word database.
+
+INSTALLATION
+------------------------------------------------------------------
+1. Ensure the word-dashboard.js script is in your scripts directory
+2. The getWordStatistics function is already in your wordAdmin.js module
+3. Make sure your database is properly set up with the required tables
+
+USAGE
+------------------------------------------------------------------
+Run the dashboard with default thresholds:
+  node scripts/word-dashboard.js
+
+Run with custom thresholds:
+  node scripts/word-dashboard.js --min-ratings=4 --consensus=60 --drop=70
+
+COMMAND LINE ARGUMENTS
+------------------------------------------------------------------
+--min-ratings=N   Minimum number of ratings required for consideration
+                  Default: 3
+                  
+--consensus=N     Percentage required for consensus on difficulty
+                  Default: 50%
+                  
+--drop=N          Percentage required for recommending word removal
+                  Default: 50%
+
+DASHBOARD SECTIONS
+------------------------------------------------------------------
+1. SUMMARY STATISTICS
+   Displays comprehensive statistics about your Pictionary word database:
+   - Total word counts (by difficulty level)
+   - User and rating statistics
+   - Rating distribution
+   - Most rated words
+   - Unrated words
+
+2. SUGGESTIONS TO REVIEW
+   Displays user-suggested words that have received enough ratings:
+   - Word and suggested difficulty
+   - Rating breakdown (easy, medium, hard, drop)
+   - Recommendation based on configured thresholds
+   - Command to execute the recommendation
+
+3. DIFFICULTY CHANGES TO REVIEW
+   Displays existing words that might need their difficulty changed:
+   - Current word difficulty
+   - Rating breakdown
+   - Recommended new difficulty level
+   - Command to execute the change
+
+4. WORDS TO REMOVE
+   Displays words that users have frequently requested to be removed:
+   - Current word difficulty
+   - Drop rating percentage
+   - Recommendation based on configured thresholds
+   - Command to execute the removal
+
+5. COMMAND REFERENCE
+   The dashboard concludes with a comprehensive command reference
+
+INTEGRATION WITH AUTO-PROCESS SCRIPT
+------------------------------------------------------------------
+To automate word processing based on the dashboard recommendations:
+  node scripts/auto-process.js
+
+The auto-process.js script now accepts the same threshold parameters
+as the dashboard:
+  node scripts/auto-process.js --min-ratings=4 --consensus=60 --drop=70
+
+==================================================================

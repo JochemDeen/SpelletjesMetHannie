@@ -404,6 +404,112 @@ function getWordsToChangeDifficulty(minRatings = 5, thresholdPercentage = 60) {
   });
 }
 
+/**
+ * Get comprehensive statistics about the Pictionary words database
+ * @returns {Object} Statistics object with various metrics
+ */
+async function getWordStatistics() {
+  try {
+    // Initialize statistics object
+    const stats = {
+      totalWords: 0,
+      easyWords: 0,
+      mediumWords: 0,
+      hardWords: 0,
+      pendingSuggestions: 0,
+      totalRatings: 0,
+      uniqueRaters: 0,
+      easyRatings: 0,
+      mediumRatings: 0,
+      hardRatings: 0,
+      dropRatings: 0,
+      averageRatingsPerWord: 0,
+      unratedWords: 0,
+      mostRatedWord: { word: '', count: 0 }
+    };
+    
+    // Get word counts by difficulty
+    const wordCountQuery = `
+      SELECT 
+        COUNT(*) as total,
+        SUM(CASE WHEN difficulty = 'easy' THEN 1 ELSE 0 END) as easy_count,
+        SUM(CASE WHEN difficulty = 'medium' THEN 1 ELSE 0 END) as medium_count,
+        SUM(CASE WHEN difficulty = 'hard' THEN 1 ELSE 0 END) as hard_count
+      FROM pictionary_words
+    `;
+    const wordCounts = await db.get(wordCountQuery);
+    
+    stats.totalWords = wordCounts.total;
+    stats.easyWords = wordCounts.easy_count;
+    stats.mediumWords = wordCounts.medium_count;
+    stats.hardWords = wordCounts.hard_count;
+    
+    // Get pending suggestions count
+    const pendingSuggestionsQuery = `
+      SELECT COUNT(*) as count
+      FROM pictionary_word_suggestions
+      WHERE status = 'pending'
+    `;
+    const pendingSuggestions = await db.get(pendingSuggestionsQuery);
+    stats.pendingSuggestions = pendingSuggestions.count;
+    
+    // Get rating statistics
+    const ratingStatsQuery = `
+      SELECT 
+        COUNT(*) as total_ratings,
+        COUNT(DISTINCT user_id) as unique_raters,
+        SUM(CASE WHEN rating = 'easy' THEN 1 ELSE 0 END) as easy_ratings,
+        SUM(CASE WHEN rating = 'medium' THEN 1 ELSE 0 END) as medium_ratings,
+        SUM(CASE WHEN rating = 'hard' THEN 1 ELSE 0 END) as hard_ratings,
+        SUM(CASE WHEN rating = 'drop' THEN 1 ELSE 0 END) as drop_ratings
+      FROM pictionary_word_ratings
+    `;
+    const ratingStats = await db.get(ratingStatsQuery);
+    
+    stats.totalRatings = ratingStats.total_ratings;
+    stats.uniqueRaters = ratingStats.unique_raters;
+    stats.easyRatings = ratingStats.easy_ratings;
+    stats.mediumRatings = ratingStats.medium_ratings;
+    stats.hardRatings = ratingStats.hard_ratings;
+    stats.dropRatings = ratingStats.drop_ratings;
+    
+    // Get unrated words count
+    const unratedQuery = `
+      SELECT COUNT(*) as count
+      FROM pictionary_words w
+      WHERE NOT EXISTS (
+        SELECT 1 FROM pictionary_word_ratings r
+        WHERE r.word = w.word
+      )
+    `;
+    const unratedStats = await db.get(unratedQuery);
+    stats.unratedWords = unratedStats.count;
+    
+    // Calculate average ratings per word
+    if (stats.totalWords > 0) {
+      stats.averageRatingsPerWord = stats.totalRatings / stats.totalWords;
+    }
+    
+    // Find most rated word
+    const mostRatedQuery = `
+      SELECT word, COUNT(*) as count
+      FROM pictionary_word_ratings
+      GROUP BY word
+      ORDER BY count DESC
+      LIMIT 1
+    `;
+    const mostRated = await db.get(mostRatedQuery);
+    if (mostRated) {
+      stats.mostRatedWord = { word: mostRated.word, count: mostRated.count };
+    }
+    
+    return stats;
+  } catch (error) {
+    console.error('Error getting word statistics:', error);
+    throw error;
+  }
+}
+
 module.exports = {
   addWord,
   removeWord,
@@ -412,5 +518,6 @@ module.exports = {
   acceptSuggestion,
   rejectSuggestion,
   getWordsToRemove,
-  getWordsToChangeDifficulty
+  getWordsToChangeDifficulty,
+  getWordStatistics
 };
