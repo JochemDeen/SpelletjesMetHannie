@@ -55,23 +55,50 @@ async function displaySummaryStatistics() {
     // Get statistics from wordAdmin
     const stats = await wordAdmin.getWordStatistics();
     
-    console.log(`Total words in database: ${stats.totalWords}`);
-    console.log(`  - Easy: ${stats.easyWords}`);
-    console.log(`  - Medium: ${stats.mediumWords}`);
-    console.log(`  - Hard: ${stats.hardWords}`);
-    console.log(`\nPending suggestions: ${stats.pendingSuggestions}`);
-    console.log(`Total users who have rated: ${stats.uniqueRaters}`);
-    console.log(`Total ratings submitted: ${stats.totalRatings}`);
-    console.log(`Average ratings per word: ${stats.averageRatingsPerWord.toFixed(1)}`);
-    console.log(`Words with no ratings: ${stats.unratedWords}`);
-    console.log(`Most rated word: "${stats.mostRatedWord.word}" (${stats.mostRatedWord.count} ratings)`);
+    if (!stats) {
+      console.log('Unable to retrieve statistics.');
+      return;
+    }
     
-    // Calculate distribution
+    // Use default values of 0 for any undefined stats
+    const {
+      totalWords = 0,
+      easyWords = 0,
+      mediumWords = 0,
+      hardWords = 0,
+      pendingSuggestions = 0,
+      uniqueRaters = 0,
+      totalRatings = 0,
+      easyRatings = 0,
+      mediumRatings = 0,
+      hardRatings = 0,
+      dropRatings = 0,
+      averageRatingsPerWord = 0,
+      unratedWords = 0,
+      mostRatedWord = { word: 'None', count: 0 }
+    } = stats;
+    
+    console.log(`Total words in database: ${totalWords || 0}`);
+    console.log(`  - Easy: ${easyWords || 0}`);
+    console.log(`  - Medium: ${mediumWords || 0}`);
+    console.log(`  - Hard: ${hardWords || 0}`);
+    console.log(`\nPending suggestions: ${pendingSuggestions || 0}`);
+    console.log(`Total users who have rated: ${uniqueRaters || 0}`);
+    console.log(`Total ratings submitted: ${totalRatings || 0}`);
+    console.log(`Average ratings per word: ${(averageRatingsPerWord || 0).toFixed(1)}`);
+    console.log(`Words with no ratings: ${unratedWords || 0}`);
+    
+    const wordStr = mostRatedWord && mostRatedWord.word ? mostRatedWord.word : 'None';
+    const countStr = mostRatedWord && mostRatedWord.count ? mostRatedWord.count : 0;
+    console.log(`Most rated word: "${wordStr}" (${countStr} ratings)`);
+    
+    // Calculate distribution (avoid division by zero)
     console.log('\nRating distribution:');
-    console.log(`  - Easy ratings: ${stats.easyRatings} (${(stats.easyRatings / stats.totalRatings * 100).toFixed(1)}%)`);
-    console.log(`  - Medium ratings: ${stats.mediumRatings} (${(stats.mediumRatings / stats.totalRatings * 100).toFixed(1)}%)`);
-    console.log(`  - Hard ratings: ${stats.hardRatings} (${(stats.hardRatings / stats.totalRatings * 100).toFixed(1)}%)`);
-    console.log(`  - Drop ratings: ${stats.dropRatings} (${(stats.dropRatings / stats.totalRatings * 100).toFixed(1)}%)`);
+    const total = totalRatings || 1; // Avoid division by zero
+    console.log(`  - Easy ratings: ${easyRatings || 0} (${((easyRatings || 0) / total * 100).toFixed(1)}%)`);
+    console.log(`  - Medium ratings: ${mediumRatings || 0} (${((mediumRatings || 0) / total * 100).toFixed(1)}%)`);
+    console.log(`  - Hard ratings: ${hardRatings || 0} (${((hardRatings || 0) / total * 100).toFixed(1)}%)`);
+    console.log(`  - Drop ratings: ${dropRatings || 0} (${((dropRatings || 0) / total * 100).toFixed(1)}%)`);
     
   } catch (error) {
     console.error('Error fetching statistics:', error);
@@ -86,7 +113,7 @@ async function reviewSuggestions(minRatings, consensusThreshold, dropThreshold) 
     
     const suggestions = await wordAdmin.getSuggestionsForReview(minRatings);
     
-    if (suggestions.length === 0) {
+    if (!suggestions || suggestions.length === 0) {
       console.log('No suggestions with enough ratings to review.');
       return;
     }
@@ -95,16 +122,31 @@ async function reviewSuggestions(minRatings, consensusThreshold, dropThreshold) 
     console.log('------------------------------------------------------');
     
     suggestions.forEach((suggestion, index) => {
-      const dropPercentage = (suggestion.drop_count / suggestion.rating_count * 100).toFixed(1);
+      const ratingCount = suggestion.rating_count || 0;
+      const dropPercentage = ratingCount > 0 
+        ? ((suggestion.drop_count || 0) / ratingCount * 100).toFixed(1)
+        : '0.0';
       
       console.log(`${index + 1}. "${suggestion.word}" (Suggested as: ${suggestion.suggested_difficulty})`);
       console.log(`   ID: ${suggestion.id}`);
-      console.log(`   Ratings: ${suggestion.rating_count} total`);
-      console.log(`   Easy: ${suggestion.easy_count} (${(suggestion.easy_count / suggestion.rating_count * 100).toFixed(1)}%)`);
-      console.log(`   Medium: ${suggestion.medium_count} (${(suggestion.medium_count / suggestion.rating_count * 100).toFixed(1)}%)`);
-      console.log(`   Hard: ${suggestion.hard_count} (${(suggestion.hard_count / suggestion.rating_count * 100).toFixed(1)}%)`);
-      console.log(`   Drop: ${suggestion.drop_count} (${dropPercentage}%)`);
-      console.log(`   Times shown: ${suggestion.used_count}`);
+      console.log(`   Ratings: ${ratingCount} total`);
+      
+      // Calculate percentages safely (avoid division by zero)
+      const easyPercent = ratingCount > 0 
+        ? ((suggestion.easy_count || 0) / ratingCount * 100).toFixed(1) 
+        : '0.0';
+      const mediumPercent = ratingCount > 0 
+        ? ((suggestion.medium_count || 0) / ratingCount * 100).toFixed(1) 
+        : '0.0';
+      const hardPercent = ratingCount > 0 
+        ? ((suggestion.hard_count || 0) / ratingCount * 100).toFixed(1) 
+        : '0.0';
+      
+      console.log(`   Easy: ${suggestion.easy_count || 0} (${easyPercent}%)`);
+      console.log(`   Medium: ${suggestion.medium_count || 0} (${mediumPercent}%)`);
+      console.log(`   Hard: ${suggestion.hard_count || 0} (${hardPercent}%)`);
+      console.log(`   Drop: ${suggestion.drop_count || 0} (${dropPercentage}%)`);
+      console.log(`   Times shown: ${suggestion.used_count || 0}`);
       
       // Recommendation
       let recommendedDifficulty = null;
@@ -118,15 +160,17 @@ async function reviewSuggestions(minRatings, consensusThreshold, dropThreshold) 
       } else {
         // Find the highest rated difficulty
         const ratings = [
-          { difficulty: 'easy', count: suggestion.easy_count },
-          { difficulty: 'medium', count: suggestion.medium_count },
-          { difficulty: 'hard', count: suggestion.hard_count }
+          { difficulty: 'easy', count: suggestion.easy_count || 0 },
+          { difficulty: 'medium', count: suggestion.medium_count || 0 },
+          { difficulty: 'hard', count: suggestion.hard_count || 0 }
         ];
         
         ratings.sort((a, b) => b.count - a.count);
         recommendedDifficulty = ratings[0].difficulty;
         
-        const topPercentage = (ratings[0].count / suggestion.rating_count * 100).toFixed(1);
+        const topPercentage = ratingCount > 0 
+          ? (ratings[0].count / ratingCount * 100).toFixed(1)
+          : '0.0';
         
         if (parseFloat(topPercentage) >= consensusThreshold) {
           console.log(`   RECOMMENDATION: Accept as ${recommendedDifficulty} (${topPercentage}% consensus)`);
@@ -154,7 +198,7 @@ async function reviewDifficultyChanges(minRatings, consensusThreshold) {
     
     const words = await wordAdmin.getWordsToChangeDifficulty(minRatings, consensusThreshold);
     
-    if (words.length === 0) {
+    if (!words || words.length === 0) {
       console.log('No words with enough ratings to consider changing difficulty.');
       return;
     }
@@ -164,12 +208,18 @@ async function reviewDifficultyChanges(minRatings, consensusThreshold) {
     
     words.forEach((word, index) => {
       console.log(`${index + 1}. "${word.word}" (Currently: ${word.current_difficulty})`);
-      console.log(`   Ratings: ${word.total_ratings} total`);
-      console.log(`   Easy: ${word.easy_count} (${word.easy_percentage.toFixed(1)}%)`);
-      console.log(`   Medium: ${word.medium_count} (${word.medium_percentage.toFixed(1)}%)`);
-      console.log(`   Hard: ${word.hard_count} (${word.hard_percentage.toFixed(1)}%)`);
+      console.log(`   Ratings: ${word.total_ratings || 0} total`);
+      
+      // Safely access percentage values
+      const easyPercent = word.easy_percentage ? word.easy_percentage.toFixed(1) : '0.0';
+      const mediumPercent = word.medium_percentage ? word.medium_percentage.toFixed(1) : '0.0';
+      const hardPercent = word.hard_percentage ? word.hard_percentage.toFixed(1) : '0.0';
+      
+      console.log(`   Easy: ${word.easy_count || 0} (${easyPercent}%)`);
+      console.log(`   Medium: ${word.medium_count || 0} (${mediumPercent}%)`);
+      console.log(`   Hard: ${word.hard_count || 0} (${hardPercent}%)`);
       console.log(`   RECOMMENDATION: Change to ${word.recommended_difficulty}`);
-      console.log(`   Reason: ${word.change_reason}`);
+      console.log(`   Reason: ${word.change_reason || "High consensus for different difficulty"}`);
       console.log(`   Run: node scripts/change-difficulty.js "${word.word}" ${word.current_difficulty} ${word.recommended_difficulty}`);
       console.log('------------------------------------------------------');
     });
@@ -186,7 +236,7 @@ async function reviewWordsToRemove(minRatings, dropThreshold) {
     
     const words = await wordAdmin.getWordsToRemove(minRatings);
     
-    if (words.length === 0) {
+    if (!words || words.length === 0) {
       console.log('No words with enough drop ratings to consider removing.');
       return;
     }
@@ -198,10 +248,13 @@ async function reviewWordsToRemove(minRatings, dropThreshold) {
     
     words.forEach((word, index) => {
       console.log(`${index + 1}. "${word.word}"`);
-      console.log(`   Current difficulty: ${word.difficulty}`);
-      console.log(`   Drop ratings: ${word.drop_count}/${word.total_ratings} (${word.drop_percentage.toFixed(1)}%)`);
+      console.log(`   Current difficulty: ${word.difficulty || "Unknown"}`);
       
-      if (word.drop_percentage >= dropThreshold) {
+      const dropPercent = word.drop_percentage ? word.drop_percentage.toFixed(1) : '0.0';
+      console.log(`   Drop ratings: ${word.drop_count || 0}/${word.total_ratings || 0} (${dropPercent}%)`);
+      
+      const dropPercentValue = parseFloat(dropPercent);
+      if (dropPercentValue >= dropThreshold) {
         console.log(`   RECOMMENDATION: Remove this word (exceeds ${dropThreshold}% threshold)`);
         console.log(`   Run: node scripts/remove-word.js "${word.word}"`);
         wordsToRemove++;
