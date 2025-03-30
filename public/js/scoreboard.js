@@ -173,7 +173,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     function getMonthName(month) {
         const [year, monthNumber] = month.split('-');
         const date = new Date(year, monthNumber - 1);
-        return date.toLocaleString('en-US', { month: 'long', year: 'numeric' });
+        return date.toLocaleString('nl-NL', { month: 'long', year: 'numeric' });
     }
 });
 
