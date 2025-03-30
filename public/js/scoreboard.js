@@ -165,7 +165,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   }
     function getPreviousMonth() {
       const date = new Date();
-      date.setMonth(date.getMonth() - 1);
+      date.setDate(0); // Set to the last day of the previous month
       return date.toISOString().slice(0, 7);
     }
     
