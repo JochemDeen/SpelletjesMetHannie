@@ -1,5 +1,4 @@
-//import axios from 'axios';
-
+//public/pictionary/js/pictionary.js
 const titles = {
     DRAW: "Teken je woord!",
     CHOOSE: "Kies een moeilijkheidsgraad!",
@@ -108,54 +107,115 @@ function hideAllContainers() {
   }
 
 
+// Replace this section in pictionary.js (around line 218-235)
+
 const handleDraw = async () => {
-    const canvas = document.getElementById("drawing-canvas");
-    const canvasRef = { current: canvas };
-    const wordTitleEl = document.getElementById("draw-word-title");
-    const finishButton = document.getElementById("finish-drawing");
-    finishButton.disabled = false; // enable at start
-  
-    try{
-    // 1. Start the drawing session and get the countdown duration
-    const startResponse = await axios.post('/api/pictionary/start-drawing');
+  const canvas = document.getElementById("drawing-canvas");
+  const canvasRef = { current: canvas };
+  const wordTitleEl = document.getElementById("draw-word-title");
+  const finishButton = document.getElementById("finish-drawing");
+  finishButton.disabled = false; // enable at start
 
-    if (startResponse.status !== 200) {
-      throw new Error('Failed to initialize drawing session.');
-    }
+  try {
+      // 1. Start the drawing session and get the countdown duration
+      const startResponse = await axios.post('/api/pictionary/start-drawing');
 
-    const countdownDuration = startResponse.data.countdown; // Duration in seconds
-    const wordToDraw = startResponse.data.word;
+      if (startResponse.status !== 200) {
+          throw new Error('Failed to initialize drawing session.');
+      }
 
-    wordTitleEl.innerHTML = `Teken een <span class="highlight-word">${wordToDraw}</span>, je hebt ${countdownDuration} seconden`;
-    console.log(`Countdown started: ${countdownDuration} seconds`);
-  
-    // 2. Start the timer and enable the canvas for drawing
-    const { timerBar, timerInterval } = startCountdown(countdownDuration);
+      const countdownDuration = startResponse.data.countdown; // Duration in seconds
+      const wordToDraw = startResponse.data.word;
 
-    enableDrawing(canvasRef);
+      wordTitleEl.innerHTML = `Teken een <span class="highlight-word">${wordToDraw}</span>, je hebt ${countdownDuration} seconden`;
+      console.log(`Countdown started: ${countdownDuration} seconds`);
+    
+      // 2. Start the timer and enable the canvas for drawing
+      const { timerBar, timerInterval } = startCountdown(countdownDuration);
 
-    finishButton.addEventListener("click", () => {
-        finishButton.disabled = true;
-        disableDrawing(canvasRef);
-        disableColors();
+      enableDrawing(canvasRef);
 
-        clearInterval(timerInterval);
-        console.log("Done button clicked. Drawing disabled, timer frozen.")
-        // If you want to submit right away:
-        submitDrawing(canvasRef, timerBar);
+      finishButton.addEventListener("click", async () => {
+          finishButton.disabled = true;
+          disableDrawing(canvasRef);
+          disableColors();
+          clearInterval(timerInterval);
+          
+          console.log("Done button clicked. Drawing disabled, timer frozen.");
+          // Submit the drawing
+          await submitDrawing(canvasRef, timerBar);
       });
 
-    // 3. When the countdown finishes, submit the drawing automatically
-    setTimeout(async () => {
-        finishButton.disabled = true;
-        disableDrawing(canvasRef);
-        disableColors();
-        console.log("Time's up – disabled drawing and button.");
-  
-      await submitDrawing(canvasRef, timerBar);
-    }, countdownDuration * 1000);
+      // 3. When the countdown finishes, submit the drawing automatically
+      setTimeout(async () => {
+          console.log("Time's up – disabled drawing and button.");
+          finishButton.disabled = true;
+          disableDrawing(canvasRef);
+          disableColors();
+          clearInterval(timerInterval);
+          
+          // Make sure this runs by adding await and proper error handling
+          try {
+              await submitDrawing(canvasRef, timerBar);
+          } catch (submitError) {
+              console.error("Error submitting drawing on timeout:", submitError);
+              // Attempt to refresh state even if submission failed
+              const newState = await fetchGameState();
+              handleGameState(newState);
+          }
+      }, countdownDuration * 1000);
   } catch (error) {
-    console.error('Error in handleDraw:', error.message);
+      console.error('Error in handleDraw:', error.message);
+      // Try to recover by fetching current state
+      try {
+          const newState = await fetchGameState();
+          handleGameState(newState);
+      } catch (stateError) {
+          console.error('Failed to recover game state:', stateError);
+      }
+  }
+};
+
+// Also update the submitDrawing function to be more robust:
+const submitDrawing = async (canvasRef, timerBar) => {
+  try {
+      // Stop the timer bar
+      if (timerBar) {
+          timerBar.style.width = '0%';
+      }
+  
+      // Extract the drawing from the canvas as a base64 string
+      const canvas = canvasRef.current;
+      const drawingData = exportCanvasWithWhiteBackground(canvas);
+  
+      const payload = {
+          drawing: drawingData,
+          timestamp: new Date().toISOString(),
+      };
+  
+      console.log('Submitting drawing to server...');
+      // Send the drawing to the backend
+      const response = await axios.post('/api/pictionary/submit-drawing', payload);
+  
+      if (response.status === 200) {
+          console.log('Drawing submitted successfully:', response.data);
+          // Refresh game state after submission
+          const newState = await fetchGameState();
+          handleGameState(newState);
+      } else {
+          console.warn('Unexpected response while submitting drawing:', response);
+          throw new Error(`Unexpected response: ${response.status}`);
+      }
+  } catch (error) {
+      console.error('Error submitting drawing:', error.message);
+      // Still try to update game state
+      try {
+          const newState = await fetchGameState();
+          handleGameState(newState);
+      } catch (stateError) {
+          console.error('Failed to recover after drawing submission error:', stateError);
+      }
+      throw error; // Re-throw to allow caller to handle
   }
 };
 
@@ -591,37 +651,6 @@ function startCountdown(duration) {
     // Export the resulting image as a data URL
     return tempCanvas.toDataURL('image/png');
   }
-
-  const submitDrawing = async (canvasRef, timerBar) => {
-    try {
-      // Stop the timer bar
-      timerBar.style.width = '0%';
-    
-      // Extract the drawing from the canvas as a base64 string
-      const canvas = canvasRef.current;
-      const drawingData = exportCanvasWithWhiteBackground(canvas);
-    
-      const payload = {
-        drawing: drawingData,  // Send the drawing data under the key 'drawing'
-        timestamp: new Date().toISOString(), // optional if needed
-      };
-    
-      // Send the drawing to the backend
-      const response = await axios.post('/api/pictionary/submit-drawing', payload);
-    
-      if (response.status === 200) {
-        console.log('Drawing submitted successfully:', response.data);
-        // 🔄 Refresh game state after submission
-        const newState = await fetchGameState();
-        handleGameState(newState);
-        
-      } else {
-        console.warn('Unexpected response while submitting drawing:', response);
-      }
-    } catch (error) {
-      console.error('Error submitting drawing:', error.message);
-    }
-  };
 
   async function handleChoose() {
     try {
