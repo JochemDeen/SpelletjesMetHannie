@@ -107,16 +107,22 @@ function hideAllContainers() {
   }
 
 
-// Replace this section in pictionary.js (around line 218-235)
+let isDrawingSessionStarting = false;
 
 const handleDraw = async () => {
   const canvas = document.getElementById("drawing-canvas");
   const canvasRef = { current: canvas };
   const wordTitleEl = document.getElementById("draw-word-title");
   const finishButton = document.getElementById("finish-drawing");
-  finishButton.disabled = false; // enable at start
+  if (isDrawingSessionStarting) {
+    console.log("Drawing session already starting, ignoring duplicate call");
+    return;
+  }
 
   try {
+    isDrawingSessionStarting = true;
+    finishButton.disabled = false;
+
       // 1. Start the drawing session and get the countdown duration
       const startResponse = await axios.post('/api/pictionary/start-drawing');
 
@@ -144,28 +150,33 @@ const handleDraw = async () => {
           console.log("Done button clicked. Drawing disabled, timer frozen.");
           // Submit the drawing
           await submitDrawing(canvasRef, timerBar);
-      });
+        }, { once: true }); // Add the once: true option
 
       // 3. When the countdown finishes, submit the drawing automatically
       setTimeout(async () => {
           console.log("Time's up – disabled drawing and button.");
-          finishButton.disabled = true;
-          disableDrawing(canvasRef);
-          disableColors();
-          clearInterval(timerInterval);
+          if (!finishButton.disabled) {
+            finishButton.disabled = true;
+            disableDrawing(canvasRef);
+            disableColors();
+            clearInterval(timerInterval);
           
-          // Make sure this runs by adding await and proper error handling
-          try {
-              await submitDrawing(canvasRef, timerBar);
-          } catch (submitError) {
-              console.error("Error submitting drawing on timeout:", submitError);
-              // Attempt to refresh state even if submission failed
-              const newState = await fetchGameState();
-              handleGameState(newState);
+            // Make sure this runs by adding await and proper error handling
+            try {
+                await submitDrawing(canvasRef, timerBar);
+            } catch (submitError) {
+                console.error("Error submitting drawing on timeout:", submitError);
+                // Attempt to refresh state even if submission failed
+                const newState = await fetchGameState();
+                handleGameState(newState);
+            }
           }
       }, countdownDuration * 1000);
+    isDrawingSessionStarting = false;
   } catch (error) {
       console.error('Error in handleDraw:', error.message);
+      isDrawingSessionStarting = false; // Reset flag in case of error
+
       // Try to recover by fetching current state
       try {
           const newState = await fetchGameState();

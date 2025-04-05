@@ -6,7 +6,7 @@ const logger = require('../../logger');
 const db = require('../db'); 
 
 
-const DRAWING_TIMER_SECONDS = 180; // Duration in seconds
+const DRAWING_TIMER_SECONDS = 60; // Duration in seconds
 
 // Start the drawing phase by setting the drawing timer.
 // The game’s "drawing_completed_at" field is set to the time when drawing should end.

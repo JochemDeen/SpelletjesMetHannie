@@ -1,3 +1,4 @@
+//path: public/pictionary/js/past-game.js
 document.addEventListener("DOMContentLoaded", async function () {
     const urlParams = new URLSearchParams(window.location.search);
     let gameId = urlParams.get("game_id");

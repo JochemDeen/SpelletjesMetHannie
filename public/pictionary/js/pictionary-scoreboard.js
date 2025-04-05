@@ -1,3 +1,4 @@
+//public/pictionary/js/pictionary-scoreboard.js
 document.addEventListener('DOMContentLoaded', async () => {
     try {
         // Fetch last game score

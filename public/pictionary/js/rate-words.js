@@ -1,3 +1,4 @@
+//public/pictionary/js/rate-words.js
 document.addEventListener('DOMContentLoaded', () => {
   // DOM elements - Word Rating
   const wordToRate = document.getElementById('wordToRate');
