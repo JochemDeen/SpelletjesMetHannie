@@ -205,6 +205,9 @@ const submitDrawing = async (canvasRef, timerBar) => {
       };
   
       console.log('Submitting drawing to server...');
+      const payloadSize = JSON.stringify(payload).length;
+      console.log(`Payload size before sending: ${payloadSize} bytes (${payloadSize/1024/1024} MB)`);
+
       // Send the drawing to the backend
       const response = await axios.post('/api/pictionary/submit-drawing', payload);
   
@@ -219,14 +222,15 @@ const submitDrawing = async (canvasRef, timerBar) => {
       }
   } catch (error) {
       console.error('Error submitting drawing:', error.message);
-      // Still try to update game state
-      try {
-          const newState = await fetchGameState();
-          handleGameState(newState);
-      } catch (stateError) {
-          console.error('Failed to recover after drawing submission error:', stateError);
+      if (window.isHandlingDrawingError) {
+          return;
       }
-      throw error; // Re-throw to allow caller to handle
+      
+      window.isHandlingDrawingError = true;
+      setTimeout(() => { 
+          window.isHandlingDrawingError = false;
+          handleGameState('idle');
+      }, 1000);
   }
 };
 
