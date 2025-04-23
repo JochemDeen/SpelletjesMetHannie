@@ -128,18 +128,21 @@ h1 {
     position: relative;
 }
 
+ 
 #shareButton {
-    width: 30px; 
-    height: 30px;
-    cursor: pointer;
-    padding: 2px; 
-    z-index: 10; 
-    transition: transform 0.3s ease; /* Hover effect */
+width: 30px; 
+height: 30px;
+cursor: pointer;
+padding: 2px; 
+z-index: 10; 
+transition: transform 0.3s ease; /* Hover effect */
+text-align: center;
 }
 
 #shareButton:hover {
-    transform: scale(1.1); /* Slightly enlarge on hover */
+transform: scale(1.1); /* Slightly enlarge on hover */
 }
+
 
 .date-navigation {
     display: flex;

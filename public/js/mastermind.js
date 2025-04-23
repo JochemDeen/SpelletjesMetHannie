@@ -213,11 +213,45 @@ function generateSharePattern() {
 }
 function shareResults() {
   const sharePattern = generateSharePattern();
-  const encodedText = encodeURIComponent(sharePattern);
-  const whatsappURL = `https://wa.me/?text=${encodedText}`;
-  window.open(whatsappURL, '_blank');
+    
+    // Check if Web Share API is supported
+    if (navigator.share) {
+        navigator.share({
+            title: 'Mijn resultaten vandaag',
+            text: sharePattern
+        })
+        .catch(error => {
+            console.error('Error sharing:', error);
+            // Fallback for when sharing fails
+            fallbackShare(sharePattern);
+        });
+    } else {
+        // Fallback for browsers that don't support Web Share API
+        fallbackShare(sharePattern);
+    }
 }
 
+
+// Fallback sharing method (copy to clipboard)
+function fallbackShare(text) {
+  // Create a temporary textarea element
+  const textarea = document.createElement('textarea');
+  textarea.value = text;
+  textarea.setAttribute('readonly', '');
+  textarea.style.position = 'absolute';
+  textarea.style.left = '-9999px';
+  document.body.appendChild(textarea);
+  
+  // Select and copy the text
+  textarea.select();
+  document.execCommand('copy');
+  
+  // Remove the textarea
+  document.body.removeChild(textarea);
+  
+  // Notify the user
+  showTemporaryMessage('Results copied to clipboard!');
+}
 
 function buzzCurrentGuess() {
   const startIndex = currentRow * 5;
