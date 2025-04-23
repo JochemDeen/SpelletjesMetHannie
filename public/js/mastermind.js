@@ -14,6 +14,8 @@ let currentGuess = "";
 let currentRow = 0;
 let gameEnded = false;
 let submittedWords = []; // Track submitted words
+let feedbackHistory = [];
+
 
 // Create the game grid and restore state if available
 (async function loadGameState() {
@@ -26,6 +28,9 @@ let submittedWords = []; // Track submitted words
             currentGuess = guess;
             submittedWords.push(guess.toLowerCase());
             updateGrid();
+            feedbackHistory.push(data.state.feedback[index]);
+
+            console.log(feedbackHistory);
             if (currentRow == data.state.currentRow && data.state.success) {
                 animateReveal(data.state.success, data.state.feedback[index], deltaDelay = 0);
             } else {
@@ -36,6 +41,8 @@ let submittedWords = []; // Track submitted words
         currentGuess = "";
         if (data.state.success || currentRow === 6) {
             document.getElementById('compare-link').style.display = 'inline';
+            document.getElementById('shareButton').style.display = 'inline';
+            document.getElementById('shareButton').onclick = shareResults;
             gameEnded = true;
         }
     }
@@ -96,17 +103,22 @@ try {
     });
     const data = await response.json();
     if (data.correct) {
+      feedbackHistory.push(data.feedback); 
       await animateReveal(true,data.feedback,deltaDelay = 300);
       showCongratulations(); 
       celebrate();
-
+      document.getElementById('shareButton').style.display = 'inline';
+      document.getElementById('shareButton').onclick = shareResults;
       document.getElementById('compare-link').style.display = 'inline';
       gameEnded = true;
     } else {
+      feedbackHistory.push(data.feedback); 
       await animateReveal(false, data.feedback,deltaDelay = 300);
       currentRow++;
       currentGuess = "";
       if (currentRow === 6 ) {
+        document.getElementById('shareButton').style.display = 'inline';
+        document.getElementById('shareButton').onclick = shareResults;
           document.getElementById('compare-link').style.display = 'inline';
           gameEnded = true;
       }
@@ -172,6 +184,40 @@ function handleKeyPress(key) {
     }
   }
 }
+
+function generateSharePattern() {
+  const totalRows = feedbackHistory.length;
+  let shareText = `Mijn resultaat vandaag: ${totalRows}/6\n\n`; // Header with attempt count
+  
+  // For each row with feedback
+  for (let row = 0; row < totalRows; row++) {
+      const rowFeedback = feedbackHistory[row];
+      
+      // For each letter in the row
+      for (let col = 0; col < 5; col++) {
+          const cellFeedback = rowFeedback[col];
+          
+          // Add appropriate square emoji based on the feedback
+          if (cellFeedback === 'correct') {
+              shareText += '🟩'; // Green square for correct position
+          } else if (cellFeedback === 'misplaced') {
+              shareText += '🟨'; // Yellow square for correct letter, wrong position
+          } else {
+              shareText += '⬛'; // Black square for incorrect letter
+          }
+      }
+      shareText += '\n'; // New line after each row
+  }
+  
+  return shareText;
+}
+function shareResults() {
+  const sharePattern = generateSharePattern();
+  const encodedText = encodeURIComponent(sharePattern);
+  const whatsappURL = `https://wa.me/?text=${encodedText}`;
+  window.open(whatsappURL, '_blank');
+}
+
 
 function buzzCurrentGuess() {
   const startIndex = currentRow * 5;
