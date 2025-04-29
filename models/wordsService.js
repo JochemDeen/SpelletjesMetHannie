@@ -16,7 +16,7 @@ db.serialize(() => {
 });
 
 // Load the words from the file
-const wordsFilePath = path.resolve(__dirname, '../data/woorden.txt');
+const wordsFilePath = path.resolve(__dirname, '../data/filtered_woorden.txt');
 let wordsList = [];
 
 // Load words into memory when the service starts
@@ -27,7 +27,7 @@ let wordsList = [];
     logger.info(`Loaded ${wordsList.length} words into memory.`);
 
   } catch (error) {
-    logger.error('Error loading words from woorden.txt:', error);
+    logger.error('Error loading words from filtered_woorden.txt:', error);
   }
 })();
 
