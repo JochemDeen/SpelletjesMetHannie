@@ -101,6 +101,7 @@ h1 {
     .status-gray { background-color: #b0b0b0; }
     .status-yellow { background-color: #fbc31a; } 
     .status-red { background-color: #e03e4e; }
+    .status-blue { background-color: #007bff; }
 
 /* Responsive Styles */
 @media (max-width: 600px) {

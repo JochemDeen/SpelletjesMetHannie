@@ -198,15 +198,15 @@ router.get('/api/pictionary/state', requireLogin, async (req, res) => {
     if (gameState.state === 'guessing' && !gameState.guessers.includes(req.session.userId)) {
       gameState.state = 'guessing-watching';
     }
+    // If game state is "feedback" and current user is NOT the drawer, change state to "guessing-watching"
+    if (gameState.state === 'feedback' && gameState.drawer_user_id !== req.session.userId) {
+      gameState.state = 'guessing-watching';
+    }
     const game_round = gameState.current_round;
     const last_round_for_user = await Pictionary.getRoundNumber(gameId, req.session.userId);
 
     // If game state is guessing and game_round==last_round_for_user, change state to "guessing-watching"
     if (gameState.state === 'guessing' && game_round === last_round_for_user) {
-      gameState.state = 'guessing-watching';
-    }
-    // If game state is "feedback" and current user is NOT the drawer, change state to "guessing-watching"
-    if (gameState.state === 'feedback' && gameState.drawer_user_id !== req.session.userId) {
       gameState.state = 'guessing-watching';
     }
     const safeGameState = {
@@ -299,11 +299,11 @@ router.get('/api/pictionary/get-image', requireLogin, async (req, res) => {
     if (!gameState) {
       return res.status(400).json({ error: 'No active game found.' });
     }
-    // Only allow this if the game state is in guessing or feedback
-    if (gameState.state !== 'guessing' && gameState.state !== 'feedback') {
-      return res.status(400).json({ error: 'Game is not in a state for guessing.' });
+    // Only allow this if the game state is in guessing, feedback, or modify
+    if (gameState.state !== 'guessing' && gameState.state !== 'feedback' && gameState.state !== 'modify') {
+      return res.status(400).json({ error: 'Game is not in a state for viewing the image.' });
     }
-    // Retrieve the drawer’s username using the Users function
+    // Retrieve the drawer's username using the Users function
     const { getUsernameById } = require('../models/user');
     const drawerName = await getUsernameById(gameState.drawer_user_id);
     
@@ -313,7 +313,7 @@ router.get('/api/pictionary/get-image', requireLogin, async (req, res) => {
     //If current user is the drawer, also return the word
     if (gameState.drawer_user_id === userId) {
       logger.info(`Returning image and word for drawer ${userId}`);
-      return res.json({ drawerName, imageSrc, word: gameState.word ,difficulty: gameState.difficulty});
+      return res.json({ drawerName, imageSrc, word: gameState.word, difficulty: gameState.difficulty});
     }
     
     res.json({ drawerName, imageSrc, difficulty: gameState.difficulty });
@@ -467,9 +467,17 @@ router.get('/api/pictionary/get-guesses-to-grade', requireLogin, async (req, res
         }
         const gameId = gameState.game_id;     
         const round_number = gameState.current_round;
-      // Fetch guesses that require grading
-      const guessesToGrade = await Pictionary.getGuessesToGrade(gameId,round_number);
-      res.json({ guesses: guessesToGrade });
+        // Fetch guesses that require grading
+        const guessesToGrade = await Pictionary.getGuessesToGrade(gameId, round_number);
+        
+        // Check if modification has been used for this round
+        const hasModified = await Pictionary.hasModifiedDrawing(gameId, round_number);
+        
+        res.json({ 
+          guesses: guessesToGrade,
+          canModify: !hasModified,
+          word: gameState.word
+        });
   } catch (error) {
       logger.error('Error fetching guesses to grade:', error);
       res.status(500).json({ error: 'Failed to fetch guesses to grade' });
@@ -575,7 +583,7 @@ router.post('/api/pictionary/submit-drawing', requireLogin, async (req, res) => 
   if (!drawing || drawing.trim() === '' || 
     (drawing.startsWith('data:image/png;base64,') && drawing.split(',')[1].trim() === '')) {
     logger.info('No drawing provided. Ending round as a loss.');
-    // Here you can call a function to update the game state to “abandoned” or to give 0 points for everyone.
+    // Here you can call a function to update the game state to "abandoned" or to give 0 points for everyone.
     await Pictionary.handleEmptyDrawing(req.session.gameId); // Implement this function as needed.
     return res.json({ status: 'success', message: 'No drawing provided. Round ended with 0 scores.' });
   }
@@ -598,6 +606,104 @@ router.post('/api/pictionary/submit-drawing', requireLogin, async (req, res) => 
   } catch (error) {
     logger.error('Error submitting drawing:', error.message);
     res.status(500).json({ error: 'Failed to submit drawing' });
+  }
+});
+
+// ----------------------
+// Enter Modify State
+// ----------------------
+router.post('/api/pictionary/enter-modify-state', requireLogin, async (req, res) => {
+  const userId = req.session.userId;
+  logger.info(`POST /api/pictionary/enter-modify-state by user: ${userId}`);
+
+  try {
+    // Retrieve the active game
+    const gameState = await Pictionary.getActiveGame();
+    if (!gameState) {
+      logger.error('No active game found');
+      return res.status(400).json({ error: 'No active game found.' });
+    }
+
+    // Log the current game state
+    logger.info(`Current game state: ${gameState.state}`);
+    logger.info(`Game state details: ${JSON.stringify(gameState)}`);
+
+    // Check if game is in feedback state
+    if (gameState.state !== 'feedback' && gameState.state !== 'modify') {
+      logger.error(`Game is not in feedback or modify state. Current state: ${gameState.state}`);
+      return res.status(400).json({ error: 'Game is not in feedback or modify state.' });
+    }
+
+    // Verify user is the drawer
+    if (gameState.drawer_user_id !== userId) {
+      logger.error(`User ${userId} is not the drawer (drawer is ${gameState.drawer_user_id})`);
+      return res.status(403).json({ error: 'Not authorized: Only the drawer can modify the drawing.' });
+    }
+
+    // Check if modification has been used for this round
+    const hasModified = await Pictionary.hasModifiedDrawing(gameState.game_id, gameState.current_round);
+    if (hasModified) {
+      logger.error(`Drawing has already been modified for game ${gameState.game_id}, round ${gameState.current_round}`);
+      return res.status(400).json({ error: 'Drawing has already been modified for this round.' });
+    }
+
+    // Set game state to modify and start modification timer
+    await Pictionary.setGameState(gameState.game_id, 'modify');
+    const countdownDuration = await Pictionary.startModificationTimer(gameState.game_id);
+
+    logger.info(`Successfully entered modify state for game ${gameState.game_id} with countdown ${countdownDuration}`);
+    res.json({ 
+      status: 'success', 
+      message: 'Entered modify state', 
+      countdown_duration: countdownDuration,
+      word: gameState.word,
+      image_src: gameState.image_path
+    });
+  } catch (error) {
+    logger.error('Error entering modify state:', error);
+    res.status(500).json({ error: 'Failed to enter modify state' });
+  }
+});
+
+// ----------------------
+// Submit Modified Drawing
+// ----------------------
+router.post('/api/pictionary/submit-modified-drawing', requireLogin, async (req, res) => {
+  const userId = req.session.userId;
+  const { drawing } = req.body;
+  logger.info(`POST /api/pictionary/submit-modified-drawing by user: ${userId}`);
+
+  try {
+    // Retrieve the active game
+    const gameState = await Pictionary.getActiveGame();
+    if (!gameState) {
+      return res.status(400).json({ error: 'No active game found.' });
+    }
+
+    // Verify game is in modify state
+    if (gameState.state !== 'modify') {
+      return res.status(400).json({ error: 'Game is not in modify state.' });
+    }
+
+    // Verify user is the drawer
+    if (gameState.drawer_user_id !== userId) {
+      return res.status(403).json({ error: 'Not authorized: Only the drawer can submit modified drawing.' });
+    }
+
+    // Save the modified drawing
+    const filePath = await Pictionary.saveModifiedDrawing(gameState.game_id, drawing);
+
+    // Return to feedback state
+    await Pictionary.setGameState(gameState.game_id, 'feedback');
+
+    res.json({ 
+      status: 'success', 
+      message: 'Modified drawing submitted successfully', 
+      filePath 
+    });
+  } catch (error) {
+    logger.error('Error submitting modified drawing:', error);
+    res.status(500).json({ error: 'Failed to submit modified drawing' });
   }
 });
 

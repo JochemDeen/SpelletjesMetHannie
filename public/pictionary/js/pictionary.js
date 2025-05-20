@@ -4,6 +4,7 @@ const titles = {
     CHOOSE: "Kies een moeilijkheidsgraad!",
     GUESS: "Raad het woord!",
     GRADE: "Beoordeel de antwoorden!",
+    MODIFY: "Pas je tekening aan!",
     IDLE: "Pictionary!"
 };
 const gameTitleElement = document.getElementById("game-title");
@@ -21,6 +22,9 @@ function updateGameTitle(state) {
             break;
         case "feedback":
             gameTitleElement.textContent = titles.GRADE;
+            break;
+        case "modify":
+            gameTitleElement.textContent = titles.MODIFY;
             break;
         default:
             gameTitleElement.textContent = titles.IDLE;
@@ -48,8 +52,8 @@ async function fetchGameState() {
 function handleGameState(state) {
     updateGameTitle(state);
 
-      // If the game is in the "scoring" state, redirect to the scoreboard
-      if (state === "scoring") {
+    // If the game is in the "scoring" state, redirect to the scoreboard
+    if (state === "scoring") {
         window.location.href = "/pictionary/scoreboard";
         return; 
     }
@@ -62,6 +66,10 @@ function handleGameState(state) {
       case "drawing":
         document.getElementById("drawing-container").classList.remove("hidden");
         handleDraw(); // or pass the canvasRef or any other args if needed
+        break;
+      case "modify":
+        document.getElementById("drawing-container").classList.remove("hidden");
+        handleModifyDrawing();
         break;
       case "choose":
         document.getElementById("word-selection").classList.remove("hidden");
@@ -528,7 +536,7 @@ function startCountdown(duration) {
         if (!drawing) return;
         const rect = canvas.getBoundingClientRect();
 
-        // Scale from display size back to the canvas’s internal coordinate space
+        // Scale from display size back to the canvas's internal coordinate space
         const scaleX = canvas.width / rect.width;  
         const scaleY = canvas.height / rect.height;
 
@@ -835,8 +843,8 @@ async function submitGuess() {
 }
 
 async function handleGrade() {
-
     const wordTitleEl = document.getElementById("grading-guesses-title");
+    const modifyButton = document.getElementById("modify-drawing");
 
     try {
         // Step 1: Fetch the image to be guessed
@@ -849,19 +857,30 @@ async function handleGrade() {
         wordTitleEl.innerHTML = `Teken een <span class="highlight-word">${wordToDraw}</span>`;
     
         const imageCanvasDiv = document.getElementById("image-canvas-guessing");
+        // Add timestamp to prevent caching
+        const timestamp = new Date().getTime();
+        const imageSrcWithTimestamp = `${imageSrc}?t=${timestamp}`;
         imageCanvasDiv.innerHTML = `
-        <img src="${imageSrc}" alt="Drawing by ${drawerName}" 
+        <img src="${imageSrcWithTimestamp}" alt="Drawing by ${drawerName}" 
             style="max-width: 100%; height: auto; border: 1px solid #ddd; border-radius: 8px;" />
         `;
         // Step 2: Fetch guesses to be graded
         const response_guesses = await fetch('/api/pictionary/get-guesses-to-grade');
         const data_guesses = await response_guesses.json();
         const guesses = data_guesses.guesses;
+        const canModify = data_guesses.canModify;
+        console.log('data_guesses', data_guesses);
+        
+        // Enable/disable modify button based on canModify status
+        modifyButton.disabled = !canModify;
+        if (!canModify) {
+            modifyButton.title = "Je hebt de tekening al aangepast voor deze ronde";
+        }
+        
         console.log('Guesses to grade:', guesses);
        
         // Step 3: Display guesses for grading
         const gradedGuesses = await showGradingUI(guesses); 
-        // Example: `showGradingUI` collects feedback for each guess { id, grade }
 
         // Step 4: Send the feedback to the backend
         const result = await fetch('/api/pictionary/submit-grades', {
@@ -1038,3 +1057,176 @@ async function initGame() {
 // Run the Game Initialization when the page loads
 window.addEventListener("DOMContentLoaded", initGame);
 document.getElementById('submit-guess').addEventListener('click', submitGuess);
+
+// Add event listener for Enter key in guess input
+document.getElementById('guess-input').addEventListener('keypress', function(e) {
+    if (e.key === 'Enter') {
+        e.preventDefault(); // Prevent default form submission
+        submitGuess();
+    }
+});
+
+async function handleModifyDrawing() {
+    try {
+        // Enter modify state and get countdown duration
+        const response = await fetch('/api/pictionary/enter-modify-state', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error('Failed to enter modify state');
+        }
+
+        const data = await response.json();
+        const countdownDuration = data.countdown_duration || 1; // Default to 1 seconds if not provided
+        const wordToDraw = data.word;
+        const imageSrc = data.image_src;
+
+        // Show word reminder in title element
+        const wordTitleEl = document.getElementById("draw-word-title");
+        wordTitleEl.innerHTML = `Teken een <span class="highlight-word">${wordToDraw}</span>, je hebt ${countdownDuration} seconden`;
+        console.log(`Countdown started: ${countdownDuration} seconds`);
+
+        // Get canvas and load existing drawing
+        const canvas = document.getElementById("drawing-canvas");
+        const ctx = canvas.getContext('2d');
+
+        // Load existing drawing into canvas
+        const image = new Image();
+        image.onload = () => {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
+        };
+        // Add timestamp to prevent caching
+        image.src = `${imageSrc}?t=${Date.now()}`;
+
+        // Enable drawing
+        const canvasRef = { current: canvas };
+        enableDrawing(canvasRef);
+
+        // Start countdown
+        const { timerBar, timerInterval } = startCountdown(countdownDuration);
+
+        // Set up finish button
+        const finishButton = document.getElementById('finish-drawing');
+        finishButton.disabled = false;
+        finishButton.onclick = async () => {
+            finishButton.disabled = true;
+            disableDrawing(canvasRef);
+            disableColors();
+            clearInterval(timerInterval);
+            await submitModifiedDrawing(canvasRef);
+        };
+
+        // Set up auto-submit when time runs out
+        setTimeout(async () => {
+            if (!finishButton.disabled) {
+                finishButton.disabled = true;
+                disableDrawing(canvasRef);
+                disableColors();
+                clearInterval(timerInterval);
+                await submitModifiedDrawing(canvasRef);
+            }
+        }, countdownDuration * 1000);
+
+        // Show drawing tools
+        document.getElementById('tools-container').style.display = 'flex';
+    } catch (error) {
+        console.error('Error entering modify state:', error);
+        alert('Er ging iets mis bij het aanpassen van je tekening. Probeer het opnieuw.');
+    }
+}
+
+async function submitModifiedDrawing(canvasRef) {
+    try {
+        // Extract the drawing from the canvas as a base64 string
+        const canvas = canvasRef.current;
+        const drawingData = exportCanvasWithWhiteBackground(canvas);
+
+        const payload = {
+            drawing: drawingData,
+            timestamp: new Date().toISOString(),
+        };
+
+        // Send the modified drawing to the backend
+        const response = await fetch('/api/pictionary/submit-modified-drawing', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(payload)
+        });
+
+        if (!response.ok) {
+            throw new Error('Failed to submit modified drawing');
+        }
+
+        console.log('Modified drawing submitted successfully');
+        // Refresh game state after submission
+        const newState = await fetchGameState();
+        handleGameState(newState);
+    } catch (error) {
+        console.error('Error submitting modified drawing:', error);
+        // Try to recover by fetching current state
+        try {
+            const newState = await fetchGameState();
+            handleGameState(newState);
+        } catch (stateError) {
+            console.error('Failed to recover game state:', stateError);
+        }
+    }
+}
+
+// Add event listener for the modify drawing button
+document.addEventListener('DOMContentLoaded', () => {
+    const modifyDrawingBtn = document.getElementById('modify-drawing');
+    if (modifyDrawingBtn) {
+        modifyDrawingBtn.addEventListener('click', async () => {
+            try {
+                console.log('Modify drawing button clicked');
+                
+                // First check the current game state
+                const stateResponse = await fetch('/api/pictionary/state');
+                const stateData = await stateResponse.json();
+                console.log('Current game state:', stateData.state);
+                
+                // Only proceed if we're in feedback state
+                if (stateData.state !== 'feedback') {
+                    console.error('Cannot modify drawing: game is not in feedback state');
+                    alert('Je kunt de tekening alleen aanpassen tijdens de beoordelingsfase.');
+                    return;
+                }
+
+                // Disable the button to prevent double-clicks
+                modifyDrawingBtn.disabled = true;
+
+                // Send request to backend to enter modify state
+                const response = await fetch('/api/pictionary/enter-modify-state', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    console.error('Failed to enter modify state:', errorData.error);
+                    throw new Error(errorData.error || 'Failed to enter modify state');
+                }
+
+                // The backend will change the state to 'modify', which will trigger handleModifyDrawing
+                // through the game state change handler
+                const newState = await fetchGameState();
+                handleGameState(newState);
+            } catch (error) {
+                console.error('Error entering modify state:', error);
+                alert('Er ging iets mis bij het aanpassen van de tekening. Probeer het opnieuw.');
+                // Re-enable the button in case of error
+                modifyDrawingBtn.disabled = false;
+            }
+        });
+    }
+});

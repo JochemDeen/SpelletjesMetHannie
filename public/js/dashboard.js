@@ -12,11 +12,16 @@ async function updatePictionaryStatus() {
 
         let text = "Wachten";
         let statusClass = "status-yellow";
+        console.log('STATE', state);
 
         switch (state) {
             case "choose":
             case "drawing":
                 text = "Tekenen";
+                statusClass = "status-green";
+                break;
+            case "modify":
+                text = "Aanpassingen";
                 statusClass = "status-green";
                 break;
             case "guessing":
@@ -34,6 +39,10 @@ async function updatePictionaryStatus() {
             case "Off":
                 text = "Uit";
                 statusClass = "status-gray";
+                break;
+            case "scoring":
+                text = "Afgelopen!";
+                statusClass = "status-blue";
                 break;
             default:
                 text = "Wachten";

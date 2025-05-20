@@ -3,6 +3,9 @@ const sqlite3 = require('sqlite3').verbose();
 const { log } = require('winston');
 const logger = require('../../logger');
 const db = require('../db'); 
+const fs = require('fs');
+const path = require('path');
+const drawingManager = require('./drawingManager');
 
 // Returns the current global active game (if any), ignoring the current user.
 async function getActiveGame() {
@@ -310,7 +313,8 @@ async function checkForEndOfFeedback(gameId) {
                 const hasCorrectGuess = rows.some(row => row.feedback === 5);
 
                 if (allFeedbackGiven) {
-                    if (hasCorrectGuess) {
+                    logger.info(`All feedback given for game ${gameId} and round ${currentRound}`);
+                    if (hasCorrectGuess || currentRound >= 5) {
                         // Game completed, trigger scoring
                         try {
                             await CompleteGame(gameId);
@@ -318,9 +322,8 @@ async function checkForEndOfFeedback(gameId) {
                         } catch (error) {
                             reject(error);
                         }
-
                     } else {
-                        // No correct guess, increment round
+                        // No correct guess and not at round 5 yet, increment round
                         db.run(`UPDATE games SET current_round = current_round + 1 WHERE game_id = ?`, [gameId], (err) => {
                             if (err) return reject(err);
                             logger.info(`Game ${gameId} moved to next round.`);
@@ -423,6 +426,31 @@ async function getNextGameId(gameId) {
     });
 }
 
+async function startModificationTimer(gameId) {
+    try {
+        const MODIFICATION_DURATION = 10; // 10 seconds for modifications
+        const endTime = new Date(Date.now() + MODIFICATION_DURATION * 1000);
+        
+        return new Promise((resolve, reject) => {
+            db.run(
+                'UPDATE games SET drawing_completed_at = ? WHERE game_id = ?',
+                [endTime, gameId],
+                function(err) {
+                    if (err) {
+                        logger.error(`Error starting modification timer for game ${gameId}:`, err);
+                        return reject(err);
+                    }
+                    logger.info(`Started modification timer for game ${gameId}`);
+                    resolve(MODIFICATION_DURATION);
+                }
+            );
+        });
+    } catch (error) {
+        logger.error(`Error starting modification timer for game ${gameId}:`, error);
+        throw error;
+    }
+}
+
 module.exports = {
     getActiveGame,
     createNewGame,
@@ -434,5 +462,6 @@ module.exports = {
     getLatestGameId,
     setDifficulty,
     getPreviousGameId,
-    getNextGameId
-  };
+    getNextGameId,
+    startModificationTimer
+};
