@@ -956,34 +956,50 @@ async function showGradingUI(guesses) {
     gradingContainer.classList.remove('hidden');
 
     return new Promise((resolve) => {
-        submitButton.addEventListener('click', () => {
-            const feedback = [];
-            let valid = true;
+      const handleSubmitClick = async () => {
+          // Disable the button immediately to prevent multiple clicks
+          newSubmitButton.disabled = true;
+          console.log("Submit grades button clicked and disabled.");
 
-            guesses.forEach((guess) => {
-                const selectedButton = document.querySelector(
-                    `button[data-id="${guess.action_id}"].selected`
-                );
-                if (selectedButton) {
-                    feedback.push({
-                        action_id: guess.action_id,
-                        feedback: parseInt(selectedButton.dataset.grade, 10),
-                    });
-                } else {
-                    valid = false;
-                }
-            });
+          const feedback = [];
+          let allGraded = true; // Assume all are graded if no guesses
 
-            if (!valid) {
-                alert('Please grade all guesses before submitting.');
-            } else {
-                gradingContainer.classList.add('hidden');
-                console.log('Grades submitted:', feedback);
-                resolve(feedback);
-            }
-        });
-    });
+          if (guesses.length > 0) { // Only check for grading if there are guesses
+              guesses.forEach((guess) => {
+                  const selectedButton = document.querySelector(
+                      `button[data-id="${guess.action_id}"].selected`
+                  );
+                  if (selectedButton) {
+                      feedback.push({
+                          action_id: guess.action_id,
+                          feedback: parseInt(selectedButton.dataset.grade, 10),
+                      });
+                  } else {
+                      allGraded = false; // A guess was not graded
+                  }
+              });
+
+              if (!allGraded) {
+                  alert('Please grade all guesses before submitting.');
+                  newSubmitButton.disabled = false; // Re-enable button
+                  return; // Don't resolve, stop processing
+              }
+          }
+          // If guesses.length is 0, feedback remains [] and allGraded remains true.
+
+          // gradingContainer.classList.add('hidden'); // Let state change handle UI
+          console.log('Collected grades for submission:', feedback);
+          resolve(feedback);
+      };
+
+      // Clone the button and replace it to remove any old event listeners
+      const newSubmitButton = submitButton.cloneNode(true);
+      submitButton.parentNode.replaceChild(newSubmitButton, submitButton);
+      newSubmitButton.disabled = false; // Ensure it's enabled
+      newSubmitButton.addEventListener('click', handleSubmitClick);
+  });
 }
+
 
 
 async function updateGuessesTable() {

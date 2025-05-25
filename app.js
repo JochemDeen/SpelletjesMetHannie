@@ -8,7 +8,7 @@ const SQLiteStore = require('connect-sqlite3')(session);
 const path = require('path');
 const authRoutes = require('./routes/auth');
 const gameRoutes = require('./routes/games');
-const pictionaryRoutes = require('./routes/pictionary');
+const pictionaryRoutes = require('./routes/pictionary_routes');
 const settingsRoutes = require('./routes/settings');
 const rateRoutes = require('./routes/ratings');
 

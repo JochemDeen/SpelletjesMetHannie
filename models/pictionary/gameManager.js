@@ -294,44 +294,64 @@ async function CompleteGame(gameId) {
 
 async function checkForEndOfFeedback(gameId) {
     return new Promise((resolve, reject) => {
-        const gameSql = `SELECT current_round FROM games WHERE game_id = ?`;
+        // Fetch current_round and guessers to know if guesses were even possible
+        const gameSql = `SELECT current_round, guessers FROM games WHERE game_id = ?`;
         db.get(gameSql, [gameId], (err, game) => {
-            if (err) return reject(err);
-            if (!game) return resolve(false);
+            if (err) {
+                logger.error(`Error fetching game details in checkForEndOfFeedback for game ${gameId}: ${err.message}`);
+                return reject(err);
+            }
+            if (!game) {
+                logger.error(`Game ${gameId} not found in checkForEndOfFeedback.`);
+                return resolve({ roundEnded: false, gameCompleted: false }); // Or reject
+            }
 
             const currentRound = game.current_round;
+            const numberOfPossibleGuessers = (JSON.parse(game.guessers || '[]')).length;
 
             const feedbackSql = `
-                SELECT feedback FROM actions
+                SELECT action_id, feedback FROM actions
                 WHERE game_id = ? AND round_number = ? AND action = 'guess'
             `;
-            db.all(feedbackSql, [gameId, currentRound], async (err, rows) => {  
-                if (err) return reject(err);
-                if (rows.length === 0) return resolve(false);
+            db.all(feedbackSql, [gameId, currentRound], async (err, actionsWithFeedback) => {
+                if (err) {
+                    logger.error(`Error fetching actions in checkForEndOfFeedback for game ${gameId}, round ${currentRound}: ${err.message}`);
+                    return reject(err);
+                }
 
-                const allFeedbackGiven = rows.every(row => row.feedback !== null);
-                const hasCorrectGuess = rows.some(row => row.feedback === 5);
+                const noGuessesWereMade = actionsWithFeedback.length === 0;
+                const allSubmittedGuessesGraded = actionsWithFeedback.every(row => row.feedback !== null);
+                const hasCorrectGuess = actionsWithFeedback.some(row => row.feedback === 5);
 
-                if (allFeedbackGiven) {
-                    logger.info(`All feedback given for game ${gameId} and round ${currentRound}`);
-                    if (hasCorrectGuess || currentRound >= 5) {
-                        // Game completed, trigger scoring
+                // The feedback phase ends if:
+                // 1. All submitted guesses have been graded.
+                // 2. Or, if no guesses were made at all in this round (by any of the possible guessers).
+                if (allSubmittedGuessesGraded || (noGuessesWereMade && numberOfPossibleGuessers > 0)) {
+                    logger.info(`Feedback phase concluded for game ${gameId}, round ${currentRound}. All graded: ${allSubmittedGuessesGraded}, No guesses made: ${noGuessesWereMade}.`);
+
+                    if (hasCorrectGuess || currentRound >= 5) { // Game completion conditions
                         try {
-                            await CompleteGame(gameId);
-                            resolve(true);
+                            await CompleteGame(gameId); // This sets state to 'completed' and completed_at
+                            logger.info(`Game ${gameId} marked as completed after feedback phase.`);
+                            resolve({ roundEnded: true, gameCompleted: true });
                         } catch (error) {
+                            logger.error(`Error completing game ${gameId} in checkForEndOfFeedback: ${error.message}`);
                             reject(error);
                         }
-                    } else {
-                        // No correct guess and not at round 5 yet, increment round
-                        db.run(`UPDATE games SET current_round = current_round + 1 WHERE game_id = ?`, [gameId], (err) => {
-                            if (err) return reject(err);
-                            logger.info(`Game ${gameId} moved to next round.`);
-                            resolve(true);
+                    } else { // Advance to next round
+                        db.run(`UPDATE games SET current_round = current_round + 1 WHERE game_id = ?`, [gameId], (updateErr) => {
+                            if (updateErr) {
+                                logger.error(`Error incrementing round for game ${gameId}: ${updateErr.message}`);
+                                return reject(updateErr);
+                            }
+                            logger.info(`Game ${gameId} moved to next round (from ${currentRound} to ${currentRound + 1}).`);
+                            resolve({ roundEnded: true, gameCompleted: false });
                         });
                     }
                 } else {
-                    resolve(false);
+                    // Feedback still pending for submitted guesses, and guesses were made.
+                    logger.info(`Feedback phase continues for game ${gameId}, round ${currentRound}. Still awaiting grades.`);
+                    resolve({ roundEnded: false, gameCompleted: false });
                 }
             });
         });

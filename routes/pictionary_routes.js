@@ -1,4 +1,4 @@
-// routes/pictionary.js
+// routes/pictionary_routes.js
 const express = require('express');
 const router = express.Router();
 const path = require('path');
@@ -338,9 +338,7 @@ router.get('/api/pictionary/get-guesses', requireLogin, async (req, res) => {
     const gameId = gameState.game_id;
     
     // Get all guesses for the game from the actions table.
-    logger.info(`Fetching guesses for game ${gameId}`);
     let guesses = await Pictionary.getGuesses(gameId);
-    logger.info(`Guesses fetched for game ${gameId}: ${guesses.length}`);
     
     // Determine if the current user is the drawer.
     const isDrawer = (gameState.drawer_user_id === userId);
@@ -489,7 +487,7 @@ router.get('/api/pictionary/get-guesses-to-grade', requireLogin, async (req, res
 // ----------------------
 router.post('/api/pictionary/submit-grades', requireLogin, async (req, res) => {
   const userId = req.session.userId;
-  const { feedback } = req.body;
+  const { feedback } = req.body;// feedback is an array of {action_id, feedback_value}
 
   logger.info(`POST /api/pictionary/submit-grades by user: ${userId}`);
   logger.info(`feedback: ${JSON.stringify(feedback)}`);
@@ -497,38 +495,66 @@ router.post('/api/pictionary/submit-grades', requireLogin, async (req, res) => {
       // Retrieve the active game
       const gameState = await Pictionary.getActiveGame();
       if (!gameState) {
+        logger.error(`Submit-grades: No active game found for user ${userId}.`);
         return res.status(400).json({ error: 'No active game found.' });
       }
       //check if state is feedback
       if (gameState.state !== 'feedback') {
+        logger.warn(`Submit-grades called for game ${gameState.game_id} by user ${userId}, but game state is '${gameState.state}', not 'feedback'. Possible duplicate or late call.`);
         return res.status(400).json({ error: 'Game is not in a state for feedback.' });
       }
       // Determine if the current user is the drawer.
       if (gameState.drawer_user_id !== userId){
+        logger.warn(`Submit-grades: User ${userId} is not the drawer for game ${gameState.game_id}. Drawer is ${gameState.drawer_user_id}.`);
         return res.status(403).json({ error: 'Not authorized: Only the drawer can grade guesses.' });
       }
       const gameId = gameState.game_id;
 
       //loop over grades and submit feedback
-      for (const grade of feedback) {
-        await Pictionary.submitFeedback(grade.action_id, grade.feedback);
+      if (feedback && feedback.length > 0) {
+        for (const grade of feedback) {
+          await Pictionary.submitFeedback(grade.action_id, grade.feedback);
+        }
+        logger.debug(`Grades applied for game ${gameId}, round ${gameState.current_round} by user: ${userId}`);
+      } else {
+          logger.debug(`No feedback items provided in request for game ${gameId}, round ${gameState.current_round}, user: ${userId}. Proceeding to check end of feedback phase.`);
       }
-      end_of_round = await Pictionary.checkForEndOfFeedback(gameId);
-      //get game state with gameId
-      const newGameState = await Pictionary.getGameById(gameId);
-      if (end_of_round && newGameState.status === 'completed') {
-        await Pictionary.updateScoring(gameId);
+
+      //end_of_round = await Pictionary.checkForEndOfFeedback(gameId);
+      const feedbackResult = await Pictionary.checkForEndOfFeedback(gameId);
+      // feedbackResult = { roundEnded: boolean, gameCompleted: boolean }
+      let finalStateForClient = gameState.state; // Start with current
+      if (feedbackResult.roundEnded) {
+        if (feedbackResult.gameCompleted) {
+            // Pictionary.CompleteGame should have set state to 'scoring' or 'completed'.
+            // If updateScoring is separate and needed:
+            // await Pictionary.updateScoring(gameId);
+            logger.info(`Game ${gameId} is now completed.`);
+            finalStateForClient = 'scoring'; // Or 'completed', client will redirect to scoreboard
+        } else {
+            // Round ended, not game over, move to next round's guessing phase
+            await Pictionary.setGameState(gameId, 'guessing');
+            logger.info(`Game ${gameId} advanced to 'guessing' state for the next round.`);
+            finalStateForClient = 'guessing';
+        }
+      } else {
+          // Round not ended (e.g., feedback still pending for actual guesses)
+          // Game remains in 'feedback' state.
+          logger.info(`Game ${gameId} remains in 'feedback' state after grade processing. Feedback result: ${JSON.stringify(feedbackResult)}`);
+          finalStateForClient = 'feedback';
       }
-      else if (end_of_round) {
-        await Pictionary.setGameState(gameId, 'guessing');
-      }
-      logger.info(`End of Round: ${end_of_round}`);
-      logger.info(`Grades submitted successfully by user: ${userId}`);
-      res.json({ status: 'success', message: 'Grades submitted successfully' });
+      
+      // Fetch the most up-to-date game state to send back, especially if it changed.
+      const updatedGameState = await Pictionary.getGameById(gameId);
+      finalStateForClient = updatedGameState.state; // Use the truly latest state from DB
+
+      res.json({ status: 'success', message: 'Grades processed.', newState: finalStateForClient });
+
   } catch (error) {
-      logger.error('Error submitting grades:', error);
-      res.status(500).json({ error: 'Failed to submit grades' });
+      logger.error(`Error in /api/pictionary/submit-grades for user ${userId}: ${error.stack}`);
+      res.status(500).json({ error: 'Failed to submit grades due to an internal error.' });
   }
+
 });  
 
 
