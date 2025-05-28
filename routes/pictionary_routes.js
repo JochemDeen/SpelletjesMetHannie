@@ -520,15 +520,13 @@ router.post('/api/pictionary/submit-grades', requireLogin, async (req, res) => {
           logger.debug(`No feedback items provided in request for game ${gameId}, round ${gameState.current_round}, user: ${userId}. Proceeding to check end of feedback phase.`);
       }
 
-      //end_of_round = await Pictionary.checkForEndOfFeedback(gameId);
       const feedbackResult = await Pictionary.checkForEndOfFeedback(gameId);
       // feedbackResult = { roundEnded: boolean, gameCompleted: boolean }
       let finalStateForClient = gameState.state; // Start with current
       if (feedbackResult.roundEnded) {
         if (feedbackResult.gameCompleted) {
             // Pictionary.CompleteGame should have set state to 'scoring' or 'completed'.
-            // If updateScoring is separate and needed:
-            // await Pictionary.updateScoring(gameId);
+            await Pictionary.updateScoring(gameId);
             logger.info(`Game ${gameId} is now completed.`);
             finalStateForClient = 'scoring'; // Or 'completed', client will redirect to scoreboard
         } else {
