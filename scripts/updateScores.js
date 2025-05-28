@@ -1,14 +1,18 @@
 // scripts/updateScores.js
-const db = require('../models/db');                   // however you get your DB handle
+const db    = require('../models/db');
 const { updateScoring } = require('../models/pictionary/scoringManager');
 
 async function main() {
   // 1) find all completed games with no scores yet
   const games = await new Promise((res, rej) => {
     db.all(
-      `SELECT id FROM games
-       WHERE status = 'completed'
-         AND id NOT IN (SELECT DISTINCT game_id FROM scores);`,
+      `SELECT game_id
+         FROM games
+        WHERE status   = 'completed'
+          AND game_id NOT IN (
+            SELECT DISTINCT game_id
+              FROM scores
+          );`,
       (err, rows) => err ? rej(err) : res(rows)
     );
   });
@@ -19,12 +23,12 @@ async function main() {
   }
 
   // 2) run updateScoring for each
-  for (const { id } of games) {
+  for (const { game_id } of games) {
     try {
-      await updateScoring(id);
-      console.log(`→ Scored game ${id}`);
+      await updateScoring(game_id);
+      console.log(`→ Scored game ${game_id}`);
     } catch (err) {
-      console.error(`‼️ Failed scoring game ${id}:`, err);
+      console.error(`‼️ Failed scoring game ${game_id}:`, err);
     }
   }
 
