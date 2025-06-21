@@ -2,10 +2,13 @@
 
 const express = require('express');
 const router = express.Router();
+const moment = require('moment');
+const isVacation = moment().isBefore('2025-08-01');
 const bcrypt = require('bcrypt');
 const path = require('path');
 const { db } = require('../models/user');
 const logger = require('../logger');  
+
 
 const { requireLogin } = require('../middleware/authMiddleware');
 
@@ -48,6 +51,10 @@ router.get('/logout', (req, res) => {
 
 // Dashboard Route
 router.get('/dashboard', requireLogin, (req, res) => {
+    if (isVacation) {
+        logger.info('Vacation mode: showing vacation page to authenticated user.');
+        return res.sendFile('vacation.html', { root: path.join(__dirname, '../public') });
+    }
     res.sendFile('dashboard.html', { root: path.join(__dirname, '../public') });
 });
 
