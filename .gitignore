@@ -18,7 +18,7 @@ pids
 
 #Drawings
 public/images/drawings/
-
+public/uploads/
 # OS files
 .DS_Store
 
@@ -35,3 +35,13 @@ data/Pictionary_hard.numbers
 data/Pictionary_medium.numbers
 data/Pictionary_words.csv
 data/Pictionary_words.numbers
+data/.ipynb_checkpoints/frequency_scoring-checkpoint.ipynb
+.gitignore
+uv.lock
+pyproject.toml
+data/frequency_scoring.ipynb
+.python-version
+.gitignore
+LLM/test.py
+.gitignore
+
