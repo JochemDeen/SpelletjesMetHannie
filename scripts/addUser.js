@@ -6,7 +6,7 @@ const username = process.argv[2];
 const password = process.argv[3];
 
 if (!username || !password) {
-  logger.info('Usage: node addUser.js <username> <password>');
+  logger.info('Usage: node scripts/addUser.js <username> <password>');
   process.exit(1);
 }
 
@@ -23,13 +23,13 @@ db.run(
     
     // Insert default setting for pictionary (default = "1" for on)
     db.run(
-      "INSERT INTO user_settings (user_id, setting_key, setting_value) VALUES (?, 'pictionaryEnabled', '1')",
+      "INSERT INTO user_settings (user_id, setting_key, setting_value) VALUES (?, 'pictionaryEnabled', '0')",
       [this.lastID],
       function(err) {
         if (err) {
           logger.error('Error setting default pictionary setting:', err.message);
         } else {
-          logger.info('Default pictionary setting set to on.');
+          logger.info('Default pictionary setting set to off.');
         }
       }
     );
