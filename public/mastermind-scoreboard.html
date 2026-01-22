@@ -9,13 +9,18 @@
   <link rel="stylesheet" href="/css/scoreboard.css"> 
 </head>
 <body>
-    <a href="/" class="home-button"><img src="/images/home.png" alt="Home" /></a>
-    <h1>Scoreboard</h1>
-    <div id="nav-links">
+    <header id="game-header">
+      <a href="/dashboard" class="home-button">
+        <img src="/images/home.png" alt="Home" />
+      </a>
+      <h1>Scoreboard</h1>
+      <nav id="nav-links">
+        <a href="/mastermind" id="play-link">Spelen</a>
         <a href="/mastermind/compare" id="compare-link">Samenvatting</a>
         <a href="/mastermind/stats" id="stats-link">Stats</a>
         <a href="/mastermind/scoreboard" id="scoreboard-link">Scoreboard</a>
-      </div>
+      </nav>
+    </header>
 
     <div id="scoreboard-container">
         <!-- Monthly Scores Section -->

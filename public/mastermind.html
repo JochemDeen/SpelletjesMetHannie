@@ -14,18 +14,37 @@
 
 </head>
 <body>
-    <h1>Raad het woord</h1>
-    <div id="nav-links">
-        <a href="/mastermind/compare" id="compare-link" style="display: none;">Samenvatting</a>
+    <header id="game-header">
+      <a href="/dashboard" class="home-button">
+        <img src="/images/home.png" alt="Home" />
+      </a>
+      <h1>Raad het woord</h1>
+      <nav id="nav-links">
+        <a href="/mastermind" id="play-link">Spelen</a>
+        <a href="/mastermind/compare" id="compare-link">Samenvatting</a>
         <a href="/mastermind/stats" id="stats-link">Stats</a>
         <a href="/mastermind/scoreboard" id="scoreboard-link">Scoreboard</a>
-      </div>
+      </nav>
+    </header>
     
     <div id="game-container">
         <!-- Grid will be generated dynamically -->
 
       </div>
-      
+
+      <div id="hint-toggle-container">
+        <span id="hint-toggle">Vraag Ollie</span>
+      </div>
+
+      <div id="hint-panel" style="display: none;">
+        <div id="hint-quota"></div>
+        <button id="request-hint-btn">Vraag een hint</button>
+        <div id="hint-response"></div>
+        <div id="hint-loading" style="display: none;">
+          <span class="spinner"></span> Ollie denkt na...
+        </div>
+      </div>
+
       <div id="keyboard">
          
           <img id="shareButton" src="/images/share-ios.svg" alt="Share on WhatsApp" />

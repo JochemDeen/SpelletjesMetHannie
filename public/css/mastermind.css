@@ -5,6 +5,13 @@
   --white: #ffffff;
 }
 
+body {
+  margin: 0;
+  padding: 0;
+  font-family: 'Arial', sans-serif;
+  background-color: #f9f9f9;
+}
+
 
 .letter-box.correct {
   background-color: var(--pastel-green);
@@ -90,25 +97,62 @@
     font-size: 24px;
   }
 
+  #game-header {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 15px 20px 10px;
+    background: linear-gradient(to bottom, #f8f9fa, #ffffff);
+    border-bottom: 1px solid #eee;
+    position: relative;
+  }
+
+  .home-button {
+    position: absolute;
+    left: 15px;
+    top: 15px;
+  }
+
+  .home-button img {
+    height: 28px;
+    opacity: 0.7;
+    transition: opacity 0.2s;
+  }
+
+  .home-button:hover img {
+    opacity: 1;
+  }
+
   h1 {
     text-align: center;
-    font-size: 2.5em;
-    color: #333;
+    font-size: 1.8em;
+    color: #2c3e50;
     font-family: 'Arial', sans-serif;
-    margin-top: 20px;
+    margin: 0 0 8px 0;
+    font-weight: 600;
   }
 
   #nav-links {
-    text-align: center;
-    margin-top: 10px;
+    display: flex;
+    justify-content: center;
+    gap: 8px;
   }
 
   #nav-links a {
-    margin: 0 15px;
     text-decoration: none;
-    color: #333;
-    font-weight: bold;
+    color: #555;
+    font-weight: 500;
     font-family: 'Arial', sans-serif;
+    font-size: 13px;
+    padding: 5px 12px;
+    border-radius: 15px;
+    background-color: #f0f0f0;
+    transition: all 0.2s;
+  }
+
+  #nav-links a:hover {
+    background-color: #e0e0e0;
+    color: #333;
   }
 
   #row-2 {
@@ -169,59 +213,281 @@
   animation: buzz 0.3s ease;
 }
 
+/* Hint Toggle */
+#hint-toggle-container {
+  text-align: center;
+  margin-top: 15px;
+}
+
+#hint-toggle {
+  display: inline-block;
+  padding: 10px 20px;
+  background-color: lightgray;
+  color: #333;
+  cursor: pointer;
+  font-family: 'Arial', sans-serif;
+  font-size: 14px;
+  font-weight: bold;
+  text-transform: uppercase;
+  border-radius: 8px;
+  transition: background-color 0.1s;
+}
+
+#hint-toggle:hover {
+  background-color: darkgray;
+}
+
+#hint-toggle:active {
+  background-color: #999;
+}
+
+/* Hint Panel */
+#hint-panel {
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 15px;
+  padding: 20px;
+  margin-top: 20px;
+  max-width: 350px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+#hint-quota {
+  font-family: 'Arial', sans-serif;
+  font-size: 14px;
+  color: #666;
+}
+
+#request-hint-btn {
+  padding: 12px 24px;
+  font-size: 16px;
+  font-weight: bold;
+  font-family: 'Arial', sans-serif;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  background-color: #5a8fd9;
+  color: white;
+}
+
+#request-hint-btn:hover:not(.disabled) {
+  background-color: #4a7fc9;
+}
+
+#request-hint-btn.disabled {
+  background-color: #aaa;
+  cursor: not-allowed;
+}
+
+#hint-response {
+  display: none;
+  font-family: 'Arial', sans-serif;
+  font-size: 16px;
+  color: #333;
+  background-color: #f5f5f5;
+  padding: 15px;
+  border-radius: 8px;
+  text-align: center;
+  max-width: 300px;
+  line-height: 1.5;
+}
+
+#hint-loading {
+  display: none;
+  align-items: center;
+  gap: 10px;
+  font-family: 'Arial', sans-serif;
+  font-size: 16px;
+  color: #666;
+}
+
+/* Spinner animation */
+.spinner {
+  width: 20px;
+  height: 20px;
+  border: 3px solid #f3f3f3;
+  border-top: 3px solid #5a8fd9;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
   /* Existing styles adjusted for mobile */
 @media (max-width: 768px) {
+  #game-header {
+    padding: 12px 15px 8px;
+  }
+
+  .home-button {
+    left: 10px;
+    top: 12px;
+  }
+
+  .home-button img {
+    height: 24px;
+  }
+
+  h1 {
+    font-size: 1.5em;
+    margin: 0 0 6px 0;
+  }
+
+  #nav-links a {
+    font-size: 12px;
+    padding: 4px 10px;
+  }
 
   #game-container {
     grid-template-columns: repeat(5, minmax(40px, 12vw));
     grid-template-rows: repeat(6, minmax(40px, 12vw));
-}
+    margin-top: 10px;
+  }
 
+  #hint-panel {
+    max-width: 90vw;
+    padding: 15px;
+  }
+
+  #hint-response {
+    max-width: 85vw;
+  }
 
   #keyboard {
-    width: 95vw; 
+    width: 95vw;
   }
   .key {
-    width: 8vw; 
-    height: 55px; 
-    font-size: 18px; 
+    width: 8vw;
+    height: 55px;
+    font-size: 18px;
   }
 
   .key.enter{
-    width: 55px; 
+    width: 55px;
     font-size: 12px;
   }
 
   .key.backspace {
-    width: 55px; 
+    width: 55px;
     font-size: 30px;
   }
 
   .keyboard-row {
-    gap: 7px; 
+    gap: 7px;
   }
   #row-2 {
-    margin-left: 15px; /* Reduced margin for smaller screens */
+    margin-left: 15px;
   }
-
-  
 }
 
 
 @media (max-width: 420px) {
+  #game-header {
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: center;
+    padding: 8px 10px;
+    gap: 5px;
+  }
+
+  .home-button {
+    position: static;
+    order: 1;
+  }
+
+  .home-button img {
+    height: 22px;
+  }
+
   h1 {
-    display: none;
+    font-size: 1.1em;
+    margin: 0;
+    order: 2;
+    flex: 1;
+    text-align: center;
+  }
+
+  #nav-links {
+    order: 3;
+    width: 100%;
+    justify-content: center;
+    gap: 6px;
+    margin-top: 4px;
+  }
+
+  #nav-links a {
+    font-size: 11px;
+    padding: 3px 8px;
+  }
+
+  #game-container {
+    margin-top: 8px;
   }
 
   .key {
-    width: 7vw; 
-    height: 45px; 
+    width: 7vw;
+    height: 45px;
   }
   .keyboard-row {
-    gap: 5px; 
+    gap: 5px;
   }
   #row-2 {
     margin-left: 5px;
   }
 
+  #hint-toggle-container {
+    margin-top: 10px;
+  }
+
+  #request-hint-btn {
+    padding: 10px 20px;
+    font-size: 14px;
+  }
+
+  #hint-response {
+    font-size: 14px;
+    padding: 12px;
+  }
+}
+
+@media (max-width: 360px) {
+  #game-header {
+    padding: 5px 8px;
+    gap: 3px;
+  }
+
+  .home-button img {
+    height: 20px;
+  }
+
+  h1 {
+    font-size: 0.95em;
+  }
+
+  #nav-links {
+    gap: 4px;
+  }
+
+  #nav-links a {
+    font-size: 10px;
+    padding: 2px 6px;
+  }
+
+  .key {
+    width: 8vw;
+    height: 40px;
+    font-size: 14px;
+  }
+
+  .key.enter,
+  .key.backspace {
+    width: 50px;
+  }
 }

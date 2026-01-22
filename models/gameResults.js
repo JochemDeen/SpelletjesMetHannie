@@ -15,6 +15,17 @@ db.serialize(() => {
         timestamp TEXT NOT NULL
         )
     `);
+
+    db.run(`
+        CREATE TABLE IF NOT EXISTS mastermind_hints (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL,
+        word_of_the_day TEXT NOT NULL,
+        hint_response TEXT NOT NULL,
+        used_at TEXT NOT NULL,
+        UNIQUE(user_id, word_of_the_day)
+        )
+    `);
   });
   
 // Function to update user guess, store feedback, and word of the day

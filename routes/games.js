@@ -6,8 +6,9 @@ const path = require('path');
 const { requireLogin } = require('../middleware/authMiddleware');
 const gameResults = require('../models/gameResults'); // Assuming this module handles game data storage
 const wordsService = require('../models/wordsService'); // Assuming this module handles word validation and word of the day
-const logger = require('../logger');  
+const logger = require('../logger');
 const { getMonthlyScores, getHighestScorerCounts } = require('../models/gameResults');
+const hintsService = require('../models/hintsService');
 
 
 // Mastermind Game Page
@@ -197,5 +198,96 @@ router.get('/api/get-earliest-date', requireLogin, async (req, res) => {
   }
 });
 
+// GET /api/mastermind/hint-status - Get hint quota and today's hint if exists
+router.get('/api/mastermind/hint-status', requireLogin, async (req, res) => {
+    const userId = req.session.userId;
+    logger.info(`GET /api/mastermind/hint-status for user ${userId}`);
+
+    try {
+        // Check if hint service is available
+        if (!hintsService.isHintServiceAvailable()) {
+            return res.json({
+                available: false,
+                hintsRemaining: 0,
+                totalHints: 0,
+                todayHint: null
+            });
+        }
+
+        const wordOfTheDay = await wordsService.getWordOfTheDay();
+        const monthlyCount = await hintsService.getMonthlyHintCount(userId);
+        const todayHint = await hintsService.getHintForToday(userId, wordOfTheDay);
+
+        res.json({
+            available: true,
+            hintsRemaining: Math.max(0, hintsService.MONTHLY_HINT_LIMIT - monthlyCount),
+            totalHints: hintsService.MONTHLY_HINT_LIMIT,
+            todayHint: todayHint
+        });
+    } catch (error) {
+        logger.error('Error getting hint status:', error);
+        res.status(500).json({ error: 'Failed to get hint status' });
+    }
+});
+
+// POST /api/mastermind/request-hint - Request a new hint
+router.post('/api/mastermind/request-hint', requireLogin, async (req, res) => {
+    const userId = req.session.userId;
+    const { guesses, feedback } = req.body;
+    logger.info(`POST /api/mastermind/request-hint for user ${userId}`);
+
+    try {
+        // Check if hint service is available
+        if (!hintsService.isHintServiceAvailable()) {
+            return res.status(503).json({
+                success: false,
+                error: 'Hint service is not configured'
+            });
+        }
+
+        const wordOfTheDay = await wordsService.getWordOfTheDay();
+
+        // Check if hint already requested today
+        const existingHint = await hintsService.getHintForToday(userId, wordOfTheDay);
+        if (existingHint) {
+            const monthlyCount = await hintsService.getMonthlyHintCount(userId);
+            return res.json({
+                success: true,
+                hint: existingHint,
+                hintsRemaining: Math.max(0, hintsService.MONTHLY_HINT_LIMIT - monthlyCount),
+                alreadyRequested: true
+            });
+        }
+
+        // Check monthly quota
+        const monthlyCount = await hintsService.getMonthlyHintCount(userId);
+        if (monthlyCount >= hintsService.MONTHLY_HINT_LIMIT) {
+            return res.status(403).json({
+                success: false,
+                error: 'Je hebt je maandelijkse limiet van hints bereikt',
+                hintsRemaining: 0
+            });
+        }
+
+        // Call Gemini API to get hint
+        const hint = await hintsService.callGeminiAPI(wordOfTheDay, guesses || [], feedback || []);
+
+        // Save the hint
+        await hintsService.saveHint(userId, wordOfTheDay, hint);
+
+        const newMonthlyCount = monthlyCount + 1;
+        res.json({
+            success: true,
+            hint: hint,
+            hintsRemaining: Math.max(0, hintsService.MONTHLY_HINT_LIMIT - newMonthlyCount)
+        });
+    } catch (error) {
+        logger.error('Error requesting hint:', error);
+        res.status(500).json({
+            success: false,
+            error: 'Er ging iets mis bij het ophalen van de hint'
+        });
+    }
+});
 
 module.exports = router;

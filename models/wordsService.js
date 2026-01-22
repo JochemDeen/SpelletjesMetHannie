@@ -77,12 +77,33 @@ function getRandomPictionaryWord(difficulty = "easy") {
   }
 }
 
+// Get words used in the past month
+function getRecentlyUsedWords() {
+  return new Promise((resolve, reject) => {
+    const oneMonthAgo = new Date();
+    oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
+    const oneMonthAgoStr = oneMonthAgo.toISOString().split('T')[0];
+
+    db.all(
+      'SELECT word FROM mastermind_word WHERE date >= ?',
+      [oneMonthAgoStr],
+      (err, rows) => {
+        if (err) {
+          return reject(err);
+        }
+        const usedWords = rows.map(row => row.word.toLowerCase());
+        resolve(usedWords);
+      }
+    );
+  });
+}
+
 async function getWordOfTheDay() {
   logger.info('Getting word of the day.');
 
-  return new Promise((resolve, reject) => {
+  return new Promise(async (resolve, reject) => {
     const today = new Date().toISOString().split('T')[0];
-    db.get('SELECT word FROM mastermind_word WHERE date = ?', [today], (err, row) => {
+    db.get('SELECT word FROM mastermind_word WHERE date = ?', [today], async (err, row) => {
       if (err) {
         return reject(err);
       }
@@ -90,14 +111,30 @@ async function getWordOfTheDay() {
         logger.info(`Word of the day for ${today} is: ${row.word}`);
         resolve(row.word);
       } else {
-        const wordOfTheDay = getRandomWord(wordsList);
-        db.run('INSERT INTO mastermind_word (date, word) VALUES (?, ?)', [today, wordOfTheDay], (err) => {
-          if (err) {
-            return reject(err);
+        // Get words used in the past month and exclude them
+        try {
+          const recentlyUsedWords = await getRecentlyUsedWords();
+          const availableWords = wordsList.filter(
+            word => !recentlyUsedWords.includes(word.toLowerCase())
+          );
+
+          if (availableWords.length === 0) {
+            logger.warn('All words have been used in the past month, falling back to full list');
           }
-          logger.info(`Set word of the day for ${today} to: ${wordOfTheDay}`);
-          resolve(wordOfTheDay);
-        });
+
+          const wordOfTheDay = getRandomWord(availableWords.length > 0 ? availableWords : wordsList);
+          logger.info(`Selected word "${wordOfTheDay}" after excluding ${recentlyUsedWords.length} recently used words`);
+
+          db.run('INSERT INTO mastermind_word (date, word) VALUES (?, ?)', [today, wordOfTheDay], (err) => {
+            if (err) {
+              return reject(err);
+            }
+            logger.info(`Set word of the day for ${today} to: ${wordOfTheDay}`);
+            resolve(wordOfTheDay);
+          });
+        } catch (error) {
+          return reject(error);
+        }
       }
     });
   });

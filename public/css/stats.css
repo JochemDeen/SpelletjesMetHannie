@@ -4,22 +4,19 @@ body {
     background-color: #f9fafc;
     color: #333;
     margin: 0;
-    padding: 20px;
+    padding: 0;
     box-sizing: border-box;
 }
 *, *::before, *::after {
     box-sizing: border-box;
 }
 
-/* Home Button */
-.home-button {
-    position: absolute;
-    top: 10px;
-    left: 10px;
+#stats-summary, #guess-distribution, #average-stats {
+    margin-left: 20px;
+    margin-right: 20px;
 }
-.home-button img {
-    height: 30px;
-}
+
+/* Home Button - now handled by mastermind.css */
 
 /* Stats Summary and Average Stats */
 #stats-summary, #average-stats {
@@ -79,9 +76,9 @@ body {
 .bar:hover {
     background-color: #56a76f;
 }
-/* Section Headers */
-h1, h2 {
-    font-size: 2em;
+/* Section Headers - h1 handled by mastermind.css */
+h2 {
+    font-size: 1.5em;
     color: #2c3e50;
     text-align: center;
     margin-top: 20px;
@@ -114,14 +111,6 @@ h1, h2 {
     }
     #stats-summary p span, #average-stats p span {
         font-size: 1.5em;
-    }
-    .home-button {
-        top: 5px;
-        left: 5px;
-    }
-    .home-button img {
-        width: 28px;
-        height: 25px;
     }
     .bar {
         height: 25px;

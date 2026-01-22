@@ -16,6 +16,13 @@ let gameEnded = false;
 let submittedWords = []; // Track submitted words
 let feedbackHistory = [];
 
+// Hint state variables
+let hintPanelVisible = false;
+let hintRequested = false;
+let currentHint = null;
+let hintsRemaining = 0;
+let hintServiceAvailable = false;
+
 
 // Create the game grid and restore state if available
 (async function loadGameState() {
@@ -40,7 +47,6 @@ let feedbackHistory = [];
         });
         currentGuess = "";
         if (data.state.success || currentRow === 6) {
-            document.getElementById('compare-link').style.display = 'inline';
             document.getElementById('shareButton').style.display = 'inline';
             document.getElementById('shareButton').onclick = shareResults;
             gameEnded = true;
@@ -103,24 +109,22 @@ try {
     });
     const data = await response.json();
     if (data.correct) {
-      feedbackHistory.push(data.feedback); 
+      feedbackHistory.push(data.feedback);
       await animateReveal(true,data.feedback,deltaDelay = 300);
-      showCongratulations(); 
+      showCongratulations();
       celebrate();
       document.getElementById('shareButton').style.display = 'inline';
       document.getElementById('shareButton').onclick = shareResults;
-      document.getElementById('compare-link').style.display = 'inline';
       gameEnded = true;
     } else {
-      feedbackHistory.push(data.feedback); 
+      feedbackHistory.push(data.feedback);
       await animateReveal(false, data.feedback,deltaDelay = 300);
       currentRow++;
       currentGuess = "";
       if (currentRow === 6 ) {
         document.getElementById('shareButton').style.display = 'inline';
         document.getElementById('shareButton').onclick = shareResults;
-          document.getElementById('compare-link').style.display = 'inline';
-          gameEnded = true;
+        gameEnded = true;
       }
     }
 } catch (error) {
@@ -374,6 +378,7 @@ function showTemporaryMessage(message) {
 
 document.addEventListener('keydown', (event) => {
   if (gameEnded) return; // If the game is over, ignore further key presses
+  if (hintPanelVisible) return; // Ignore keyboard input when hint panel is open
 
   const key = event.key.toLowerCase();
 
@@ -388,3 +393,188 @@ document.addEventListener('keydown', (event) => {
     handleKeyPress(key);
   }
 });
+
+// =====================
+// Hint Panel Functions
+// =====================
+
+// Toggle between keyboard and hint panel
+function toggleHintPanel(show) {
+    const keyboard = document.getElementById('keyboard');
+    const hintPanel = document.getElementById('hint-panel');
+    const hintToggle = document.getElementById('hint-toggle');
+
+    if (show) {
+        keyboard.style.display = 'none';
+        hintPanel.style.display = 'flex';
+        hintToggle.textContent = 'Terug';
+        hintPanelVisible = true;
+        // Update button state when opening panel
+        updateHintButtonState();
+    } else {
+        keyboard.style.display = 'flex';
+        hintPanel.style.display = 'none';
+        hintToggle.textContent = 'Vraag Ollie';
+        hintPanelVisible = false;
+    }
+}
+
+// Update hint button state based on current game state
+function updateHintButtonState() {
+    const requestBtn = document.getElementById('request-hint-btn');
+    const responseElement = document.getElementById('hint-response');
+
+    // If hint already requested or no hints remaining, don't change
+    if (hintRequested || hintsRemaining === 0) return;
+
+    // Check if user has made any guesses
+    if (submittedWords.length === 0) {
+        requestBtn.textContent = 'Doe eerst een poging';
+        requestBtn.disabled = true;
+        requestBtn.classList.add('disabled');
+        responseElement.style.display = 'none';
+    } else {
+        requestBtn.textContent = 'Vraag een hint';
+        requestBtn.disabled = false;
+        requestBtn.classList.remove('disabled');
+    }
+}
+
+// Load hint status on page load
+async function loadHintStatus() {
+    try {
+        const response = await fetch('/api/mastermind/hint-status');
+        const data = await response.json();
+
+        hintServiceAvailable = data.available;
+        hintsRemaining = data.hintsRemaining;
+
+        const hintToggleContainer = document.getElementById('hint-toggle-container');
+
+        if (!hintServiceAvailable) {
+            // Hide hint toggle if service not available
+            hintToggleContainer.style.display = 'none';
+            return;
+        }
+
+        updateHintUI(data.hintsRemaining, data.totalHints, data.todayHint);
+
+        // If there's an existing hint for today, store it
+        if (data.todayHint) {
+            currentHint = data.todayHint;
+            hintRequested = true;
+        }
+    } catch (error) {
+        console.error('Failed to load hint status:', error);
+        document.getElementById('hint-toggle-container').style.display = 'none';
+    }
+}
+
+// Update hint UI elements
+function updateHintUI(remaining, total, todayHint) {
+    const quotaElement = document.getElementById('hint-quota');
+    const requestBtn = document.getElementById('request-hint-btn');
+    const responseElement = document.getElementById('hint-response');
+
+    // Update quota display
+    const used = total - remaining;
+    quotaElement.textContent = `${used}/${total} hints gebruikt deze maand`;
+
+    // Show existing hint if available
+    if (todayHint) {
+        responseElement.textContent = todayHint;
+        responseElement.style.display = 'block';
+        requestBtn.textContent = 'Hint al gevraagd vandaag';
+        requestBtn.disabled = true;
+        requestBtn.classList.add('disabled');
+    } else if (remaining === 0) {
+        requestBtn.textContent = 'Geen hints meer over';
+        requestBtn.disabled = true;
+        requestBtn.classList.add('disabled');
+        responseElement.style.display = 'none';
+    } else if (submittedWords.length === 0) {
+        requestBtn.textContent = 'Doe eerst een poging';
+        requestBtn.disabled = true;
+        requestBtn.classList.add('disabled');
+        responseElement.style.display = 'none';
+    } else {
+        requestBtn.textContent = 'Vraag een hint';
+        requestBtn.disabled = false;
+        requestBtn.classList.remove('disabled');
+        responseElement.style.display = 'none';
+    }
+}
+
+// Request a hint from the server
+async function requestHint() {
+    const requestBtn = document.getElementById('request-hint-btn');
+    const loadingElement = document.getElementById('hint-loading');
+    const responseElement = document.getElementById('hint-response');
+
+    // Show loading state
+    requestBtn.style.display = 'none';
+    loadingElement.style.display = 'flex';
+    responseElement.style.display = 'none';
+
+    try {
+        const response = await fetch('/api/mastermind/request-hint', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                guesses: submittedWords,
+                feedback: feedbackHistory
+            })
+        });
+
+        const data = await response.json();
+
+        // Hide loading
+        loadingElement.style.display = 'none';
+        requestBtn.style.display = 'block';
+
+        if (data.success) {
+            currentHint = data.hint;
+            hintRequested = true;
+            hintsRemaining = data.hintsRemaining;
+
+            // Update UI
+            responseElement.textContent = data.hint;
+            responseElement.style.display = 'block';
+            requestBtn.textContent = 'Hint al gevraagd vandaag';
+            requestBtn.disabled = true;
+            requestBtn.classList.add('disabled');
+
+            // Update quota
+            const quotaElement = document.getElementById('hint-quota');
+            const used = 3 - data.hintsRemaining;
+            quotaElement.textContent = `${used}/3 hints gebruikt deze maand`;
+        } else {
+            showTemporaryMessage(data.error || 'Er ging iets mis');
+        }
+    } catch (error) {
+        console.error('Failed to request hint:', error);
+        loadingElement.style.display = 'none';
+        requestBtn.style.display = 'block';
+        showTemporaryMessage('Er ging iets mis bij het ophalen van de hint');
+    }
+}
+
+// Initialize hint panel event listeners
+function initHintPanel() {
+    const hintToggle = document.getElementById('hint-toggle');
+    const requestBtn = document.getElementById('request-hint-btn');
+
+    hintToggle.addEventListener('click', () => {
+        toggleHintPanel(!hintPanelVisible);
+    });
+
+    requestBtn.addEventListener('click', requestHint);
+
+    // Load initial hint status
+    loadHintStatus();
+}
+
+// Initialize hint panel when DOM is ready
+initHintPanel();

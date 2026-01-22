@@ -8,11 +8,11 @@ body {
     text-align: center;
 }
 
-h1 {
-    font-size: 2.5em;
-    margin-top: 20px;
-    color: #333;
+#compare-container {
+    padding: 0 20px;
 }
+
+/* h1 handled by mastermind.css */
 
 /* Container for comparing results */
 #compare-container {
@@ -110,17 +110,7 @@ h1 {
     color: white;
 }
 
-/* Navigation button */
-.home-button {
-    position: absolute;
-    top: 10px;
-    left: 10px;
-}
-
-.home-button img {
-    width: 30px;
-    height: 30px;
-}
+/* Navigation button - handled by mastermind.css */
 
 /* Capture section */
 #captureSection {
