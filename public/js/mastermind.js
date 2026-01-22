@@ -37,7 +37,6 @@ let hintServiceAvailable = false;
             updateGrid();
             feedbackHistory.push(data.state.feedback[index]);
 
-            console.log(feedbackHistory);
             if (currentRow == data.state.currentRow && data.state.success) {
                 animateReveal(data.state.success, data.state.feedback[index], deltaDelay = 0);
             } else {
@@ -291,10 +290,8 @@ function getStateColor(feedback) {
 
 // Function to update the keyboard color based on the highest state encountered
 function updateKeyColor(letter, feedback) {
-  console.info(`Updating key color for ${letter} with feedback: ${feedback}`);
   const currentColor = keyState[letter] || gray;
   const newColor = getStateColor(feedback);
-  console.info(`Current color: ${currentColor}, New color: ${newColor}`);
 
   // Update if the new color has a higher priority or if it's the first time setting it
   if (
