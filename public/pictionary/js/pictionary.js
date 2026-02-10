@@ -1,6 +1,7 @@
 //public/pictionary/js/pictionary.js
 const titles = {
     DRAW: "Teken je woord!",
+    THINK: "Bedenk je tekening!",
     CHOOSE: "Kies een moeilijkheidsgraad!",
     GUESS: "Raad het woord!",
     GRADE: "Beoordeel de antwoorden!",
@@ -13,6 +14,9 @@ function updateGameTitle(state) {
     switch (state) {
         case "drawing":
             gameTitleElement.textContent = titles.DRAW;
+            break;
+        case "thinking":
+            gameTitleElement.textContent = titles.THINK;
             break;
         case "choose":
             gameTitleElement.textContent = titles.CHOOSE;
@@ -37,35 +41,49 @@ async function fetchGameState() {
     try {
         const response = await fetch("/api/pictionary/state");
         if (!response.ok) throw new Error("Failed to fetch initial game state.");
-        
+
         const data = await response.json();
         console.log("Initial data fetched:", data);
-        return data.state; // Assuming response has { state: "draw/choose/guess/idle" }
+        return data; // Return full data object (includes state, and word when thinking)
     } catch (error) {
         console.error("Error fetching game state:", error);
-        return "idle"; // Default to idle state
+        return { state: "idle" }; // Default to idle state
     }
-  
+
 }
 
 // Function to Handle the Game State
-function handleGameState(state) {
+// Accepts either a state string or a data object with { state, word, ... }
+function handleGameState(stateOrData) {
+    let state, data;
+    if (typeof stateOrData === 'object' && stateOrData !== null) {
+        state = stateOrData.state;
+        data = stateOrData;
+    } else {
+        state = stateOrData;
+        data = {};
+    }
+
     updateGameTitle(state);
 
     // If the game is in the "scoring" state, redirect to the scoreboard
     if (state === "scoring") {
         window.location.href = "/pictionary/scoreboard";
-        return; 
+        return;
     }
-  
+
     // 1. Hide all relevant containers first
     hideAllContainers();
-  
+
     // 2. Show the container & call the function for the chosen state
     switch (state) {
+      case "thinking":
+        document.getElementById("thinking-container").classList.remove("hidden");
+        handleThinking(data.word);
+        break;
       case "drawing":
         document.getElementById("drawing-container").classList.remove("hidden");
-        handleDraw(); // or pass the canvasRef or any other args if needed
+        handleDraw();
         break;
       case "modify":
         document.getElementById("drawing-container").classList.remove("hidden");
@@ -89,7 +107,7 @@ function handleGameState(state) {
         document.getElementById("guess-submission-controls").classList.add("hidden"); // Hide input & button
         handleGuess();
         break;
-    
+
       case "feedback":
         document.getElementById("grading-guesses").classList.remove("hidden");
         handleGrade();
@@ -102,6 +120,7 @@ function handleGameState(state) {
 function hideAllContainers() {
     const containers = [
       "word-selection",
+      "thinking-container",
       "drawing-container",
       "guess-submission",
       "guesses-table-container",
@@ -281,6 +300,53 @@ function disableDrawing(canvasRef) {
     disableThicknessControls();
   
     }
+
+let thinkingTimerInterval = null;
+
+function handleThinking(word) {
+    const wordTitleEl = document.getElementById("thinking-word-title");
+    const timerEl = document.getElementById("thinking-timer");
+    const startBtn = document.getElementById("start-drawing-btn");
+
+    if (word) {
+        wordTitleEl.innerHTML = `Je woord is: <span class="highlight-word">${word}</span>`;
+    }
+
+    // 60 seconds
+    const thinkingDuration = 60;
+    let timeLeft = thinkingDuration;
+
+    function formatTime(seconds) {
+        const m = Math.floor(seconds / 60);
+        const s = seconds % 60;
+        return `${m}:${s.toString().padStart(2, '0')}`;
+    }
+
+    timerEl.textContent = formatTime(timeLeft);
+
+    // Clear any previous interval
+    if (thinkingTimerInterval) clearInterval(thinkingTimerInterval);
+
+    thinkingTimerInterval = setInterval(() => {
+        timeLeft -= 1;
+        timerEl.textContent = formatTime(timeLeft);
+
+        if (timeLeft <= 0) {
+            clearInterval(thinkingTimerInterval);
+            thinkingTimerInterval = null;
+            handleGameState('drawing');
+        }
+    }, 1000);
+
+    // Start drawing button
+    startBtn.addEventListener("click", () => {
+        if (thinkingTimerInterval) {
+            clearInterval(thinkingTimerInterval);
+            thinkingTimerInterval = null;
+        }
+        handleGameState('drawing');
+    }, { once: true });
+}
 
 function startCountdown(duration) {
     const timerBar = document.getElementById("timer-bar");
@@ -692,8 +758,8 @@ function startCountdown(duration) {
         if (response.ok) {
             console.log(`Assigned word: ${data.word}, Max Points: ${data.maxPoints}`);
 
-            // 🔄 Immediately update game state
-            handleGameState(data.state);
+            // Transition to thinking state with the word
+            handleGameState(data);
         } else {
             console.error('Failed to set difficulty');
         }
@@ -1066,8 +1132,8 @@ function handleIdle() {
 
 // Main Game Initialization
 async function initGame() {
-    const initialState = await fetchGameState(); 
-    handleGameState(initialState);
+    const data = await fetchGameState();
+    handleGameState(data);
 }
 
 // Run the Game Initialization when the page loads

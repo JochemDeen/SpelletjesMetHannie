@@ -667,3 +667,51 @@
     background-color: #cccccc;
     cursor: not-allowed;
 }
+
+/* Thinking Phase */
+#thinking-container {
+    margin: 20px auto;
+    padding: 30px 20px;
+    width: 80%;
+    max-width: 500px;
+    background-color: #fff7e6;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    border-radius: 12px;
+    text-align: center;
+    border: 2px solid #ffd966;
+}
+
+#thinking-word-title {
+    font-size: 1.4em;
+    margin-bottom: 15px;
+}
+
+#thinking-message {
+    font-size: 1em;
+    color: #555;
+    margin-bottom: 20px;
+}
+
+#thinking-timer {
+    font-size: 2.5em;
+    font-weight: bold;
+    color: #333;
+    margin-bottom: 25px;
+}
+
+#start-drawing-btn {
+    padding: 14px 28px;
+    font-size: 1.2em;
+    font-weight: bold;
+    background-color: #ffa500;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+#start-drawing-btn:hover {
+    background-color: #ff8c00;
+    transform: scale(1.05);
+}

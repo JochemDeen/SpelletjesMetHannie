@@ -179,8 +179,11 @@ router.get('/api/pictionary/state', requireLogin, async (req, res) => {
     }
 
 
-    //if game state is choose and current user is not the drawer, change state to "idle"
+    //if game state is choose, thinking, or drawing and current user is not the drawer, change state to "idle"
     if (gameState.state === 'choose' && gameState.drawer_user_id !== req.session.userId) {
+      gameState.state = 'idle';
+    }
+    if (gameState.state === 'thinking' && gameState.drawer_user_id !== req.session.userId) {
       gameState.state = 'idle';
     }
     //if game state is "drawing" and current user is NOT the drawer, change state to "idle"
@@ -215,6 +218,12 @@ router.get('/api/pictionary/state', requireLogin, async (req, res) => {
       status: gameState.status,
       difficulty: gameState.difficulty,
     };
+
+    // Include the word when the drawer is in thinking state
+    if (gameState.state === 'thinking') {
+      safeGameState.word = gameState.word;
+    }
+
     res.json(safeGameState);
 
   } catch (error) {
@@ -271,13 +280,13 @@ router.post('/api/pictionary/set-difficulty', requireLogin, async (req, res) => 
       // Store the chosen word, difficulty and update game state to 'drawing'
       await Pictionary.setChosenWord(gameId, word);
       await Pictionary.setDifficulty(gameId, difficulty);
-      await Pictionary.setGameState(gameId, 'drawing');
+      await Pictionary.setGameState(gameId, 'thinking');
       //await Pictionary.updateGameState(gameId, 'drawing');
 
       res.json({
           word,
           game_id: gameId,
-          state: 'drawing',
+          state: 'thinking',
           maxPoints
       });
 
