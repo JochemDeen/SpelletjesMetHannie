@@ -193,7 +193,7 @@ function determineHintTier(guessCount, analysis) {
     const { correctCount, knownCount, misplacedLetters } = analysis;
 
     // Tier 1: Almost done or last guess
-    if (correctCount >= 4 || guessCount >= 5) {
+    if (correctCount >= 4 || guessCount >= 5 || (correctCount >= 3 && knownCount >= 4)) {
         return 'tier1_word_association';
     }
 
