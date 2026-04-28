@@ -193,7 +193,7 @@ function determineHintTier(guessCount, analysis) {
     const { correctCount, knownCount, misplacedLetters } = analysis;
 
     // Tier 1: Almost done or last guess
-    if (correctCount >= 4 || guessCount >= 5 || (correctCount >= 3 && knownCount >= 4)) {
+    if (correctCount >= 4 || guessCount >= 5 || (correctCount >= 3 && misplacedLetters.length > 0)) {
         return 'tier1_word_association';
     }
 
@@ -320,7 +320,7 @@ async function callGeminiAPI(wordOfTheDay, guesses, feedback) {
     const https = require('https');
 
     return new Promise((resolve, reject) => {
-        const modelId = "gemini-2.0-flash";
+        const modelId = "gemini-2.5-flash-lite";
         const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent?key=${apiKey}`;
 
         const urlObj = new URL(url);
