@@ -16,6 +16,13 @@ document.addEventListener('DOMContentLoaded', async () => {
       if (highestData.success && Array.isArray(highestData.highestScores)) {
         renderHighestScores(highestData.highestScores);
       }
+
+      // Fetch all-time top monthly scores
+      const responseTopMonthly = await fetch('/api/get-top-monthly-scores?limit=3');
+      const topMonthlyData = await responseTopMonthly.json();
+      if (topMonthlyData.success && Array.isArray(topMonthlyData.topScores)) {
+        renderTopMonthlyScores(topMonthlyData.topScores);
+      }
     } catch (error) {
       console.error('Failed to load scores:', error);
     }
@@ -163,6 +170,44 @@ document.addEventListener('DOMContentLoaded', async () => {
           orderedList.appendChild(listItem);
       });
   }
+    function renderTopMonthlyScores(topScores) {
+      const orderedList = document.getElementById('top-monthly-scores-list');
+      if (!orderedList) return;
+
+      // Already sorted descending by the server, but sort defensively.
+      topScores.sort((a, b) => b.score - a.score);
+
+      orderedList.innerHTML = '';
+
+      if (topScores.length === 0) {
+        const listItem = document.createElement('li');
+        listItem.textContent = 'Er zijn nog geen scores.';
+        orderedList.appendChild(listItem);
+        return;
+      }
+
+      topScores.forEach((entry, index) => {
+        const listItem = document.createElement('li');
+
+        const rankSpan = document.createElement('span');
+        rankSpan.classList.add('rank');
+        rankSpan.textContent = `${index + 1}.`;
+
+        const username = document.createElement('span');
+        username.classList.add('username');
+        username.textContent = `${entry.username} (${getMonthName(entry.month)})`;
+
+        const scoreValue = document.createElement('span');
+        scoreValue.classList.add('score');
+        scoreValue.textContent = entry.score;
+
+        listItem.appendChild(rankSpan);
+        listItem.appendChild(username);
+        listItem.appendChild(scoreValue);
+        orderedList.appendChild(listItem);
+      });
+    }
+
     function getPreviousMonth() {
       const date = new Date();
       date.setDate(0); // Set to the last day of the previous month

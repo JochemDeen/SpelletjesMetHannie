@@ -451,6 +451,53 @@ async function getHighestScorerCounts() {
 }
 
 
+// Function to get the top N highest monthly scores ever achieved (across all users/months)
+async function getTopMonthlyScores(limit = 3) {
+  return new Promise((resolve, reject) => {
+    db.all(`
+      SELECT u.username,
+            strftime('%Y-%m', r.timestamp) AS month,
+            strftime('%Y-%m-%d', r.timestamp) AS day,
+            GROUP_CONCAT(r.guess, '|~|') AS guesses,
+            GROUP_CONCAT(r.feedback, '|~|') AS feedbacks
+      FROM mastermind_results AS r
+      JOIN users AS u ON r.user_id = u.id
+      GROUP BY u.username, month, day
+    `, (err, rows) => {
+      if (err) return reject(err);
+
+      const monthlyScores = {}; // key: `${username}-${month}` -> { username, month, score }
+
+      rows.forEach(row => {
+        const guesses = row.guesses.split('|~|');
+        const feedbacks = row.feedbacks.split('|~|').map(feedback => {
+          try {
+            return JSON.parse(feedback);
+          } catch (e) {
+            logger.error('Failed to parse feedback JSON:', e);
+            return null;
+          }
+        }).filter(feedback => feedback !== null);
+        const success = feedbacks.some(feedbackArray => feedbackArray.every(entry => entry === 'correct'));
+        const dailyScore = calculateScore(guesses, success);
+
+        const key = `${row.username}-${row.month}`;
+        if (!monthlyScores[key]) {
+          monthlyScores[key] = { username: row.username, month: row.month, score: 0 };
+        }
+        monthlyScores[key].score += dailyScore;
+      });
+
+      const topScores = Object.values(monthlyScores)
+        .sort((a, b) => b.score - a.score)
+        .slice(0, limit);
+
+      logger.info(`Retrieved top ${topScores.length} monthly scores.`);
+      resolve(topScores);
+    });
+  });
+}
+
 // Function to calculate score based on the number of guesses
 function calculateScore(guesses, success) {
   if (!success) return 0;  // No score if the user didn't guess the word
@@ -493,6 +540,7 @@ async function getEarliestDate() {
     getUserStats,
     getMonthlyScores,
     getHighestScorerCounts,
+    getTopMonthlyScores,
     calculateScore,
     getEarliestDate
   };

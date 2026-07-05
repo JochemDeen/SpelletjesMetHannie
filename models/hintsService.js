@@ -6,7 +6,7 @@ const path = require('path');
 
 const db = new sqlite3.Database('database.sqlite');
 
-const MONTHLY_HINT_LIMIT = 3;
+const MONTHLY_HINT_LIMIT = 4;
 
 /**
  * Load prompts from JSON file
@@ -312,15 +312,15 @@ async function callGeminiAPI(wordOfTheDay, guesses, feedback) {
             }]
         }],
         generationConfig: {
-            temperature: 0.9,
-            maxOutputTokens: 200
+            temperature: 0.7,
+            maxOutputTokens: 500
         }
     };
 
     const https = require('https');
 
     return new Promise((resolve, reject) => {
-        const modelId = "gemini-2.5-flash-lite";
+        const modelId = "gemini-3.1-flash-lite";
         const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent?key=${apiKey}`;
 
         const urlObj = new URL(url);

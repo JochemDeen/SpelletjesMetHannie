@@ -183,6 +183,19 @@ router.get('/api/get-highest-scorer-counts', requireLogin, async (req, res) => {
   }
 });
 
+// Endpoint for Get Top Monthly Scores (all-time highest monthly scores)
+router.get('/api/get-top-monthly-scores', requireLogin, async (req, res) => {
+  logger.info('GET /api/get-top-monthly-scores');
+  try {
+    const limit = parseInt(req.query.limit, 10) || 3;
+    const topScores = await gameResults.getTopMonthlyScores(limit);
+    res.json({ success: true, topScores });
+  } catch (error) {
+    logger.error('Error fetching top monthly scores:', error);
+    res.status(500).json({ success: false, error: 'An error occurred while retrieving top monthly scores.' });
+  }
+});
+
 // GET /api/get-earliest-date
 router.get('/api/get-earliest-date', requireLogin, async (req, res) => {
   try {
