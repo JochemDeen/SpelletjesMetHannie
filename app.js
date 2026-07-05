@@ -9,6 +9,7 @@ const path = require('path');
 const authRoutes = require('./routes/auth');
 const gameRoutes = require('./routes/games');
 const pictionaryRoutes = require('./routes/pictionary_routes');
+const wieBenIkRoutes = require('./routes/wie_ben_ik_routes');
 const settingsRoutes = require('./routes/settings');
 const rateRoutes = require('./routes/ratings');
 
@@ -44,6 +45,9 @@ app.use(session({
 
   // Use pictionary routes
   app.use('/', pictionaryRoutes);
+
+  // Use wie ben ik routes
+  app.use('/', wieBenIkRoutes);
 
   // Use rating routes
   app.use('/', rateRoutes);

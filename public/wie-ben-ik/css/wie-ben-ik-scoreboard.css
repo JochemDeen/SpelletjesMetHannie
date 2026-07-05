@@ -1,0 +1,160 @@
+/* Wie ben ik? scoreboard — mystery theme: midnight blue with gold accents */
+:root {
+    --wbi-bg: #17172e;
+    --wbi-surface: #21213c;
+    --wbi-surface-light: #2b2b4a;
+    --wbi-border: #3b3b60;
+    --wbi-text: #e9e7f2;
+    --wbi-muted: #9d99bd;
+    --wbi-gold: #d9b95c;
+    --wbi-purple: #8b7fd4;
+}
+
+body {
+    font-family: 'Arial', sans-serif;
+    background-color: var(--wbi-bg);
+    color: var(--wbi-text);
+    margin: 0;
+    padding: 20px;
+    box-sizing: border-box;
+}
+
+#scoreboard-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 30px;
+    margin-top: 20px;
+    width: 100%;
+    max-width: 800px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+.score-list {
+    list-style: none;
+    width: 100%;
+    max-width: 600px;
+    padding: 0;
+    margin: 0;
+    background: var(--wbi-surface);
+    border: 1px solid var(--wbi-border);
+    border-radius: 10px;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+}
+
+li {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--wbi-border);
+    transition: background-color 0.2s;
+}
+
+li:last-child {
+    border-bottom: none;
+}
+
+li:hover {
+    background-color: var(--wbi-surface-light);
+}
+
+.rank {
+    font-weight: bold;
+    color: var(--wbi-purple);
+}
+
+.username {
+    flex: 1;
+    padding-left: 10px;
+    color: var(--wbi-text);
+    font-size: 1.1em;
+}
+
+.score {
+    font-weight: bold;
+    color: var(--wbi-gold);
+}
+
+h1, h2 {
+    font-family: Georgia, 'Times New Roman', serif;
+    font-size: 1.8em;
+    letter-spacing: 1px;
+    margin: 20px 0;
+    color: var(--wbi-gold);
+    text-align: center;
+    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+}
+
+.highlight-word {
+    font-weight: bold;
+    border-radius: 5px;
+    display: inline-block;
+    color: var(--wbi-gold);
+}
+
+/* Style for the last game title (subtitle) */
+#last-game-title {
+    font-size: 1.2em;
+    text-align: center;
+    color: var(--wbi-text);
+    margin-bottom: 10px;
+    font-weight: 500;
+}
+
+#previous-month-winner-info {
+    text-align: center;
+    color: var(--wbi-text);
+}
+
+/* Home Button (light chip so the icon stays visible on the dark page) */
+.home-button {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    background-color: rgba(255, 255, 255, 0.9);
+    border-radius: 8px;
+    padding: 4px 6px 2px 6px;
+}
+
+.home-button img {
+    width: 30px;
+    height: 28px;
+    transition: transform 0.2s ease-in-out;
+}
+
+.home-button img:hover {
+    transform: scale(1.1);
+}
+
+.view-game-container {
+    display: flex;
+    justify-content: center;
+    margin-top: 10px;
+    padding-bottom: 10px;
+    border-bottom: none;
+}
+
+.view-game-button {
+    font-size: 0.9rem;
+    color: var(--wbi-purple);
+    text-decoration: none;
+    font-weight: 500;
+    transition: color 0.2s ease-in-out, opacity 0.2s ease-in-out;
+}
+
+.view-game-button:hover {
+    color: var(--wbi-gold);
+    opacity: 0.9;
+    text-decoration: underline;
+}
+
+@media (max-width: 600px) {
+    .view-game-container {
+        margin-top: 8px;
+    }
+    .view-game-button {
+        font-size: 0.85rem;
+    }
+}

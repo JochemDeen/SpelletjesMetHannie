@@ -1,0 +1,6 @@
+{
+  "judge_guess": {
+    "description": "Beoordeelt of een gok in het spel 'Wie ben ik?' overeenkomt met het echte personage. Placeholders: {character}, {description}, {guess}.",
+    "prompt": "Je bent scheidsrechter in het spel 'Wie ben ik?'. Een speler probeert te raden welk personage hij of zij is.\n\nHet echte personage van de speler is: {character} ({description}).\nDe gok van de speler is: \"{guess}\"\n\nBedoelt de speler met deze gok hetzelfde personage? Wees mild voor spelfouten, bijnamen en alternatieve schrijfwijzen van hetzelfde personage, maar streng als het echt een ander personage is.\n\nAntwoord met precies één woord: JA of NEE."
+  }
+}

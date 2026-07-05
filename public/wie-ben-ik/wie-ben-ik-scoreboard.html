@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8">
+  <title>Wie ben ik? Scoreboard</title>
+  <link rel="stylesheet" href="/wie-ben-ik/css/wie-ben-ik-scoreboard.css">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body>
+    <a href="/" class="home-button"><img src="/images/home.png" alt="Home" /></a>
+    <h1>Wie ben ik? Scoreboard</h1>
+
+    <div id="scoreboard-container">
+        <!-- Last Game Score -->
+        <div class="last-game-score">
+            <h2 id="last-game-header">Laatste Spel</h2>
+            <div id="last-game-title"></div>
+            <ol id="last-game-list" class="score-list"></ol>
+        </div>
+
+        <!-- Monthly Scores -->
+        <div class="monthly-scores">
+            <h2 id="current-month-header"></h2>
+            <ol id="monthly-score-list" class="score-list"></ol>
+        </div>
+
+        <!-- Previous Month Winner -->
+        <div class="previous-month-winner">
+            <h2 id="previous-month-winner-title"></h2>
+            <p id="previous-month-winner-info"></p>
+        </div>
+    </div>
+
+    <script src="/wie-ben-ik/js/wie-ben-ik-scoreboard.js"></script>
+</body>
+</html>

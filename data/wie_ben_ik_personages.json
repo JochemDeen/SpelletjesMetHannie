@@ -1,0 +1,1953 @@
+{
+  "spel": "Wie ben ik?",
+  "taal": "nl",
+  "doelgroep": "Nederlandstalige spelers (België/Nederland), ca. 38–68 jaar",
+  "opmerking": "De 'omschrijving' is een hint voor de antwoordende spelers, niet voor de rader.",
+  "themas": [
+    {
+      "id": "wereldleiders",
+      "naam": "Wereldleiders & historische figuren",
+      "figuren": [
+        {
+          "naam": "Napoleon Bonaparte",
+          "omschrijving": "Franse keizer en veldheer"
+        },
+        {
+          "naam": "Julius Caesar",
+          "omschrijving": "Romeinse veldheer en dictator"
+        },
+        {
+          "naam": "Cleopatra",
+          "omschrijving": "Laatste farao van Egypte"
+        },
+        {
+          "naam": "Alexander de Grote",
+          "omschrijving": "Macedonische veroveraar"
+        },
+        {
+          "naam": "Karel de Grote",
+          "omschrijving": "Frankische keizer, 'vader van Europa'"
+        },
+        {
+          "naam": "Keizer Karel (Karel V)",
+          "omschrijving": "In Gent geboren keizer van het Habsburgse rijk"
+        },
+        {
+          "naam": "Willem van Oranje",
+          "omschrijving": "Willem de Zwijger, leider Nederlandse Opstand"
+        },
+        {
+          "naam": "Napoleon III",
+          "omschrijving": "Franse keizer, neef van Napoleon"
+        },
+        {
+          "naam": "Lodewijk XIV",
+          "omschrijving": "Franse Zonnekoning"
+        },
+        {
+          "naam": "Marie-Antoinette",
+          "omschrijving": "Franse koningin, onthoofd tijdens de Revolutie"
+        },
+        {
+          "naam": "Jeanne d'Arc",
+          "omschrijving": "Franse heldin en martelares"
+        },
+        {
+          "naam": "Godfried van Bouillon",
+          "omschrijving": "Vlaamse kruisvaarder, veroveraar van Jeruzalem"
+        },
+        {
+          "naam": "Ambiorix",
+          "omschrijving": "Eburoonse leider, 'de eerste Belg'"
+        },
+        {
+          "naam": "Adolf Hitler",
+          "omschrijving": "Duitse dictator, nazi-leider"
+        },
+        {
+          "naam": "Winston Churchill",
+          "omschrijving": "Britse premier tijdens WOII"
+        },
+        {
+          "naam": "Charles de Gaulle",
+          "omschrijving": "Frans president en generaal"
+        },
+        {
+          "naam": "Jozef Stalin",
+          "omschrijving": "Sovjetdictator"
+        },
+        {
+          "naam": "Vladimir Lenin",
+          "omschrijving": "Leider Russische Revolutie"
+        },
+        {
+          "naam": "Mao Zedong",
+          "omschrijving": "Chinese communistische leider"
+        },
+        {
+          "naam": "Nelson Mandela",
+          "omschrijving": "Zuid-Afrikaans president, anti-apartheidsicoon"
+        },
+        {
+          "naam": "Mahatma Gandhi",
+          "omschrijving": "Indiase leider van geweldloos verzet"
+        },
+        {
+          "naam": "Martin Luther King",
+          "omschrijving": "Amerikaans burgerrechtenleider"
+        },
+        {
+          "naam": "Rosa Parks",
+          "omschrijving": "Symbool van de Amerikaanse burgerrechtenbeweging"
+        },
+        {
+          "naam": "Che Guevara",
+          "omschrijving": "Argentijnse revolutionair"
+        },
+        {
+          "naam": "Fidel Castro",
+          "omschrijving": "Cubaanse revolutionair en leider"
+        },
+        {
+          "naam": "John F. Kennedy",
+          "omschrijving": "Vermoorde Amerikaanse president"
+        },
+        {
+          "naam": "Abraham Lincoln",
+          "omschrijving": "Amerikaanse president, afschaffing slavernij"
+        },
+        {
+          "naam": "George Washington",
+          "omschrijving": "Eerste Amerikaanse president"
+        },
+        {
+          "naam": "Ronald Reagan",
+          "omschrijving": "Amerikaans president en acteur"
+        },
+        {
+          "naam": "Barack Obama",
+          "omschrijving": "Eerste zwarte Amerikaanse president"
+        },
+        {
+          "naam": "Donald Trump",
+          "omschrijving": "Amerikaans president en zakenman"
+        },
+        {
+          "naam": "Margaret Thatcher",
+          "omschrijving": "Britse premier, 'Iron Lady'"
+        },
+        {
+          "naam": "Angela Merkel",
+          "omschrijving": "Langdurige Duitse bondskanselier"
+        },
+        {
+          "naam": "Vladimir Poetin",
+          "omschrijving": "Russisch president"
+        },
+        {
+          "naam": "Koningin Elizabeth II",
+          "omschrijving": "Britse koningin, langste regeerperiode"
+        },
+        {
+          "naam": "Koning Boudewijn",
+          "omschrijving": "Belgische koning"
+        },
+        {
+          "naam": "Koning Albert II",
+          "omschrijving": "Belgische koning"
+        },
+        {
+          "naam": "Koning Filip",
+          "omschrijving": "Huidige Belgische koning"
+        },
+        {
+          "naam": "Koning Leopold II",
+          "omschrijving": "Belgische koning, Congo-Vrijstaat"
+        },
+        {
+          "naam": "Koningin Beatrix",
+          "omschrijving": "Voormalige Nederlandse koningin"
+        },
+        {
+          "naam": "Koning Willem-Alexander",
+          "omschrijving": "Huidige Nederlandse koning"
+        },
+        {
+          "naam": "Christoffel Columbus",
+          "omschrijving": "Ontdekkingsreiziger van Amerika"
+        },
+        {
+          "naam": "Ferdinand Magellaan",
+          "omschrijving": "Eerste reis rond de wereld"
+        },
+        {
+          "naam": "Marco Polo",
+          "omschrijving": "Reiziger naar het verre oosten"
+        },
+        {
+          "naam": "Genghis Khan",
+          "omschrijving": "Mongoolse veroveraar"
+        },
+        {
+          "naam": "Attila de Hun",
+          "omschrijving": "Gevreesde koning der Hunnen"
+        },
+        {
+          "naam": "Nero",
+          "omschrijving": "Wrede Romeinse keizer"
+        },
+        {
+          "naam": "Toetanchamon",
+          "omschrijving": "Egyptische kindfarao"
+        },
+        {
+          "naam": "Anne Frank",
+          "omschrijving": "Joods meisje, dagboek uit WOII"
+        },
+        {
+          "naam": "Mata Hari",
+          "omschrijving": "Nederlandse danseres en spionne"
+        },
+        {
+          "naam": "Saddam Hoessein",
+          "omschrijving": "Iraakse dictator"
+        },
+        {
+          "naam": "Muammar Gaddafi",
+          "omschrijving": "Libische dictator"
+        },
+        {
+          "naam": "Yasser Arafat",
+          "omschrijving": "Palestijnse leider"
+        },
+        {
+          "naam": "Koningin Wilhelmina",
+          "omschrijving": "Nederlandse koningin tijdens WOII"
+        },
+        {
+          "naam": "Tsaar Nicolaas II",
+          "omschrijving": "Laatste Russische tsaar"
+        }
+      ]
+    },
+    {
+      "id": "wetenschappers",
+      "naam": "Wetenschappers & uitvinders",
+      "figuren": [
+        {
+          "naam": "Albert Einstein",
+          "omschrijving": "Relativiteitstheorie, E=mc²"
+        },
+        {
+          "naam": "Isaac Newton",
+          "omschrijving": "Zwaartekracht en bewegingswetten"
+        },
+        {
+          "naam": "Charles Darwin",
+          "omschrijving": "Evolutietheorie"
+        },
+        {
+          "naam": "Marie Curie",
+          "omschrijving": "Onderzoek naar radioactiviteit, dubbele Nobelprijs"
+        },
+        {
+          "naam": "Galileo Galilei",
+          "omschrijving": "Astronoom, telescoop"
+        },
+        {
+          "naam": "Nikola Tesla",
+          "omschrijving": "Uitvinder, wisselstroom"
+        },
+        {
+          "naam": "Thomas Edison",
+          "omschrijving": "Uitvinder van de gloeilamp"
+        },
+        {
+          "naam": "Leonardo da Vinci",
+          "omschrijving": "Universeel genie en uitvinder"
+        },
+        {
+          "naam": "Stephen Hawking",
+          "omschrijving": "Natuurkundige, zwarte gaten"
+        },
+        {
+          "naam": "Louis Pasteur",
+          "omschrijving": "Pasteurisatie en vaccins"
+        },
+        {
+          "naam": "Sigmund Freud",
+          "omschrijving": "Grondlegger psychoanalyse"
+        },
+        {
+          "naam": "Archimedes",
+          "omschrijving": "Griekse wiskundige, 'Eureka!'"
+        },
+        {
+          "naam": "Pythagoras",
+          "omschrijving": "Wiskundige, stelling over driehoeken"
+        },
+        {
+          "naam": "Aristoteles",
+          "omschrijving": "Griekse filosoof en wetenschapper"
+        },
+        {
+          "naam": "Nicolaus Copernicus",
+          "omschrijving": "Zon in het middelpunt"
+        },
+        {
+          "naam": "Johannes Kepler",
+          "omschrijving": "Wetten van planeetbanen"
+        },
+        {
+          "naam": "Alfred Nobel",
+          "omschrijving": "Uitvinder dynamiet, Nobelprijzen"
+        },
+        {
+          "naam": "Gebroeders Wright",
+          "omschrijving": "Eerste gemotoriseerde vlucht"
+        },
+        {
+          "naam": "Alexander Fleming",
+          "omschrijving": "Ontdekker van penicilline"
+        },
+        {
+          "naam": "Gregor Mendel",
+          "omschrijving": "Grondlegger van de erfelijkheidsleer"
+        },
+        {
+          "naam": "Antoni van Leeuwenhoek",
+          "omschrijving": "Nederlander, vader van de microbiologie"
+        },
+        {
+          "naam": "Christiaan Huygens",
+          "omschrijving": "Nederlandse natuurkundige en astronoom"
+        },
+        {
+          "naam": "Andreas Vesalius",
+          "omschrijving": "Brusselse anatoom"
+        },
+        {
+          "naam": "Gerardus Mercator",
+          "omschrijving": "Vlaamse cartograaf, wereldkaart"
+        },
+        {
+          "naam": "Simon Stevin",
+          "omschrijving": "Vlaamse wis- en natuurkundige"
+        },
+        {
+          "naam": "Niels Bohr",
+          "omschrijving": "Atoommodel"
+        },
+        {
+          "naam": "Max Planck",
+          "omschrijving": "Grondlegger kwantumtheorie"
+        },
+        {
+          "naam": "Werner Heisenberg",
+          "omschrijving": "Onzekerheidsprincipe"
+        },
+        {
+          "naam": "James Watt",
+          "omschrijving": "Verbeterde de stoommachine"
+        },
+        {
+          "naam": "Michael Faraday",
+          "omschrijving": "Elektromagnetisme"
+        },
+        {
+          "naam": "Blaise Pascal",
+          "omschrijving": "Wiskundige en filosoof"
+        },
+        {
+          "naam": "René Descartes",
+          "omschrijving": "Filosoof, 'ik denk dus ik ben'"
+        },
+        {
+          "naam": "Alan Turing",
+          "omschrijving": "Grondlegger informatica, codekraker"
+        },
+        {
+          "naam": "Tim Berners-Lee",
+          "omschrijving": "Uitvinder van het world wide web"
+        },
+        {
+          "naam": "Bill Gates",
+          "omschrijving": "Oprichter van Microsoft"
+        },
+        {
+          "naam": "Steve Jobs",
+          "omschrijving": "Medeoprichter van Apple"
+        },
+        {
+          "naam": "Guglielmo Marconi",
+          "omschrijving": "Pionier van de radio"
+        },
+        {
+          "naam": "Rudolf Diesel",
+          "omschrijving": "Uitvinder dieselmotor"
+        },
+        {
+          "naam": "Karl Benz",
+          "omschrijving": "Pionier van de auto"
+        },
+        {
+          "naam": "Henry Ford",
+          "omschrijving": "Lopende band, Ford-auto's"
+        },
+        {
+          "naam": "Edward Jenner",
+          "omschrijving": "Eerste pokkenvaccin"
+        },
+        {
+          "naam": "Robert Koch",
+          "omschrijving": "Ontdekker ziekteverwekkende bacteriën"
+        },
+        {
+          "naam": "Alexander Graham Bell",
+          "omschrijving": "Uitvinder van de telefoon"
+        },
+        {
+          "naam": "Socrates",
+          "omschrijving": "Griekse filosoof"
+        },
+        {
+          "naam": "Plato",
+          "omschrijving": "Griekse filosoof"
+        }
+      ]
+    },
+    {
+      "id": "stripfiguren",
+      "naam": "Stripfiguren",
+      "figuren": [
+        {
+          "naam": "Kuifje",
+          "omschrijving": "Belgische reporter met kuif (Hergé)"
+        },
+        {
+          "naam": "Bobbie",
+          "omschrijving": "Kuifjes witte hondje"
+        },
+        {
+          "naam": "Kapitein Haddock",
+          "omschrijving": "Vloekende zeekapitein, vriend van Kuifje"
+        },
+        {
+          "naam": "Professor Zonnebloem",
+          "omschrijving": "Dove uitvinder in Kuifje"
+        },
+        {
+          "naam": "Jansen en Janssen",
+          "omschrijving": "Onhandige detectives in Kuifje"
+        },
+        {
+          "naam": "Suske",
+          "omschrijving": "Jongen uit Suske en Wiske"
+        },
+        {
+          "naam": "Wiske",
+          "omschrijving": "Meisje uit Suske en Wiske"
+        },
+        {
+          "naam": "Lambik",
+          "omschrijving": "Grappige held uit Suske en Wiske"
+        },
+        {
+          "naam": "Jerom",
+          "omschrijving": "Supersterke reus uit Suske en Wiske"
+        },
+        {
+          "naam": "Tante Sidonia",
+          "omschrijving": "Magere tante uit Suske en Wiske"
+        },
+        {
+          "naam": "Schanulleke",
+          "omschrijving": "Wiskes lappenpop"
+        },
+        {
+          "naam": "Asterix",
+          "omschrijving": "Kleine slimme Gallische krijger"
+        },
+        {
+          "naam": "Obelix",
+          "omschrijving": "Dikke sterke Galliër met menhir"
+        },
+        {
+          "naam": "Idefix",
+          "omschrijving": "Obelix' hondje"
+        },
+        {
+          "naam": "Panoramix",
+          "omschrijving": "Druïde met toverdrank"
+        },
+        {
+          "naam": "Lucky Luke",
+          "omschrijving": "Cowboy die sneller schiet dan zijn schaduw"
+        },
+        {
+          "naam": "Jolly Jumper",
+          "omschrijving": "Het paard van Lucky Luke"
+        },
+        {
+          "naam": "De Daltons",
+          "omschrijving": "Vier boevenbroers, tegenstanders van Lucky Luke"
+        },
+        {
+          "naam": "Rataplan",
+          "omschrijving": "Domme gevangenishond bij Lucky Luke"
+        },
+        {
+          "naam": "De Smurfen",
+          "omschrijving": "Kleine blauwe wezentjes (Peyo)"
+        },
+        {
+          "naam": "Grote Smurf",
+          "omschrijving": "Rode leider van de Smurfen"
+        },
+        {
+          "naam": "Smurfin",
+          "omschrijving": "Enige vrouwelijke Smurf"
+        },
+        {
+          "naam": "Gargamel",
+          "omschrijving": "Boze tovenaar, vijand van de Smurfen"
+        },
+        {
+          "naam": "Jommeke",
+          "omschrijving": "Vlaamse jongen met blonde krul (Nys)"
+        },
+        {
+          "naam": "Flip",
+          "omschrijving": "De pratende papegaai van Jommeke"
+        },
+        {
+          "naam": "Filiberke",
+          "omschrijving": "Vriendje van Jommeke"
+        },
+        {
+          "naam": "Nero",
+          "omschrijving": "Held uit De avonturen van Nero (Marc Sleen)"
+        },
+        {
+          "naam": "Guust Flater",
+          "omschrijving": "Luie kantoorbediende die alles verknoeit"
+        },
+        {
+          "naam": "Robbedoes",
+          "omschrijving": "Piccolo-held (Spirou)"
+        },
+        {
+          "naam": "Kwabbernoot",
+          "omschrijving": "Vriend van Robbedoes"
+        },
+        {
+          "naam": "Marsupilami",
+          "omschrijving": "Geel dier met lange staart"
+        },
+        {
+          "naam": "Kiekeboe",
+          "omschrijving": "Vlaams stripgezin (Merho)"
+        },
+        {
+          "naam": "De Rode Ridder",
+          "omschrijving": "Middeleeuwse Vlaamse ridderheld"
+        },
+        {
+          "naam": "Blake en Mortimer",
+          "omschrijving": "Britse avonturiers-duo"
+        },
+        {
+          "naam": "Heer Bommel",
+          "omschrijving": "Deftige heer (Marten Toonder)"
+        },
+        {
+          "naam": "Tom Poes",
+          "omschrijving": "Slim katje, vriend van Heer Bommel"
+        },
+        {
+          "naam": "Garfield",
+          "omschrijving": "Luie oranje kat die lasagne lust"
+        },
+        {
+          "naam": "Snoopy",
+          "omschrijving": "Witte beagle uit Peanuts"
+        },
+        {
+          "naam": "Charlie Brown",
+          "omschrijving": "Pechvogel-jongen uit Peanuts"
+        },
+        {
+          "naam": "Popeye",
+          "omschrijving": "Zeeman die sterk wordt van spinazie"
+        },
+        {
+          "naam": "Calimero",
+          "omschrijving": "Zwart kuikentje met eierschaal op zijn kop"
+        },
+        {
+          "naam": "Urbanus",
+          "omschrijving": "Vlaamse ondeugende stripjongen"
+        }
+      ]
+    },
+    {
+      "id": "sprookjes",
+      "naam": "Sprookjesfiguren",
+      "figuren": [
+        {
+          "naam": "Roodkapje",
+          "omschrijving": "Meisje met rode kap en de wolf"
+        },
+        {
+          "naam": "Assepoester",
+          "omschrijving": "Meisje met glazen muiltje"
+        },
+        {
+          "naam": "Sneeuwwitje",
+          "omschrijving": "Prinses en de zeven dwergen"
+        },
+        {
+          "naam": "Doornroosje",
+          "omschrijving": "Prinses die honderd jaar slaapt"
+        },
+        {
+          "naam": "Hans en Grietje",
+          "omschrijving": "Kinderen bij het peperkoeken huisje"
+        },
+        {
+          "naam": "Klein Duimpje",
+          "omschrijving": "Piepklein jongetje"
+        },
+        {
+          "naam": "Repelsteeltje",
+          "omschrijving": "Kobold die stro tot goud spint"
+        },
+        {
+          "naam": "Rapunzel",
+          "omschrijving": "Meisje met heel lang haar in een toren"
+        },
+        {
+          "naam": "De Kleine Zeemeermin",
+          "omschrijving": "Zeemeermin die mens wil worden"
+        },
+        {
+          "naam": "De Gelaarsde Kat",
+          "omschrijving": "Slimme kat met laarzen"
+        },
+        {
+          "naam": "Pinokkio",
+          "omschrijving": "Houten pop wiens neus groeit bij liegen"
+        },
+        {
+          "naam": "Peter Pan",
+          "omschrijving": "Jongen die nooit groot wordt"
+        },
+        {
+          "naam": "Alice in Wonderland",
+          "omschrijving": "Meisje dat in een konijnenhol valt"
+        },
+        {
+          "naam": "Het Lelijke Eendje",
+          "omschrijving": "Eendje dat een zwaan wordt"
+        },
+        {
+          "naam": "Het Meisje met de Zwavelstokjes",
+          "omschrijving": "Arm meisje in de kou"
+        },
+        {
+          "naam": "De Kikkerkoning",
+          "omschrijving": "Kikker die een prins wordt"
+        },
+        {
+          "naam": "Vrouw Holle",
+          "omschrijving": "Vrouw die sneeuw maakt door haar bed op te schudden"
+        },
+        {
+          "naam": "De Zeven Geitjes",
+          "omschrijving": "Geitjes en de boze wolf"
+        },
+        {
+          "naam": "De Boze Wolf",
+          "omschrijving": "Klassieke schurk uit vele sprookjes"
+        },
+        {
+          "naam": "Blauwbaard",
+          "omschrijving": "Man met een geheime verboden kamer"
+        },
+        {
+          "naam": "Belle en het Beest",
+          "omschrijving": "Meisje en het betoverde beest"
+        },
+        {
+          "naam": "De Prinses op de Erwt",
+          "omschrijving": "Prinses die een erwt door matrassen voelt"
+        },
+        {
+          "naam": "Jack en de Bonenstaak",
+          "omschrijving": "Jongen die naar de reus klimt"
+        },
+        {
+          "naam": "Goudlokje",
+          "omschrijving": "Meisje bij de drie beren"
+        },
+        {
+          "naam": "De Rattenvanger van Hamelen",
+          "omschrijving": "Man die met muziek ratten wegleidt"
+        },
+        {
+          "naam": "Ali Baba",
+          "omschrijving": "Man en de veertig rovers"
+        },
+        {
+          "naam": "Sinbad de Zeeman",
+          "omschrijving": "Avonturier op zee uit 1001 nacht"
+        },
+        {
+          "naam": "Sjeherazade",
+          "omschrijving": "Verteller van 1001 nacht"
+        },
+        {
+          "naam": "De Gestiefelde Reus",
+          "omschrijving": "Reus uit klassieke sprookjes"
+        },
+        {
+          "naam": "De Boze Stiefmoeder",
+          "omschrijving": "Klassieke schurk in sprookjes"
+        },
+        {
+          "naam": "De Goede Fee",
+          "omschrijving": "Helpster in sprookjes"
+        },
+        {
+          "naam": "De Heks",
+          "omschrijving": "Klassieke sprookjesschurk"
+        },
+        {
+          "naam": "Doornroosjes Prins",
+          "omschrijving": "Prins die de slapende prinses wakker kust"
+        },
+        {
+          "naam": "Sneeuwkoningin",
+          "omschrijving": "IJskoude koningin (Andersen)"
+        },
+        {
+          "naam": "De Standvastige Tinnen Soldaat",
+          "omschrijving": "Soldaatje op één been (Andersen)"
+        }
+      ]
+    },
+    {
+      "id": "bekende_mensen",
+      "naam": "Bekende mensen – sport, muziek, film & kunst",
+      "figuren": [
+        {
+          "naam": "Eddy Merckx",
+          "omschrijving": "Belgische wielerlegende",
+          "domein": "sport"
+        },
+        {
+          "naam": "Johan Cruijff",
+          "omschrijving": "Nederlandse voetballegende",
+          "domein": "sport"
+        },
+        {
+          "naam": "Marco van Basten",
+          "omschrijving": "Nederlandse topvoetballer",
+          "domein": "sport"
+        },
+        {
+          "naam": "Ruud Gullit",
+          "omschrijving": "Nederlandse voetballer met dreadlocks",
+          "domein": "sport"
+        },
+        {
+          "naam": "Kevin De Bruyne",
+          "omschrijving": "Belgische topmiddenvelder",
+          "domein": "sport"
+        },
+        {
+          "naam": "Eden Hazard",
+          "omschrijving": "Belgische voetbalster",
+          "domein": "sport"
+        },
+        {
+          "naam": "Romelu Lukaku",
+          "omschrijving": "Belgische spits",
+          "domein": "sport"
+        },
+        {
+          "naam": "Vincent Kompany",
+          "omschrijving": "Belgische verdediger en trainer",
+          "domein": "sport"
+        },
+        {
+          "naam": "Diego Maradona",
+          "omschrijving": "Argentijnse voetballegende",
+          "domein": "sport"
+        },
+        {
+          "naam": "Pelé",
+          "omschrijving": "Braziliaanse voetballegende",
+          "domein": "sport"
+        },
+        {
+          "naam": "Lionel Messi",
+          "omschrijving": "Argentijnse voetbalster",
+          "domein": "sport"
+        },
+        {
+          "naam": "Cristiano Ronaldo",
+          "omschrijving": "Portugese voetbalster",
+          "domein": "sport"
+        },
+        {
+          "naam": "Ronaldo",
+          "omschrijving": "Braziliaanse topspits",
+          "domein": "sport"
+        },
+        {
+          "naam": "Kim Clijsters",
+          "omschrijving": "Belgische tennisster",
+          "domein": "sport"
+        },
+        {
+          "naam": "Justine Henin",
+          "omschrijving": "Belgische tennisster",
+          "domein": "sport"
+        },
+        {
+          "naam": "Tom Boonen",
+          "omschrijving": "Belgische wielrenner",
+          "domein": "sport"
+        },
+        {
+          "naam": "Wout van Aert",
+          "omschrijving": "Belgische wielrenner",
+          "domein": "sport"
+        },
+        {
+          "naam": "Remco Evenepoel",
+          "omschrijving": "Belgische wielrenner",
+          "domein": "sport"
+        },
+        {
+          "naam": "Max Verstappen",
+          "omschrijving": "Nederlandse Formule 1-kampioen",
+          "domein": "sport"
+        },
+        {
+          "naam": "Michael Schumacher",
+          "omschrijving": "Duitse Formule 1-legende",
+          "domein": "sport"
+        },
+        {
+          "naam": "Ayrton Senna",
+          "omschrijving": "Braziliaanse Formule 1-legende",
+          "domein": "sport"
+        },
+        {
+          "naam": "Muhammad Ali",
+          "omschrijving": "Amerikaanse bokslegende",
+          "domein": "sport"
+        },
+        {
+          "naam": "Michael Jordan",
+          "omschrijving": "Amerikaanse basketlegende",
+          "domein": "sport"
+        },
+        {
+          "naam": "Usain Bolt",
+          "omschrijving": "Jamaicaanse sprinter",
+          "domein": "sport"
+        },
+        {
+          "naam": "Roger Federer",
+          "omschrijving": "Zwitserse tennislegende",
+          "domein": "sport"
+        },
+        {
+          "naam": "Rafael Nadal",
+          "omschrijving": "Spaanse tennisser",
+          "domein": "sport"
+        },
+        {
+          "naam": "Serena Williams",
+          "omschrijving": "Amerikaanse tennisster",
+          "domein": "sport"
+        },
+        {
+          "naam": "Elvis Presley",
+          "omschrijving": "The King of rock-'n-roll",
+          "domein": "muziek"
+        },
+        {
+          "naam": "The Beatles",
+          "omschrijving": "Britse popgroep uit Liverpool",
+          "domein": "muziek"
+        },
+        {
+          "naam": "John Lennon",
+          "omschrijving": "Beatle, vermoord in New York",
+          "domein": "muziek"
+        },
+        {
+          "naam": "Michael Jackson",
+          "omschrijving": "King of Pop",
+          "domein": "muziek"
+        },
+        {
+          "naam": "Madonna",
+          "omschrijving": "Amerikaanse popkoningin",
+          "domein": "muziek"
+        },
+        {
+          "naam": "Freddie Mercury",
+          "omschrijving": "Zanger van Queen",
+          "domein": "muziek"
+        },
+        {
+          "naam": "David Bowie",
+          "omschrijving": "Britse chameleon van de pop",
+          "domein": "muziek"
+        },
+        {
+          "naam": "Elton John",
+          "omschrijving": "Britse pianist en zanger",
+          "domein": "muziek"
+        },
+        {
+          "naam": "Bob Dylan",
+          "omschrijving": "Amerikaanse singer-songwriter",
+          "domein": "muziek"
+        },
+        {
+          "naam": "Mick Jagger",
+          "omschrijving": "Zanger van de Rolling Stones",
+          "domein": "muziek"
+        },
+        {
+          "naam": "Prince",
+          "omschrijving": "Amerikaanse muzikant in het paars",
+          "domein": "muziek"
+        },
+        {
+          "naam": "Whitney Houston",
+          "omschrijving": "Amerikaanse zangeres",
+          "domein": "muziek"
+        },
+        {
+          "naam": "Bono",
+          "omschrijving": "Zanger van U2",
+          "domein": "muziek"
+        },
+        {
+          "naam": "Beyoncé",
+          "omschrijving": "Amerikaanse popster",
+          "domein": "muziek"
+        },
+        {
+          "naam": "Adele",
+          "omschrijving": "Britse zangeres met krachtige stem",
+          "domein": "muziek"
+        },
+        {
+          "naam": "Frank Sinatra",
+          "omschrijving": "Amerikaanse crooner",
+          "domein": "muziek"
+        },
+        {
+          "naam": "Jacques Brel",
+          "omschrijving": "Belgische chansonnier",
+          "domein": "muziek"
+        },
+        {
+          "naam": "Toots Thielemans",
+          "omschrijving": "Belgische jazzmuzikant, mondharmonica",
+          "domein": "muziek"
+        },
+        {
+          "naam": "Stromae",
+          "omschrijving": "Belgische zanger",
+          "domein": "muziek"
+        },
+        {
+          "naam": "Angèle",
+          "omschrijving": "Belgische popzangeres",
+          "domein": "muziek"
+        },
+        {
+          "naam": "Arno",
+          "omschrijving": "Belgische rockzanger",
+          "domein": "muziek"
+        },
+        {
+          "naam": "Salvatore Adamo",
+          "omschrijving": "Belgische zanger ('Tombe la neige')",
+          "domein": "muziek"
+        },
+        {
+          "naam": "Rocco Granata",
+          "omschrijving": "Belgisch-Italiaanse zanger ('Marina')",
+          "domein": "muziek"
+        },
+        {
+          "naam": "Will Tura",
+          "omschrijving": "Vlaamse 'keizer van het lied'",
+          "domein": "muziek"
+        },
+        {
+          "naam": "Helmut Lotti",
+          "omschrijving": "Vlaamse zanger",
+          "domein": "muziek"
+        },
+        {
+          "naam": "Koen Wauters",
+          "omschrijving": "Zanger van Clouseau",
+          "domein": "muziek"
+        },
+        {
+          "naam": "André Hazes",
+          "omschrijving": "Nederlandse volkszanger",
+          "domein": "muziek"
+        },
+        {
+          "naam": "Marco Borsato",
+          "omschrijving": "Nederlandse zanger",
+          "domein": "muziek"
+        },
+        {
+          "naam": "André Rieu",
+          "omschrijving": "Nederlandse violist en orkestleider",
+          "domein": "muziek"
+        },
+        {
+          "naam": "K3",
+          "omschrijving": "Vlaamse meidengroep",
+          "domein": "muziek"
+        },
+        {
+          "naam": "Samson en Gert",
+          "omschrijving": "Vlaams duo met pratende hond",
+          "domein": "muziek"
+        },
+        {
+          "naam": "Charlie Chaplin",
+          "omschrijving": "Stille film-komiek met snor",
+          "domein": "film"
+        },
+        {
+          "naam": "Marilyn Monroe",
+          "omschrijving": "Amerikaans filmicoon",
+          "domein": "film"
+        },
+        {
+          "naam": "Audrey Hepburn",
+          "omschrijving": "In Brussel geboren filmster",
+          "domein": "film"
+        },
+        {
+          "naam": "Sean Connery",
+          "omschrijving": "Eerste James Bond",
+          "domein": "film"
+        },
+        {
+          "naam": "Robert De Niro",
+          "omschrijving": "Amerikaanse topacteur",
+          "domein": "film"
+        },
+        {
+          "naam": "Al Pacino",
+          "omschrijving": "Amerikaanse acteur (The Godfather)",
+          "domein": "film"
+        },
+        {
+          "naam": "Meryl Streep",
+          "omschrijving": "Veelvuldig bekroonde actrice",
+          "domein": "film"
+        },
+        {
+          "naam": "Tom Hanks",
+          "omschrijving": "Amerikaanse acteur (Forrest Gump)",
+          "domein": "film"
+        },
+        {
+          "naam": "Tom Cruise",
+          "omschrijving": "Amerikaanse actie-acteur",
+          "domein": "film"
+        },
+        {
+          "naam": "Brad Pitt",
+          "omschrijving": "Amerikaanse filmster",
+          "domein": "film"
+        },
+        {
+          "naam": "Angelina Jolie",
+          "omschrijving": "Amerikaanse actrice",
+          "domein": "film"
+        },
+        {
+          "naam": "Leonardo DiCaprio",
+          "omschrijving": "Acteur uit Titanic",
+          "domein": "film"
+        },
+        {
+          "naam": "Julia Roberts",
+          "omschrijving": "Amerikaanse actrice (Pretty Woman)",
+          "domein": "film"
+        },
+        {
+          "naam": "Arnold Schwarzenegger",
+          "omschrijving": "Spierbundel-acteur (Terminator)",
+          "domein": "film"
+        },
+        {
+          "naam": "Sylvester Stallone",
+          "omschrijving": "Acteur (Rocky, Rambo)",
+          "domein": "film"
+        },
+        {
+          "naam": "Bruce Willis",
+          "omschrijving": "Acteur (Die Hard)",
+          "domein": "film"
+        },
+        {
+          "naam": "Johnny Depp",
+          "omschrijving": "Acteur (Jack Sparrow)",
+          "domein": "film"
+        },
+        {
+          "naam": "Robin Williams",
+          "omschrijving": "Komische acteur",
+          "domein": "film"
+        },
+        {
+          "naam": "Jack Nicholson",
+          "omschrijving": "Amerikaanse acteur met grijns",
+          "domein": "film"
+        },
+        {
+          "naam": "Clint Eastwood",
+          "omschrijving": "Cowboy-acteur en regisseur",
+          "domein": "film"
+        },
+        {
+          "naam": "Louis de Funès",
+          "omschrijving": "Franse komische acteur",
+          "domein": "film"
+        },
+        {
+          "naam": "Gérard Depardieu",
+          "omschrijving": "Franse acteur",
+          "domein": "film"
+        },
+        {
+          "naam": "Jean-Claude Van Damme",
+          "omschrijving": "Belgische actie-acteur, 'Muscles from Brussels'",
+          "domein": "film"
+        },
+        {
+          "naam": "Alfred Hitchcock",
+          "omschrijving": "Meester van de spanningsfilm",
+          "domein": "film"
+        },
+        {
+          "naam": "Steven Spielberg",
+          "omschrijving": "Amerikaanse topregisseur",
+          "domein": "film"
+        },
+        {
+          "naam": "Gaston en Leo",
+          "omschrijving": "Vlaams komisch duo",
+          "domein": "film"
+        },
+        {
+          "naam": "Vincent van Gogh",
+          "omschrijving": "Nederlandse schilder, zonnebloemen",
+          "domein": "kunst"
+        },
+        {
+          "naam": "Rembrandt van Rijn",
+          "omschrijving": "Nederlandse meester, De Nachtwacht",
+          "domein": "kunst"
+        },
+        {
+          "naam": "Johannes Vermeer",
+          "omschrijving": "Nederlandse schilder, Meisje met de parel",
+          "domein": "kunst"
+        },
+        {
+          "naam": "Pieter Bruegel de Oude",
+          "omschrijving": "Vlaamse meester van boerentaferelen",
+          "domein": "kunst"
+        },
+        {
+          "naam": "Peter Paul Rubens",
+          "omschrijving": "Vlaamse barokschilder uit Antwerpen",
+          "domein": "kunst"
+        },
+        {
+          "naam": "Jan van Eyck",
+          "omschrijving": "Vlaamse primitief, Lam Gods",
+          "domein": "kunst"
+        },
+        {
+          "naam": "Jheronimus Bosch",
+          "omschrijving": "Schilder van fantastische taferelen",
+          "domein": "kunst"
+        },
+        {
+          "naam": "René Magritte",
+          "omschrijving": "Belgische surrealist, pijp en bolhoed",
+          "domein": "kunst"
+        },
+        {
+          "naam": "Pablo Picasso",
+          "omschrijving": "Spaanse meester van het kubisme",
+          "domein": "kunst"
+        },
+        {
+          "naam": "Claude Monet",
+          "omschrijving": "Franse impressionist, waterlelies",
+          "domein": "kunst"
+        },
+        {
+          "naam": "Salvador Dalí",
+          "omschrijving": "Spaanse surrealist met snor",
+          "domein": "kunst"
+        },
+        {
+          "naam": "Andy Warhol",
+          "omschrijving": "Popart, soepblikken",
+          "domein": "kunst"
+        },
+        {
+          "naam": "Michelangelo",
+          "omschrijving": "Beeldhouwer en schilder, Sixtijnse Kapel",
+          "domein": "kunst"
+        }
+      ]
+    },
+    {
+      "id": "superhelden_games",
+      "naam": "Superhelden & videogame-personages",
+      "figuren": [
+        {
+          "naam": "Superman",
+          "omschrijving": "Man van staal met rode cape"
+        },
+        {
+          "naam": "Batman",
+          "omschrijving": "Duistere held van Gotham City"
+        },
+        {
+          "naam": "Spider-Man",
+          "omschrijving": "Held die aan webben zwiert"
+        },
+        {
+          "naam": "Iron Man",
+          "omschrijving": "Miljardair in een ijzeren pak"
+        },
+        {
+          "naam": "Hulk",
+          "omschrijving": "Groene reus, sterk als hij boos is"
+        },
+        {
+          "naam": "Captain America",
+          "omschrijving": "Held met sterren-en-strepen schild"
+        },
+        {
+          "naam": "Wonder Woman",
+          "omschrijving": "Amazonekrijgster met lasso"
+        },
+        {
+          "naam": "The Flash",
+          "omschrijving": "Snelste man ter wereld"
+        },
+        {
+          "naam": "Aquaman",
+          "omschrijving": "Koning van de zeeën"
+        },
+        {
+          "naam": "Black Panther",
+          "omschrijving": "Held-koning van Wakanda"
+        },
+        {
+          "naam": "Wolverine",
+          "omschrijving": "Mutant met klauwen van adamantium"
+        },
+        {
+          "naam": "Deadpool",
+          "omschrijving": "Sarcastische held in rood pak"
+        },
+        {
+          "naam": "Doctor Strange",
+          "omschrijving": "Meester in de magie"
+        },
+        {
+          "naam": "Black Widow",
+          "omschrijving": "Spionne en superheldin"
+        },
+        {
+          "naam": "Robin",
+          "omschrijving": "Batmans jonge helper"
+        },
+        {
+          "naam": "Catwoman",
+          "omschrijving": "Diefegge in kattenpak"
+        },
+        {
+          "naam": "The Joker",
+          "omschrijving": "Lachende aartsvijand van Batman"
+        },
+        {
+          "naam": "Green Goblin",
+          "omschrijving": "Vijand van Spider-Man"
+        },
+        {
+          "naam": "Thanos",
+          "omschrijving": "Paarse schurk met de Infinity Gauntlet"
+        },
+        {
+          "naam": "Professor X",
+          "omschrijving": "Telepathische leider van de X-Men"
+        },
+        {
+          "naam": "Magneto",
+          "omschrijving": "Mutant die metaal beheerst"
+        },
+        {
+          "naam": "Storm",
+          "omschrijving": "X-Men-heldin die het weer bestuurt"
+        },
+        {
+          "naam": "Groot",
+          "omschrijving": "Boomachtige held ('I am Groot')"
+        },
+        {
+          "naam": "Captain Marvel",
+          "omschrijving": "Superheldin met kosmische krachten"
+        },
+        {
+          "naam": "Mario",
+          "omschrijving": "Italiaanse loodgieter met rode pet"
+        },
+        {
+          "naam": "Luigi",
+          "omschrijving": "Mario's groene broer"
+        },
+        {
+          "naam": "Prinses Peach",
+          "omschrijving": "Prinses uit het Paddenstoelenrijk"
+        },
+        {
+          "naam": "Bowser",
+          "omschrijving": "Schildpaddraak, vijand van Mario"
+        },
+        {
+          "naam": "Yoshi",
+          "omschrijving": "Groene dinosaurus van Mario"
+        },
+        {
+          "naam": "Donkey Kong",
+          "omschrijving": "Reuzegorilla met stropdas"
+        },
+        {
+          "naam": "Link",
+          "omschrijving": "Held met groene tuniek uit Zelda"
+        },
+        {
+          "naam": "Zelda",
+          "omschrijving": "Prinses uit The Legend of Zelda"
+        },
+        {
+          "naam": "Pikachu",
+          "omschrijving": "Geel elektrisch Pokémon"
+        },
+        {
+          "naam": "Sonic",
+          "omschrijving": "Blauwe supersnelle egel"
+        },
+        {
+          "naam": "Pac-Man",
+          "omschrijving": "Gele bol die stipjes opeet"
+        },
+        {
+          "naam": "Lara Croft",
+          "omschrijving": "Vrouwelijke avonturier (Tomb Raider)"
+        },
+        {
+          "naam": "Crash Bandicoot",
+          "omschrijving": "Oranje buideldier"
+        },
+        {
+          "naam": "Kirby",
+          "omschrijving": "Roze bolletje dat vijanden opzuigt"
+        },
+        {
+          "naam": "Samus Aran",
+          "omschrijving": "Premiejager in ruimtepak (Metroid)"
+        },
+        {
+          "naam": "Master Chief",
+          "omschrijving": "Soldaat in groen pantser (Halo)"
+        },
+        {
+          "naam": "Kratos",
+          "omschrijving": "Woeste krijger (God of War)"
+        },
+        {
+          "naam": "Steve",
+          "omschrijving": "Hoofdfiguur uit Minecraft"
+        },
+        {
+          "naam": "Ryu",
+          "omschrijving": "Karateka uit Street Fighter"
+        },
+        {
+          "naam": "Sub-Zero",
+          "omschrijving": "IJskoude vechter uit Mortal Kombat"
+        },
+        {
+          "naam": "Spyro",
+          "omschrijving": "Paars drakenjong"
+        },
+        {
+          "naam": "Solid Snake",
+          "omschrijving": "Sluipende soldaat (Metal Gear)"
+        }
+      ]
+    },
+    {
+      "id": "religie_mythologie",
+      "naam": "Religieuze & mythologische figuren",
+      "figuren": [
+        {
+          "naam": "Adam",
+          "omschrijving": "De eerste mens",
+          "bron": "bijbel"
+        },
+        {
+          "naam": "Eva",
+          "omschrijving": "De eerste vrouw",
+          "bron": "bijbel"
+        },
+        {
+          "naam": "Noäch",
+          "omschrijving": "Bouwde de ark",
+          "bron": "bijbel"
+        },
+        {
+          "naam": "Abraham",
+          "omschrijving": "Aartsvader van de gelovigen",
+          "bron": "bijbel"
+        },
+        {
+          "naam": "Mozes",
+          "omschrijving": "Leidde het volk uit Egypte, tien geboden",
+          "bron": "bijbel"
+        },
+        {
+          "naam": "Jozef",
+          "omschrijving": "Dromer met de veelkleurige mantel",
+          "bron": "bijbel"
+        },
+        {
+          "naam": "Kaïn",
+          "omschrijving": "Doodde zijn broer Abel",
+          "bron": "bijbel"
+        },
+        {
+          "naam": "Abel",
+          "omschrijving": "Vermoord door zijn broer Kaïn",
+          "bron": "bijbel"
+        },
+        {
+          "naam": "David",
+          "omschrijving": "Herdersjongen die Goliath versloeg, koning",
+          "bron": "bijbel"
+        },
+        {
+          "naam": "Goliath",
+          "omschrijving": "Reus verslagen door David",
+          "bron": "bijbel"
+        },
+        {
+          "naam": "Salomo",
+          "omschrijving": "Wijze koning",
+          "bron": "bijbel"
+        },
+        {
+          "naam": "Samson",
+          "omschrijving": "Sterke man met lang haar",
+          "bron": "bijbel"
+        },
+        {
+          "naam": "Delila",
+          "omschrijving": "Verried Samson",
+          "bron": "bijbel"
+        },
+        {
+          "naam": "Jona",
+          "omschrijving": "Zat in de buik van een grote vis",
+          "bron": "bijbel"
+        },
+        {
+          "naam": "Daniël",
+          "omschrijving": "Overleefde de leeuwenkuil",
+          "bron": "bijbel"
+        },
+        {
+          "naam": "Job",
+          "omschrijving": "Man die op de proef werd gesteld",
+          "bron": "bijbel"
+        },
+        {
+          "naam": "Maria",
+          "omschrijving": "Moeder van Jezus",
+          "bron": "bijbel"
+        },
+        {
+          "naam": "Jozef (timmerman)",
+          "omschrijving": "Man van Maria",
+          "bron": "bijbel"
+        },
+        {
+          "naam": "Jezus",
+          "omschrijving": "Centrale figuur van het christendom",
+          "bron": "bijbel"
+        },
+        {
+          "naam": "Johannes de Doper",
+          "omschrijving": "Doopte Jezus in de Jordaan",
+          "bron": "bijbel"
+        },
+        {
+          "naam": "Judas",
+          "omschrijving": "Verraadde Jezus voor zilverlingen",
+          "bron": "bijbel"
+        },
+        {
+          "naam": "Petrus",
+          "omschrijving": "Apostel, 'rots' van de kerk",
+          "bron": "bijbel"
+        },
+        {
+          "naam": "Paulus",
+          "omschrijving": "Apostel, bekeerd op weg naar Damascus",
+          "bron": "bijbel"
+        },
+        {
+          "naam": "Maria Magdalena",
+          "omschrijving": "Volgelinge van Jezus",
+          "bron": "bijbel"
+        },
+        {
+          "naam": "Pontius Pilatus",
+          "omschrijving": "Romein die Jezus veroordeelde",
+          "bron": "bijbel"
+        },
+        {
+          "naam": "Lucifer",
+          "omschrijving": "Gevallen engel, de duivel",
+          "bron": "bijbel"
+        },
+        {
+          "naam": "Aartsengel Michaël",
+          "omschrijving": "Engel die de draak verslaat",
+          "bron": "bijbel"
+        },
+        {
+          "naam": "Gabriël",
+          "omschrijving": "Engel die de geboorte aankondigt",
+          "bron": "bijbel"
+        },
+        {
+          "naam": "Elia",
+          "omschrijving": "Profeet in een vurige wagen",
+          "bron": "bijbel"
+        },
+        {
+          "naam": "Metusalem",
+          "omschrijving": "Oudste mens uit de Bijbel",
+          "bron": "bijbel"
+        },
+        {
+          "naam": "Boeddha",
+          "omschrijving": "Grondlegger van het boeddhisme",
+          "bron": "andere religie"
+        },
+        {
+          "naam": "Mohammed",
+          "omschrijving": "Profeet van de islam",
+          "bron": "andere religie"
+        },
+        {
+          "naam": "Zeus",
+          "omschrijving": "Oppergod van de Grieken",
+          "bron": "grieks-romeins"
+        },
+        {
+          "naam": "Poseidon",
+          "omschrijving": "God van de zee",
+          "bron": "grieks-romeins"
+        },
+        {
+          "naam": "Hades",
+          "omschrijving": "God van de onderwereld",
+          "bron": "grieks-romeins"
+        },
+        {
+          "naam": "Hera",
+          "omschrijving": "Godin, vrouw van Zeus",
+          "bron": "grieks-romeins"
+        },
+        {
+          "naam": "Athena",
+          "omschrijving": "Godin van de wijsheid",
+          "bron": "grieks-romeins"
+        },
+        {
+          "naam": "Apollo",
+          "omschrijving": "God van de zon en muziek",
+          "bron": "grieks-romeins"
+        },
+        {
+          "naam": "Artemis",
+          "omschrijving": "Godin van de jacht",
+          "bron": "grieks-romeins"
+        },
+        {
+          "naam": "Ares",
+          "omschrijving": "God van de oorlog",
+          "bron": "grieks-romeins"
+        },
+        {
+          "naam": "Aphrodite",
+          "omschrijving": "Godin van de liefde",
+          "bron": "grieks-romeins"
+        },
+        {
+          "naam": "Hermes",
+          "omschrijving": "Bode van de goden met vleugelschoenen",
+          "bron": "grieks-romeins"
+        },
+        {
+          "naam": "Dionysos",
+          "omschrijving": "God van de wijn",
+          "bron": "grieks-romeins"
+        },
+        {
+          "naam": "Hercules",
+          "omschrijving": "Held met bovenmenselijke kracht",
+          "bron": "grieks-romeins"
+        },
+        {
+          "naam": "Achilles",
+          "omschrijving": "Onkwetsbaar behalve zijn hiel",
+          "bron": "grieks-romeins"
+        },
+        {
+          "naam": "Odysseus",
+          "omschrijving": "Held van de lange thuisreis",
+          "bron": "grieks-romeins"
+        },
+        {
+          "naam": "Perseus",
+          "omschrijving": "Held die Medusa onthoofdde",
+          "bron": "grieks-romeins"
+        },
+        {
+          "naam": "Medusa",
+          "omschrijving": "Vrouw met slangen als haar",
+          "bron": "grieks-romeins"
+        },
+        {
+          "naam": "Pegasus",
+          "omschrijving": "Gevleugeld paard",
+          "bron": "grieks-romeins"
+        },
+        {
+          "naam": "Minotaurus",
+          "omschrijving": "Half mens, half stier in het labyrint",
+          "bron": "grieks-romeins"
+        },
+        {
+          "naam": "Icarus",
+          "omschrijving": "Vloog te dicht bij de zon",
+          "bron": "grieks-romeins"
+        },
+        {
+          "naam": "Prometheus",
+          "omschrijving": "Bracht het vuur naar de mensen",
+          "bron": "grieks-romeins"
+        },
+        {
+          "naam": "Pandora",
+          "omschrijving": "Vrouw met de doos vol onheil",
+          "bron": "grieks-romeins"
+        },
+        {
+          "naam": "Narcissus",
+          "omschrijving": "Verliefd op zijn eigen spiegelbeeld",
+          "bron": "grieks-romeins"
+        },
+        {
+          "naam": "Koning Midas",
+          "omschrijving": "Alles wat hij aanraakt wordt goud",
+          "bron": "grieks-romeins"
+        },
+        {
+          "naam": "Atlas",
+          "omschrijving": "Draagt de hemel op zijn schouders",
+          "bron": "grieks-romeins"
+        },
+        {
+          "naam": "Cerberus",
+          "omschrijving": "Driekoppige hellehond",
+          "bron": "grieks-romeins"
+        },
+        {
+          "naam": "Cupido",
+          "omschrijving": "Gevleugelde god van de liefde met pijl",
+          "bron": "grieks-romeins"
+        },
+        {
+          "naam": "Helena van Troje",
+          "omschrijving": "Mooiste vrouw, oorzaak van de Trojaanse oorlog",
+          "bron": "grieks-romeins"
+        },
+        {
+          "naam": "Odin",
+          "omschrijving": "Oppergod van de Noormannen",
+          "bron": "noors"
+        },
+        {
+          "naam": "Thor",
+          "omschrijving": "Noorse god van de donder met hamer",
+          "bron": "noors"
+        },
+        {
+          "naam": "Loki",
+          "omschrijving": "Noorse god van de streken",
+          "bron": "noors"
+        },
+        {
+          "naam": "Freya",
+          "omschrijving": "Noorse godin van de liefde",
+          "bron": "noors"
+        },
+        {
+          "naam": "Ra",
+          "omschrijving": "Egyptische zonnegod",
+          "bron": "egyptisch"
+        },
+        {
+          "naam": "Anubis",
+          "omschrijving": "Egyptische god met jakhalskop",
+          "bron": "egyptisch"
+        },
+        {
+          "naam": "Osiris",
+          "omschrijving": "Egyptische god van de onderwereld",
+          "bron": "egyptisch"
+        },
+        {
+          "naam": "Isis",
+          "omschrijving": "Egyptische godin",
+          "bron": "egyptisch"
+        },
+        {
+          "naam": "Horus",
+          "omschrijving": "Egyptische god met valkenkop",
+          "bron": "egyptisch"
+        }
+      ]
+    },
+    {
+      "id": "disney",
+      "naam": "Disney",
+      "figuren": [
+        {
+          "naam": "Mickey Mouse",
+          "omschrijving": "Beroemdste muis ter wereld"
+        },
+        {
+          "naam": "Minnie Mouse",
+          "omschrijving": "Muis met strik, Mickeys vriendin"
+        },
+        {
+          "naam": "Donald Duck",
+          "omschrijving": "Opvliegende eend in matrozenpak"
+        },
+        {
+          "naam": "Katrien Duck",
+          "omschrijving": "Donalds vriendin"
+        },
+        {
+          "naam": "Goofy",
+          "omschrijving": "Onhandige hondachtige vriend van Mickey"
+        },
+        {
+          "naam": "Pluto",
+          "omschrijving": "Mickeys hond"
+        },
+        {
+          "naam": "Kwik, Kwek en Kwak",
+          "omschrijving": "Donalds drie neefjes"
+        },
+        {
+          "naam": "Oom Dagobert",
+          "omschrijving": "Rijkste eend ter wereld"
+        },
+        {
+          "naam": "Simba",
+          "omschrijving": "Leeuwenwelp, de Leeuwenkoning"
+        },
+        {
+          "naam": "Mufasa",
+          "omschrijving": "Simba's vader, de koning"
+        },
+        {
+          "naam": "Scar",
+          "omschrijving": "Boze oom in de Leeuwenkoning"
+        },
+        {
+          "naam": "Timon en Pumbaa",
+          "omschrijving": "Stokstaartje en wrattenzwijn, 'Hakuna Matata'"
+        },
+        {
+          "naam": "Woody",
+          "omschrijving": "Cowboypop uit Toy Story"
+        },
+        {
+          "naam": "Buzz Lightyear",
+          "omschrijving": "Ruimtevaarderfiguur uit Toy Story"
+        },
+        {
+          "naam": "Nemo",
+          "omschrijving": "Verdwaalde clownvis"
+        },
+        {
+          "naam": "Dory",
+          "omschrijving": "Vergeetachtige blauwe vis"
+        },
+        {
+          "naam": "Elsa",
+          "omschrijving": "IJskoningin uit Frozen"
+        },
+        {
+          "naam": "Anna",
+          "omschrijving": "Elsa's zus uit Frozen"
+        },
+        {
+          "naam": "Olaf",
+          "omschrijving": "Pratende sneeuwpop uit Frozen"
+        },
+        {
+          "naam": "Aladdin",
+          "omschrijving": "Straatjongen met wonderlamp"
+        },
+        {
+          "naam": "Jasmine",
+          "omschrijving": "Prinses uit Aladdin"
+        },
+        {
+          "naam": "De Geest",
+          "omschrijving": "Blauwe geest uit de wonderlamp"
+        },
+        {
+          "naam": "Jafar",
+          "omschrijving": "Boze tovenaar uit Aladdin"
+        },
+        {
+          "naam": "Ariël",
+          "omschrijving": "Disney's kleine zeemeermin"
+        },
+        {
+          "naam": "Mulan",
+          "omschrijving": "Chinese krijgster"
+        },
+        {
+          "naam": "Pocahontas",
+          "omschrijving": "Indiaanse prinses"
+        },
+        {
+          "naam": "Vaiana",
+          "omschrijving": "Meisje dat de oceaan bevaart"
+        },
+        {
+          "naam": "Stitch",
+          "omschrijving": "Blauw buitenaards wezentje"
+        },
+        {
+          "naam": "Bambi",
+          "omschrijving": "Jong hertje in het bos"
+        },
+        {
+          "naam": "Dombo",
+          "omschrijving": "Olifantje met grote oren"
+        },
+        {
+          "naam": "Tinkelbel",
+          "omschrijving": "Klein feetje met stofjes"
+        },
+        {
+          "naam": "Cruella de Vil",
+          "omschrijving": "Schurk die dalmatiërs wil"
+        },
+        {
+          "naam": "De 101 Dalmatiërs",
+          "omschrijving": "Puppy's met zwarte vlekken"
+        },
+        {
+          "naam": "Winnie de Poeh",
+          "omschrijving": "Beertje dat van honing houdt"
+        },
+        {
+          "naam": "Teigetje",
+          "omschrijving": "Springerige tijger, vriend van Poeh"
+        },
+        {
+          "naam": "Iejoor",
+          "omschrijving": "Droevige ezel, vriend van Poeh"
+        },
+        {
+          "naam": "Lightning McQueen",
+          "omschrijving": "Rode racewagen uit Cars"
+        },
+        {
+          "naam": "Sully",
+          "omschrijving": "Grote harige monster uit Monsters en Co."
+        },
+        {
+          "naam": "Mike Wazowski",
+          "omschrijving": "Eenogig groen monstertje"
+        },
+        {
+          "naam": "WALL-E",
+          "omschrijving": "Klein robotje op een verlaten aarde"
+        },
+        {
+          "naam": "Remy",
+          "omschrijving": "Kokkerellende rat uit Ratatouille"
+        },
+        {
+          "naam": "Rox en Rax",
+          "omschrijving": "Vos en jachthond, dikke vrienden"
+        },
+        {
+          "naam": "Baloe",
+          "omschrijving": "Zorgeloze beer uit Jungle Boek"
+        },
+        {
+          "naam": "Mowgli",
+          "omschrijving": "Jongen opgevoed door wolven"
+        },
+        {
+          "naam": "Kaa",
+          "omschrijving": "Hypnotiserende slang uit Jungle Boek"
+        }
+      ]
+    }
+  ]
+}

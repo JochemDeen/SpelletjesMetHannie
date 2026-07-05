@@ -1,0 +1,95 @@
+<!-- public/wie-ben-ik/wie-ben-ik.html -->
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8">
+  <title>Wie ben ik?</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" type="image/png" href="/favicon-96x96.png" sizes="96x96" />
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <link rel="shortcut icon" href="/favicon.ico" />
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+  <link rel="manifest" href="/site.webmanifest" />
+  <link rel="stylesheet" href="/wie-ben-ik/css/wie-ben-ik.css">
+</head>
+<body>
+    <!-- Home Button -->
+    <a href="/dashboard" class="home-button">
+        <img src="/images/home.png" alt="Home" />
+    </a>
+
+    <h1 id="game-title">Wie ben ik?</h1>
+    <div id="round-info" class="hidden"></div>
+
+    <!-- Navigation Links -->
+    <div id="nav-links">
+        <a href="/wie-ben-ik/scoreboard" id="scoreboard-link">Scoreboard</a>
+    </div>
+
+    <div id="game-state-container">
+
+        <!-- Scenario: game off / not participating -->
+        <div id="off-container" class="hidden">
+            <p id="off-message">Je doet niet mee met dit spel. Je kunt meedoen via de instellingen.</p>
+        </div>
+
+        <!-- Scenario: waiting -->
+        <div id="waiting-container" class="hidden">
+            <div class="waiting-spinner">🔮</div>
+            <p id="waiting-message">Wachten op de andere spelers...</p>
+        </div>
+
+        <!-- Scenario: theme vote -->
+        <div id="theme-vote-container" class="hidden">
+            <h3>Kies een thema:</h3>
+            <p class="subtitle">Het thema met de meeste stemmen wint!</p>
+            <div id="theme-options"></div>
+        </div>
+
+        <!-- The other players and their characters -->
+        <div id="players-container" class="hidden">
+            <h3>De personages</h3>
+            <div id="players-list"></div>
+        </div>
+
+        <!-- Scenario: ask a question -->
+        <div id="question-container" class="hidden">
+            <h3>Stel een vraag over je personage</h3>
+            <p class="subtitle">Bijvoorbeeld: "Ben ik een vrouw?" of "Leef ik nog?"</p>
+            <input type="text" id="question-input" placeholder="Schrijf hier je vraag..." />
+            <label class="guess-toggle">
+                <input type="checkbox" id="guess-checkbox">
+                <span>🎯 Dit is geen vraag maar een gok! (bijv. "Ik ben Kuifje")</span>
+            </label>
+            <button id="submit-question">Verstuur</button>
+        </div>
+
+        <!-- Scenario: vote on questions -->
+        <div id="voting-container" class="hidden">
+            <h3>Beantwoord de vragen van de anderen</h3>
+            <div id="voting-list"></div>
+        </div>
+
+        <!-- History of all rounds -->
+        <div id="history-container" class="hidden">
+            <h3>Vragen en antwoorden</h3>
+            <table>
+              <thead>
+                <tr>
+                  <th title="Ronde">#</th>
+                  <th>Speler</th>
+                  <th>Vraag</th>
+                  <th>Ja</th>
+                  <th>Nee</th>
+                  <th>?</th>
+                </tr>
+              </thead>
+              <tbody id="historyTableBody"></tbody>
+            </table>
+        </div>
+
+    </div>
+
+    <script src="/wie-ben-ik/js/wie-ben-ik.js"></script>
+</body>
+</html>

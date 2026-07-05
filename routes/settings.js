@@ -30,6 +30,11 @@ router.get('/api', requireLogin, (req, res) => {
     if (!settings.pictionaryEnabled) {
       settings.pictionaryEnabled = "1";
     }
+    // Default for wieBenIkEnabled follows the pictionary setting if not set,
+    // so the toggle in the UI matches who actually joins a new game.
+    if (!settings.wieBenIkEnabled) {
+      settings.wieBenIkEnabled = settings.pictionaryEnabled;
+    }
     logger.info(`Settings for user ${userId}:`, settings);
     res.json(settings);
   });
@@ -50,6 +55,24 @@ router.post('/api/pictionary', requireLogin, (req, res) => {
         return res.status(500).json({ error: 'Internal Server Error' });
       }
       res.json({ success: true, pictionaryEnabled });
+    });
+  });
+
+// Update wie ben ik setting
+router.post('/api/wie-ben-ik', requireLogin, (req, res) => {
+    const userId = req.session.userId;
+    const { wieBenIkEnabled } = req.body; // "1" or "0"
+    logger.info(`POST /settings/api/wie-ben-ik userId: ${userId}, wieBenIkEnabled: ${wieBenIkEnabled}`);
+    const sql = `
+      INSERT OR REPLACE INTO user_settings (user_id, setting_key, setting_value)
+      VALUES (?, 'wieBenIkEnabled', ?)
+    `;
+    db.run(sql, [userId, wieBenIkEnabled], function(err) {
+      if (err) {
+        logger.error('Error updating setting:', err.message);
+        return res.status(500).json({ error: 'Internal Server Error' });
+      }
+      res.json({ success: true, wieBenIkEnabled });
     });
   });
 
