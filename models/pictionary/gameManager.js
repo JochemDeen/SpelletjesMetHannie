@@ -51,7 +51,7 @@ async function getActiveGame() {
                     return reject(err);
                 }
 
-                let lastGameEndedLessThan12hAgo = false;
+                let lastGameEndedLessThan24hAgo = false;
 
                 if (lastGame?.completed_at) {
                     const completedAt = new Date(lastGame.completed_at);
@@ -59,9 +59,9 @@ async function getActiveGame() {
 
                     logger.info(`Last game completed at: ${completedAt}, ${diffHoursCompleted.toFixed(2)} hours ago`);
 
-                    if (diffHoursCompleted < 12) {
-                        lastGameEndedLessThan12hAgo = true;
-                        logger.info(`✅ Condition met: Last game ended less than 12 hours ago.`);
+                    if (diffHoursCompleted < 24) {
+                        lastGameEndedLessThan24hAgo = true;
+                        logger.info(`✅ Condition met: Last game ended less than 24 hours ago.`);
                     }
                 } else {
                     logger.info("No completed games found.");
@@ -99,7 +99,7 @@ async function getActiveGame() {
                     }
 
                     // If either condition is met, return "scoring" state
-                    if (lastGameEndedLessThan12hAgo || lastGameStartedLessThan24hAgo) {
+                    if (lastGameEndedLessThan24hAgo || lastGameStartedLessThan24hAgo) {
                         logger.info("✅ Returning 'scoring' state due to recent game.");
                         return resolve({
                             game_id: lastGame?.game_id || lastCreatedGame?.game_id,
