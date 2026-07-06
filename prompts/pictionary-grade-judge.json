@@ -1,0 +1,6 @@
+{
+  "grade_guesses": {
+    "description": "Stelt per Pictionary-gok een score van 1 t/m 5 voor, vergeleken met het echte woord. Placeholders: {word}, {guesses} (genummerde lijst).",
+    "prompt": "Je helpt de tekenaar in een potje Pictionary met het beoordelen van de gokken van de andere spelers.\n\nHet woord dat getekend werd is: \"{word}\".\n\nDit zijn de gokken:\n{guesses}\n\nGeef per gok een score van 1 tot en met 5:\n5 = goed: hetzelfde woord (wees mild voor spelfouten, verkleinwoorden, meervoud en duidelijke synoniemen)\n4 = heel dichtbij: bijna hetzelfde, maar net een ander woord\n3 = goede richting: zelfde categorie of duidelijk verwant\n2 = beetje verwant: er is een verband, maar het zit er ver naast\n1 = fout: geen verband met het woord\n\nAntwoord met alleen een JSON-array met één score per gok, in dezelfde volgorde, bijvoorbeeld: [5, 1, 3]"
+  }
+}

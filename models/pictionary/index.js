@@ -4,6 +4,7 @@ const drawingManager = require('./drawingManager');
 const guessesManager = require('./guessesManager');
 const scoringManager = require('./scoringManager');
 const ratingsManager = require('./ratingsManager');
+const gradeSuggester = require('./gradeSuggester');
 
 module.exports = {
   ...gameManager,
@@ -11,5 +12,6 @@ module.exports = {
   ...drawingManager,
   ...guessesManager,
   ...scoringManager,
-  ...ratingsManager
+  ...ratingsManager,
+  ...gradeSuggester
 };

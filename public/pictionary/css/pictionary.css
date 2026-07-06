@@ -224,6 +224,13 @@
     border: 1px solid #e0e0e0;
 }
 
+.suggestion-note {
+    margin-bottom: 8px;
+    font-size: 13px;
+    font-style: italic;
+    color: #777777;
+}
+
 .guess-container {
     display: flex;
     align-items: center;

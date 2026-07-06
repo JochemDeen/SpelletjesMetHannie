@@ -976,6 +976,17 @@ async function showGradingUI(guesses) {
     // Clear existing content
     guessesList.innerHTML = '';
 
+    // Show a note when the pre-selected scores come from the LLM
+    if (guesses.some((guess) => guess.suggested_grade >= 1 && guess.suggested_grade <= 5)) {
+        const suggestedScores = guesses
+            .map((guess) => (guess.suggested_grade >= 1 && guess.suggested_grade <= 5 ? guess.suggested_grade : '?'))
+            .join(', ');
+        const suggestionNote = document.createElement('p');
+        suggestionNote.textContent = `💡 Voorgesteld door de computer: (${suggestedScores})`;
+        suggestionNote.classList.add('suggestion-note');
+        guessesList.appendChild(suggestionNote);
+    }
+
     // Create grading elements for each guess
     guesses.forEach((guess) => {
         const guessContainer = document.createElement('div');
@@ -1015,6 +1026,17 @@ async function showGradingUI(guesses) {
         correctIndicator.textContent = '✔';
         correctIndicator.classList.add('correct-indicator', 'hidden');
         guessContainer.appendChild(correctIndicator);
+
+        // Pre-select the LLM-suggested grade; the drawer can still change it.
+        if (guess.suggested_grade >= 1 && guess.suggested_grade <= 5) {
+            const suggestedButton = gradingButtons.querySelector(`button[data-grade="${guess.suggested_grade}"]`);
+            if (suggestedButton) {
+                suggestedButton.classList.add('selected');
+                if (guess.suggested_grade === 5) {
+                    correctIndicator.classList.remove('hidden');
+                }
+            }
+        }
 
         guessesList.appendChild(guessContainer);
     });

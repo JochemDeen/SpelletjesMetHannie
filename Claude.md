@@ -28,7 +28,7 @@ Config is loaded via `dotenv` from `.env` (not committed):
 - `PORT` — server port (default 3000)
 - `SESSION_SECRET` — express-session secret
 - `COOKIE_SECURE` — set `'true'` to mark session cookie secure (production/HTTPS)
-- `GEMINI_API_KEY` — enables the Mastermind hint feature (`models/hintsService.js`) and the Wie ben ik guess judge (`models/wieBenIk/llmJudge.js`); if unset, hints are reported as unavailable and guesses simply get no LLM suggestion, rather than erroring.
+- `GEMINI_API_KEY` — enables the Mastermind hint feature (`models/hintsService.js`), the Wie ben ik guess judge (`models/wieBenIk/llmJudge.js`), and the Pictionary grade suggester (`models/pictionary/gradeSuggester.js`); if unset, hints are reported as unavailable and guesses/grades simply get no LLM suggestion, rather than erroring.
 
 Sessions are stored in `sessions.sqlite` via `connect-sqlite3`; app data lives in `database.sqlite` in the project root.
 

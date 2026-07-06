@@ -475,12 +475,19 @@ router.get('/api/pictionary/get-guesses-to-grade', requireLogin, async (req, res
         const gameId = gameState.game_id;     
         const round_number = gameState.current_round;
         // Fetch guesses that require grading
-        const guessesToGrade = await Pictionary.getGuessesToGrade(gameId, round_number);
-        
+        let guessesToGrade = await Pictionary.getGuessesToGrade(gameId, round_number);
+
+        // Ask the LLM for suggested grades; grading works without them if this fails.
+        const suggestedGrades = await Pictionary.suggestGrades(gameState.word, guessesToGrade);
+        guessesToGrade = guessesToGrade.map(guess => ({
+          ...guess,
+          suggested_grade: suggestedGrades.get(guess.action_id) ?? null
+        }));
+
         // Check if modification has been used for this round
         const hasModified = await Pictionary.hasModifiedDrawing(gameId, round_number);
-        
-        res.json({ 
+
+        res.json({
           guesses: guessesToGrade,
           canModify: !hasModified,
           word: gameState.word
