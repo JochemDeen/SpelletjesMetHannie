@@ -57,10 +57,12 @@ document.addEventListener('DOMContentLoaded', () => {
             listDiv.appendChild(card);
         });
 
-        // Full history with vote counts
+        // Full history with vote counts (most recent question first, throughout)
         const tableBody = document.getElementById('historyTableBody');
         tableBody.innerHTML = '';
-        game.questions.forEach((q) => {
+        const questions = [...game.questions].sort((a, b) =>
+            b.round_number - a.round_number || b.question_id - a.question_id);
+        questions.forEach((q) => {
             const row = document.createElement('tr');
             const isWinningGuess = q.is_guess && q.ja > q.nee;
             if (q.is_guess) row.classList.add('history-guess');

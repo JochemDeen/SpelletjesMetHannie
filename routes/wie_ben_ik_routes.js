@@ -342,7 +342,6 @@ router.get('/api/wie-ben-ik/last-game-score', requireLogin, async (req, res) => 
       return res.json({ success: false, message: 'Geen score beschikbaar' });
     }
     const game = await WieBenIk.getGameById(lastGameId);
-    const score = await WieBenIk.getGameScore(lastGameId);
 
     let winners = [];
     try { winners = JSON.parse(game.winners || '[]'); } catch (e) { /* ignore */ }
@@ -351,7 +350,6 @@ router.get('/api/wie-ben-ik/last-game-score', requireLogin, async (req, res) => 
 
     res.json({
       success: true,
-      score,
       game_id: lastGameId,
       theme_name: game.theme_name,
       round: game.current_round,
@@ -366,7 +364,17 @@ router.get('/api/wie-ben-ik/monthly-scores', requireLogin, async (req, res) => {
   logger.info(`GET /api/wie-ben-ik/monthly-scores for user: ${req.session.userId}`);
   const currentMonth = new Date().toISOString().slice(0, 7);
   try {
-    const scores = await WieBenIk.getMonthlyScores(currentMonth);
+    const scores = await WieBenIk.getMonthlyWinCounts(currentMonth);
+    res.json({ success: true, scores });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
+router.get('/api/wie-ben-ik/total-scores', requireLogin, async (req, res) => {
+  logger.info(`GET /api/wie-ben-ik/total-scores for user: ${req.session.userId}`);
+  try {
+    const scores = await WieBenIk.getTotalWinCounts();
     res.json({ success: true, scores });
   } catch (error) {
     res.status(500).json({ success: false, error: error.message });
@@ -378,7 +386,7 @@ router.get('/api/wie-ben-ik/previous-month-winner', requireLogin, async (req, re
   try {
     const winner = await WieBenIk.getPreviousMonthWinner();
     if (winner) {
-      res.json({ success: true, winner: winner.username, score: winner.score });
+      res.json({ success: true, winner: winner.username, wins: winner.wins });
     } else {
       res.json({ success: false, message: 'Geen winnaar' });
     }

@@ -2,16 +2,8 @@
 const logger = require('../../logger');
 const db = require('../db');
 
-// Points for the winner(s), indexed by round the game was won in (round 1 = 20).
-const WINNER_POINTS = [20, 18, 16, 14, 12, 10];
-
-function getWinnerPoints(round) {
-  const index = Math.min(Math.max(round, 1) - 1, WINNER_POINTS.length - 1);
-  return WINNER_POINTS[index];
-}
-
-// Persists scores for a completed game: winners get round-based points,
-// all other players a 0 entry so they show up on the scoreboard.
+// Persists a completed game's outcome: winners get a win entry (score = 1),
+// everyone else in the game gets a 0 entry so participation is recorded.
 async function updateScoring(gameId) {
   return new Promise((resolve, reject) => {
     db.get(`SELECT * FROM wbi_games WHERE game_id = ?`, [gameId], (err, game) => {
@@ -31,7 +23,6 @@ async function updateScoring(gameId) {
       } catch (parseErr) {
         logger.warn(`Wie ben ik: could not parse winners for game ${gameId}: ${parseErr.message}`);
       }
-      const points = getWinnerPoints(game.current_round);
 
       db.all(`SELECT user_id FROM wbi_players WHERE game_id = ?`, [gameId], (err2, players) => {
         if (err2) {
@@ -41,13 +32,13 @@ async function updateScoring(gameId) {
 
         const insertSql = `INSERT INTO wbi_scores (user_id, game_id, score) VALUES (?, ?, ?)`;
         const inserts = players.map(({ user_id }) => new Promise((res, rej) => {
-          const score = winners.includes(user_id) ? points : 0;
-          db.run(insertSql, [user_id, gameId, score], (insertErr) => insertErr ? rej(insertErr) : res());
+          const won = winners.includes(user_id) ? 1 : 0;
+          db.run(insertSql, [user_id, gameId, won], (insertErr) => insertErr ? rej(insertErr) : res());
         }));
 
         Promise.all(inserts)
           .then(() => {
-            logger.info(`Wie ben ik: scoring updated for game ${gameId} (winners get ${points} points).`);
+            logger.info(`Wie ben ik: scoring updated for game ${gameId} (${winners.length} winner(s)).`);
             resolve(true);
           })
           .catch(reject);
@@ -56,19 +47,19 @@ async function updateScoring(gameId) {
   });
 }
 
-async function getGameScore(gameId) {
+async function getMonthlyWinCounts(month) {
   return new Promise((resolve, reject) => {
     db.all(
-      `SELECT u.username, COALESCE(s.score, 0) AS score
-       FROM wbi_players p
-       JOIN users u ON p.user_id = u.id
-       LEFT JOIN wbi_scores s ON s.user_id = p.user_id AND s.game_id = p.game_id
-       WHERE p.game_id = ?
-       ORDER BY score DESC`,
-      [gameId],
+      `SELECT u.username, SUM(CASE WHEN s.score > 0 THEN 1 ELSE 0 END) AS wins
+       FROM wbi_scores s
+       JOIN users u ON s.user_id = u.id
+       WHERE strftime('%Y-%m', s.created_at) = ?
+       GROUP BY u.id
+       ORDER BY wins DESC`,
+      [month],
       (err, rows) => {
         if (err) {
-          logger.error('Wie ben ik: error fetching last game scores:', err.message);
+          logger.error('Wie ben ik: error fetching monthly win counts:', err.message);
           return reject(err);
         }
         resolve(rows);
@@ -77,19 +68,18 @@ async function getGameScore(gameId) {
   });
 }
 
-async function getMonthlyScores(month) {
+async function getTotalWinCounts() {
   return new Promise((resolve, reject) => {
     db.all(
-      `SELECT u.username, SUM(s.score) AS total_score
+      `SELECT u.username, SUM(CASE WHEN s.score > 0 THEN 1 ELSE 0 END) AS wins
        FROM wbi_scores s
        JOIN users u ON s.user_id = u.id
-       WHERE strftime('%Y-%m', s.created_at) = ?
        GROUP BY u.id
-       ORDER BY total_score DESC`,
-      [month],
+       ORDER BY wins DESC`,
+      [],
       (err, rows) => {
         if (err) {
-          logger.error('Wie ben ik: error fetching monthly scores:', err.message);
+          logger.error('Wie ben ik: error fetching total win counts:', err.message);
           return reject(err);
         }
         resolve(rows);
@@ -105,12 +95,12 @@ async function getPreviousMonthWinner() {
 
   return new Promise((resolve, reject) => {
     db.get(
-      `SELECT u.username, SUM(s.score) AS score
+      `SELECT u.username, SUM(CASE WHEN s.score > 0 THEN 1 ELSE 0 END) AS wins
        FROM wbi_scores s
        JOIN users u ON s.user_id = u.id
        WHERE strftime('%Y-%m', s.created_at) = ?
        GROUP BY u.id
-       ORDER BY score DESC
+       ORDER BY wins DESC
        LIMIT 1`,
       [monthStr],
       (err, row) => {
@@ -118,7 +108,7 @@ async function getPreviousMonthWinner() {
           logger.error('Wie ben ik: error fetching previous month winner:', err.message);
           return reject(err);
         }
-        resolve(row ? { username: row.username, score: row.score } : null);
+        resolve(row && row.wins > 0 ? { username: row.username, wins: row.wins } : null);
       }
     );
   });
@@ -126,8 +116,7 @@ async function getPreviousMonthWinner() {
 
 module.exports = {
   updateScoring,
-  getGameScore,
-  getMonthlyScores,
-  getPreviousMonthWinner,
-  getWinnerPoints
+  getMonthlyWinCounts,
+  getTotalWinCounts,
+  getPreviousMonthWinner
 };

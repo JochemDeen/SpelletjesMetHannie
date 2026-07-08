@@ -352,9 +352,9 @@ async function renderHistory() {
         const tableBody = document.getElementById("historyTableBody");
         tableBody.innerHTML = "";
 
-        // Newest round on top
+        // Most recent question first, throughout
         const questions = [...data.questions].sort((a, b) =>
-            b.round_number - a.round_number || a.question_id - b.question_id);
+            b.round_number - a.round_number || b.question_id - a.question_id);
 
         questions.forEach((q) => {
             const row = document.createElement("tr");
