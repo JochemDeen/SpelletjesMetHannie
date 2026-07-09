@@ -20,6 +20,11 @@ router.get('/wie-ben-ik/scoreboard', requireLogin, (req, res) => {
   res.sendFile('wie-ben-ik-scoreboard.html', { root: path.join(__dirname, '../public/wie-ben-ik') });
 });
 
+router.get('/wie-ben-ik/personages', requireLogin, (req, res) => {
+  logger.info(`GET /wie-ben-ik/personages for user: ${req.session.userId}`);
+  res.sendFile('wie-ben-ik-personages.html', { root: path.join(__dirname, '../public/wie-ben-ik') });
+});
+
 // ----------------------
 // Load Game State (per-viewer projection)
 // ----------------------
@@ -44,10 +49,6 @@ router.get('/api/wie-ben-ik/state', requireLogin, async (req, res) => {
 
     const players = await WieBenIk.getPlayers(game.game_id);
     const me = players.find(p => p.user_id === userId);
-    if (!me) {
-      logger.info(`Wie ben ik: user ${userId} is not a participant. Returning Off state.`);
-      return res.json({ game_id: game.game_id, state: 'Off', status: game.status });
-    }
 
     // Safety net: run the phase checks so a stuck game recovers on any poll.
     if (game.state === 'theme_vote') {
@@ -63,6 +64,28 @@ router.get('/api/wie-ben-ik/state', requireLogin, async (req, res) => {
       if (result.roundEnded) {
         game = await WieBenIk.getGameById(game.game_id);
       }
+    }
+
+    if (!me) {
+      // Non-participants spectate: they follow the questions, never the characters.
+      const spectateStates = {
+        theme_vote: 'spectate-theme-vote',
+        question: 'spectate-question',
+        voting: 'spectate-voting'
+      };
+      const spectateState = spectateStates[game.state];
+      if (!spectateState) {
+        logger.info(`Wie ben ik: user ${userId} is not a participant. Returning Off state.`);
+        return res.json({ game_id: game.game_id, state: 'Off', status: game.status });
+      }
+      return res.json({
+        game_id: game.game_id,
+        state: spectateState,
+        status: game.status,
+        round: game.current_round,
+        theme_id: game.theme_id,
+        theme_name: game.theme_name
+      });
     }
 
     let viewState;
@@ -115,6 +138,32 @@ router.get('/api/wie-ben-ik/themes', requireLogin, (req, res) => {
 });
 
 // ----------------------
+// Character browser (blocked while a game is live, so nobody can
+// narrow down their own character mid-game)
+// ----------------------
+router.get('/api/wie-ben-ik/characters', requireLogin, async (req, res) => {
+  logger.info(`GET /api/wie-ben-ik/characters for user: ${req.session.userId}`);
+  try {
+    const game = await WieBenIk.getActiveGame();
+    if (game && game.status === 'ongoing' && game.state !== 'theme_vote') {
+      return res.status(403).json({ error: 'De personagelijst is niet beschikbaar tijdens een spel.' });
+    }
+    const themes = WieBenIk.getThemes().map(t => ({
+      id: t.id,
+      naam: t.naam,
+      figuren: WieBenIk.getFiguresForTheme(t.id).map(f => ({
+        naam: f.naam,
+        omschrijving: f.omschrijving || ''
+      }))
+    }));
+    res.json({ themes });
+  } catch (error) {
+    logger.error('Wie ben ik: error fetching characters:', error.message);
+    res.status(500).json({ error: 'Failed to fetch characters' });
+  }
+});
+
+// ----------------------
 // Submit Theme Vote
 // ----------------------
 router.post('/api/wie-ben-ik/theme-vote', requireLogin, async (req, res) => {
@@ -143,7 +192,8 @@ router.post('/api/wie-ben-ik/theme-vote', requireLogin, async (req, res) => {
 });
 
 // ----------------------
-// Players (own character stays hidden while the game is ongoing)
+// Players (own character stays hidden while the game is ongoing;
+// spectators see no characters at all)
 // ----------------------
 router.get('/api/wie-ben-ik/players', requireLogin, async (req, res) => {
   const userId = req.session.userId;
@@ -153,12 +203,10 @@ router.get('/api/wie-ben-ik/players', requireLogin, async (req, res) => {
       return res.status(400).json({ error: 'Geen actief spel.' });
     }
     const players = await WieBenIk.getPlayers(game.game_id);
-    if (!players.some(p => p.user_id === userId)) {
-      return res.status(403).json({ error: 'Je doet niet mee met dit spel.' });
-    }
+    const isSpectator = !players.some(p => p.user_id === userId);
     const safePlayers = players.map(p => {
       const isMe = p.user_id === userId;
-      const hideCharacter = isMe && game.status === 'ongoing';
+      const hideCharacter = (isMe || isSpectator) && game.status === 'ongoing';
       return {
         user_id: p.user_id,
         username: p.username,
@@ -168,7 +216,7 @@ router.get('/api/wie-ben-ik/players', requireLogin, async (req, res) => {
         character_description: hideCharacter ? null : p.character_description
       };
     });
-    res.json({ players: safePlayers, theme_name: game.theme_name });
+    res.json({ players: safePlayers, theme_name: game.theme_name, spectator: isSpectator });
   } catch (error) {
     logger.error('Wie ben ik: error fetching players:', error.message);
     res.status(500).json({ error: 'Failed to fetch players' });
@@ -186,13 +234,15 @@ router.get('/api/wie-ben-ik/questions', requireLogin, async (req, res) => {
       return res.status(400).json({ error: 'Geen actief spel.' });
     }
     const players = await WieBenIk.getPlayers(game.game_id);
-    if (!players.some(p => p.user_id === userId)) {
-      return res.status(403).json({ error: 'Je doet niet mee met dit spel.' });
-    }
+    const isSpectator = !players.some(p => p.user_id === userId);
     const questions = await WieBenIk.getQuestionsWithVotes(game.game_id);
     // Questions of the current round stay hidden until the viewer submitted
     // their own question (so nobody can lean on the others' questions first).
-    const hasAskedThisRound = await WieBenIk.hasSubmittedQuestion(game.game_id, game.current_round, userId);
+    // Spectators get them once the question phase is over, so they can't
+    // relay them to a player who still has to ask.
+    const hasAskedThisRound = isSpectator
+      ? game.state !== 'question'
+      : await WieBenIk.hasSubmittedQuestion(game.game_id, game.current_round, userId);
     const safeQuestions = questions.map(q => {
       // Vote counts become visible once the round is over.
       const resolved = q.round_number < game.current_round || game.status === 'completed';

@@ -1,0 +1,45 @@
+<!-- public/wie-ben-ik/wie-ben-ik-personages.html -->
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8">
+  <title>Wie ben ik? — Personages</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="icon" type="image/png" href="/favicon-96x96.png" sizes="96x96" />
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <link rel="shortcut icon" href="/favicon.ico" />
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+  <link rel="manifest" href="/site.webmanifest" />
+  <link rel="stylesheet" href="/wie-ben-ik/css/wie-ben-ik.css">
+  <link rel="stylesheet" href="/wie-ben-ik/css/wie-ben-ik-personages.css">
+</head>
+<body>
+    <!-- Home Button -->
+    <a href="/dashboard" class="home-button">
+        <img src="/images/home.png" alt="Home" />
+    </a>
+
+    <h1>De personages</h1>
+
+    <!-- Navigation Links -->
+    <div id="nav-links">
+        <a href="/wie-ben-ik">← Terug naar het spel</a>
+    </div>
+
+    <!-- Shown while a game is live (or when loading fails) -->
+    <div id="blocked-container" class="hidden">
+        <div class="waiting-spinner">🙈</div>
+        <p id="blocked-message">De personagelijst is niet beschikbaar tijdens een spel.</p>
+    </div>
+
+    <!-- The browser: pick a theme, see its characters -->
+    <div id="browser-container" class="hidden">
+        <p class="subtitle">Kies een thema om te zien welke personages erin zitten.</p>
+        <select id="theme-select"></select>
+        <p id="theme-count" class="subtitle"></p>
+        <div id="characters-list"></div>
+    </div>
+
+    <script src="/wie-ben-ik/js/wie-ben-ik-personages.js"></script>
+</body>
+</html>

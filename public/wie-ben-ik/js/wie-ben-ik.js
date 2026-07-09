@@ -126,6 +126,26 @@ async function handleGameState(data) {
             await renderPlayers();
             await renderHistory();
             break;
+        case "spectate-theme-vote":
+            show("waiting-container");
+            document.getElementById("waiting-message").textContent =
+                "👀 Je kijkt mee! De spelers kiezen een thema...";
+            await renderPlayers(true);
+            break;
+        case "spectate-question":
+            show("waiting-container");
+            document.getElementById("waiting-message").textContent =
+                "👀 Je kijkt mee! De spelers stellen hun vragen...";
+            await renderPlayers();
+            await renderHistory();
+            break;
+        case "spectate-voting":
+            show("waiting-container");
+            document.getElementById("waiting-message").textContent =
+                "👀 Je kijkt mee! De spelers beantwoorden de vragen...";
+            await renderPlayers();
+            await renderHistory();
+            break;
         default:
             show("waiting-container");
             document.getElementById("waiting-message").textContent = "Even wachten...";
@@ -187,6 +207,9 @@ async function renderPlayers(themeVotePhase = false) {
         const response = await fetch("/api/wie-ben-ik/players");
         if (!response.ok) return;
         const data = await response.json();
+        const isSpectator = !!data.spectator;
+        document.querySelector("#players-container h3").textContent =
+            isSpectator ? "De spelers" : "De personages";
         const listDiv = document.getElementById("players-list");
         listDiv.innerHTML = "";
 
@@ -200,6 +223,11 @@ async function renderPlayers(themeVotePhase = false) {
                 card.innerHTML = `
                     <div class="player-name">${player.username}${player.is_me ? " (jij)" : ""}</div>
                     <div class="player-status">${voted}</div>
+                `;
+            } else if (isSpectator) {
+                card.innerHTML = `
+                    <div class="player-name">${player.username}</div>
+                    <div class="character-name mystery">🤫</div>
                 `;
             } else if (player.is_me) {
                 card.innerHTML = `

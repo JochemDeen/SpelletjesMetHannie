@@ -1,0 +1,55 @@
+/* Wie ben ik? — character browser page (builds on wie-ben-ik.css) */
+#blocked-container {
+    margin: 30px auto;
+    padding: 30px 20px;
+    width: 80%;
+    max-width: 500px;
+    background-color: var(--wbi-surface);
+    border: 1px solid var(--wbi-border);
+    border-radius: 12px;
+    text-align: center;
+    font-size: 1.1em;
+    color: var(--wbi-text);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+}
+
+#browser-container {
+    margin: 20px auto;
+    width: 90%;
+    max-width: 700px;
+    text-align: center;
+}
+
+#theme-select {
+    padding: 10px 14px;
+    font-size: 1em;
+    background-color: var(--wbi-surface-light);
+    color: var(--wbi-text);
+    border: 1px solid var(--wbi-border);
+    border-radius: 8px;
+    max-width: 100%;
+    cursor: pointer;
+}
+
+#theme-select:focus {
+    outline: none;
+    border-color: var(--wbi-gold);
+}
+
+#theme-count {
+    margin-top: 10px;
+}
+
+#characters-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 10px;
+    margin-top: 5px;
+}
+
+.character-card {
+    padding: 12px;
+    background-color: var(--wbi-surface);
+    border: 1px solid var(--wbi-border);
+    border-radius: 10px;
+}
