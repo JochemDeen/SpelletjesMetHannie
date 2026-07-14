@@ -21,9 +21,10 @@ db.serialize(() => {
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         user_id INTEGER NOT NULL,
         word_of_the_day TEXT NOT NULL,
+        date TEXT NOT NULL,
         hint_response TEXT NOT NULL,
         used_at TEXT NOT NULL,
-        UNIQUE(user_id, word_of_the_day)
+        UNIQUE(user_id, date)
         )
     `);
   });

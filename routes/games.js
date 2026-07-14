@@ -227,9 +227,8 @@ router.get('/api/mastermind/hint-status', requireLogin, async (req, res) => {
             });
         }
 
-        const wordOfTheDay = await wordsService.getWordOfTheDay();
         const monthlyCount = await hintsService.getMonthlyHintCount(userId);
-        const todayHint = await hintsService.getHintForToday(userId, wordOfTheDay);
+        const todayHint = await hintsService.getHintForToday(userId);
 
         res.json({
             available: true,
@@ -261,7 +260,7 @@ router.post('/api/mastermind/request-hint', requireLogin, async (req, res) => {
         const wordOfTheDay = await wordsService.getWordOfTheDay();
 
         // Check if hint already requested today
-        const existingHint = await hintsService.getHintForToday(userId, wordOfTheDay);
+        const existingHint = await hintsService.getHintForToday(userId);
         if (existingHint) {
             const monthlyCount = await hintsService.getMonthlyHintCount(userId);
             return res.json({

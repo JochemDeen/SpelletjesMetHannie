@@ -44,14 +44,22 @@ async function getMonthlyHintCount(userId) {
 }
 
 /**
+ * Today's date as YYYY-MM-DD, matching the key wordsService uses for the word of the day
+ */
+function getTodayDateString() {
+    return new Date().toISOString().split('T')[0];
+}
+
+/**
  * Get hint for today if already requested
  */
-async function getHintForToday(userId, wordOfTheDay) {
+async function getHintForToday(userId) {
+    const today = getTodayDateString();
     return new Promise((resolve, reject) => {
         db.get(
             `SELECT hint_response FROM mastermind_hints
-             WHERE user_id = ? AND word_of_the_day = ?`,
-            [userId, wordOfTheDay],
+             WHERE user_id = ? AND date = ?`,
+            [userId, today],
             (err, row) => {
                 if (err) {
                     logger.error('Error getting hint for today:', err);
@@ -67,11 +75,12 @@ async function getHintForToday(userId, wordOfTheDay) {
  * Save a new hint to the database
  */
 async function saveHint(userId, wordOfTheDay, hintResponse) {
+    const today = getTodayDateString();
     return new Promise((resolve, reject) => {
         db.run(
-            `INSERT INTO mastermind_hints (user_id, word_of_the_day, hint_response, used_at)
-             VALUES (?, ?, ?, ?)`,
-            [userId, wordOfTheDay, hintResponse, new Date().toISOString()],
+            `INSERT INTO mastermind_hints (user_id, word_of_the_day, date, hint_response, used_at)
+             VALUES (?, ?, ?, ?, ?)`,
+            [userId, wordOfTheDay, today, hintResponse, new Date().toISOString()],
             (err) => {
                 if (err) {
                     logger.error('Error saving hint:', err);
