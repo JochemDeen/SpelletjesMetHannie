@@ -1792,8 +1792,16 @@
           "omschrijving": "Mickeys hond"
         },
         {
-          "naam": "Kwik, Kwek en Kwak",
-          "omschrijving": "Donalds drie neefjes"
+          "naam": "Kwik",
+          "omschrijving": "Donalds neefje met rode pet"
+        },
+        {
+          "naam": "Kwek",
+          "omschrijving": "Donalds neefje met blauwe pet"
+        },
+        {
+          "naam": "Kwak",
+          "omschrijving": "Donalds neefje met groene pet"
         },
         {
           "naam": "Oom Dagobert",
@@ -1812,8 +1820,12 @@
           "omschrijving": "Boze oom in de Leeuwenkoning"
         },
         {
-          "naam": "Timon en Pumbaa",
-          "omschrijving": "Stokstaartje en wrattenzwijn, 'Hakuna Matata'"
+          "naam": "Timon",
+          "omschrijving": "Stokstaartje, beste vriend van Pumbaa, 'Hakuna Matata'"
+        },
+        {
+          "naam": "Pumbaa",
+          "omschrijving": "Wrattenzwijn, beste vriend van Timon, 'Hakuna Matata'"
         },
         {
           "naam": "Woody",
@@ -1932,8 +1944,12 @@
           "omschrijving": "Kokkerellende rat uit Ratatouille"
         },
         {
-          "naam": "Rox en Rax",
-          "omschrijving": "Vos en jachthond, dikke vrienden"
+          "naam": "Rox",
+          "omschrijving": "Jonge vos, opgegroeid met jachthond Rax"
+        },
+        {
+          "naam": "Rax",
+          "omschrijving": "Jachthond, opgegroeid met vos Rox"
         },
         {
           "naam": "Baloe",
@@ -1946,6 +1962,98 @@
         {
           "naam": "Kaa",
           "omschrijving": "Hypnotiserende slang uit Jungle Boek"
+        },
+        {
+          "naam": "Sneeuwwitje",
+          "omschrijving": "Prinses die bij zeven dwergen intrekt"
+        },
+        {
+          "naam": "De Boze Koningin",
+          "omschrijving": "Jaloerse koningin uit Sneeuwwitje, 'Spiegeltje, spiegeltje'"
+        },
+        {
+          "naam": "Sufferd",
+          "omschrijving": "Jongste van de zeven dwergen, kan niet praten"
+        },
+        {
+          "naam": "Assepoester",
+          "omschrijving": "Meisje met glazen muiltje, moet werken voor stiefzussen"
+        },
+        {
+          "naam": "De Fee Peettante",
+          "omschrijving": "Tovert Assepoesters jurk en koets, 'Bibbidi Bobbidi Boo'"
+        },
+        {
+          "naam": "Prins Charmant",
+          "omschrijving": "Zoekt de eigenaar van het glazen muiltje"
+        },
+        {
+          "naam": "Doornroosje",
+          "omschrijving": "Prinses vervloekt om in slaap te vallen"
+        },
+        {
+          "naam": "Maleficent",
+          "omschrijving": "Boze fee die Doornroosje vervloekt"
+        },
+        {
+          "naam": "Rapunzel",
+          "omschrijving": "Meisje met heel lang haar in een toren"
+        },
+        {
+          "naam": "Flynn Rider",
+          "omschrijving": "Dief die Rapunzel uit haar toren helpt"
+        },
+        {
+          "naam": "Moeder Gothel",
+          "omschrijving": "Houdt Rapunzel gevangen in de toren"
+        },
+        {
+          "naam": "Pinokkio",
+          "omschrijving": "Houten pop wiens neus groeit bij liegen"
+        },
+        {
+          "naam": "Gepetto",
+          "omschrijving": "Houtsnijder die Pinokkio maakte"
+        },
+        {
+          "naam": "Jiminy Krekel",
+          "omschrijving": "Pinokkio's geweten in krekelvorm"
+        },
+        {
+          "naam": "Peter Pan",
+          "omschrijving": "Jongen die nooit groot wordt"
+        },
+        {
+          "naam": "Kapitein Haak",
+          "omschrijving": "Piraat met een haak in plaats van een hand"
+        },
+        {
+          "naam": "Alice",
+          "omschrijving": "Meisje dat in een konijnenhol valt"
+        },
+        {
+          "naam": "De Hartenkoningin",
+          "omschrijving": "Humeurige koningin, 'Af met haar hoofd!'"
+        },
+        {
+          "naam": "De Gekke Hoedenmaker",
+          "omschrijving": "Excentrieke gastheer van een theekransje"
+        },
+        {
+          "naam": "Belle",
+          "omschrijving": "Meisje dat van boeken houdt, gevangen bij het Beest"
+        },
+        {
+          "naam": "Het Beest",
+          "omschrijving": "Betoverde prins die Belle gevangen houdt"
+        },
+        {
+          "naam": "Gaston",
+          "omschrijving": "IJdele dorpsheld die met Belle wil trouwen"
+        },
+        {
+          "naam": "Lumière",
+          "omschrijving": "Pratende kandelaar in het Beest's kasteel"
         }
       ]
     }
