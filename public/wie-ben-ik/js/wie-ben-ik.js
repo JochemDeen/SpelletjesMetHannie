@@ -7,6 +7,12 @@ const titles = {
     IDLE: "Wie ben ik?"
 };
 
+const themeIcons = {
+    wereldleiders: "👑", wetenschappers: "🔬", stripfiguren: "💬",
+    sprookjes: "🏰", bekende_mensen: "⭐", superhelden_games: "🦸",
+    religie_mythologie: "⚡", disney: "🐭", alle: "🌈", willekeurig: "🎲"
+};
+
 const gameTitleElement = document.getElementById("game-title");
 const roundInfoElement = document.getElementById("round-info");
 
@@ -16,6 +22,7 @@ let lastRenderedRound = null;
 function updateGameTitle(state) {
     switch (state) {
         case "theme-vote":
+        case "theme-vote-waiting":
             gameTitleElement.textContent = titles.THEME;
             break;
         case "question":
@@ -48,6 +55,7 @@ function hideAllContainers() {
         "off-container",
         "waiting-container",
         "theme-vote-container",
+        "theme-preview-container",
         "players-container",
         "question-container",
         "voting-container",
@@ -60,7 +68,8 @@ function hideAllContainers() {
 }
 
 function show(id) {
-    document.getElementById(id).classList.remove("hidden");
+    const el = document.getElementById(id);
+    if (el) el.classList.remove("hidden");
 }
 
 async function handleGameState(data) {
@@ -93,12 +102,16 @@ async function handleGameState(data) {
             break;
         case "theme-vote":
             show("theme-vote-container");
-            await renderThemeOptions();
+            await renderThemeOptions(null);
             break;
         case "theme-vote-waiting":
+            // Your vote stands, but you can still switch until everybody voted.
             show("waiting-container");
             document.getElementById("waiting-message").textContent =
-                "Je stem is binnen! Wachten tot iedereen een thema heeft gekozen...";
+                `Je stemde op ${data.my_theme_vote_name || "een thema"}! Wachten tot iedereen een thema heeft gekozen...`;
+            show("theme-vote-container");
+            await renderThemeOptions(data.my_theme_vote || null);
+            await renderThemePreview(data.my_theme_vote, data.my_theme_vote_name);
             await renderPlayers(true);
             break;
         case "question":
@@ -156,46 +169,104 @@ async function handleGameState(data) {
 // ----------------------
 // Theme vote
 // ----------------------
-async function renderThemeOptions() {
+async function submitThemeVote(themeId) {
+    try {
+        const res = await fetch("/api/wie-ben-ik/theme-vote", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ theme_id: themeId })
+        });
+        if (!res.ok) {
+            const err = await res.json();
+            alert(err.error || "Stemmen is niet gelukt.");
+        }
+    } catch (error) {
+        console.error("Error submitting theme vote:", error);
+    }
+    initGame();
+}
+
+// `myThemeId` is the theme you already voted for (null if you still have to
+// vote): it gets marked, and the wording switches to "change your vote".
+async function renderThemeOptions(myThemeId = null) {
     const optionsDiv = document.getElementById("theme-options");
     optionsDiv.innerHTML = "";
+    // Guarded: a browser holding a cached copy of the old page still gets a
+    // working theme list instead of a crash.
+    const titleEl = document.getElementById("theme-vote-title");
+    const subtitleEl = document.getElementById("theme-vote-subtitle");
+    if (titleEl) titleEl.textContent = myThemeId ? "Je thema:" : "Kies een thema:";
+    if (subtitleEl) {
+        subtitleEl.textContent = myThemeId
+            ? "Je kunt nog van gedachten veranderen zolang niet iedereen gestemd heeft."
+            : "Het thema met de meeste stemmen wint!";
+    }
     try {
         const response = await fetch("/api/wie-ben-ik/themes");
         const data = await response.json();
-        const icons = {
-            wereldleiders: "👑", wetenschappers: "🔬", stripfiguren: "💬",
-            sprookjes: "🏰", bekende_mensen: "⭐", superhelden_games: "🦸",
-            religie_mythologie: "⚡", disney: "🐭", alle: "🌈"
-        };
-        data.themes.forEach((theme) => {
+        const options = [
+            ...data.themes,
+            { id: "willekeurig", naam: myThemeId ? "Verras me opnieuw!" : "Verras me!", random: true }
+        ];
+        options.forEach((theme) => {
             const btn = document.createElement("button");
             btn.classList.add("theme-option");
             if (theme.id === "alle") btn.classList.add("theme-all");
+            if (theme.random) btn.classList.add("theme-random");
+            const selected = theme.id === myThemeId;
+            if (selected) btn.classList.add("theme-selected");
+            const count = theme.random
+                ? "<small>(willekeurig thema)</small>"
+                : `<small>(${theme.aantal} personages)</small>`;
             btn.innerHTML = `
-                <span class="theme-icon">${icons[theme.id] || "🎭"}</span>
+                <span class="theme-icon">${themeIcons[theme.id] || "🎭"}</span>
                 <span class="theme-name">${theme.naam}</span>
-                <small>(${theme.aantal} personages)</small>
+                ${count}
+                ${selected ? '<span class="theme-check">✅</span>' : ""}
             `;
-            btn.addEventListener("click", async () => {
-                try {
-                    const res = await fetch("/api/wie-ben-ik/theme-vote", {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify({ theme_id: theme.id })
-                    });
-                    if (!res.ok) {
-                        const err = await res.json();
-                        alert(err.error || "Stemmen is niet gelukt.");
-                    }
-                } catch (error) {
-                    console.error("Error submitting theme vote:", error);
-                }
-                initGame();
+            btn.addEventListener("click", () => {
+                if (selected) return; // already your vote
+                submitThemeVote(theme.id);
             });
             optionsDiv.appendChild(btn);
         });
     } catch (error) {
         console.error("Error fetching themes:", error);
+    }
+}
+
+// The characters of the theme you voted for, so you know what you picked while
+// the others are still choosing. Fails silently once the game has started (the
+// characters endpoint closes as soon as the theme vote is over).
+async function renderThemePreview(themeId, themeName) {
+    if (!themeId) return;
+    try {
+        const response = await fetch("/api/wie-ben-ik/characters");
+        if (!response.ok) return;
+        const data = await response.json();
+        const theme = (data.themes || []).find(t => t.id === themeId);
+        if (!theme) return;
+
+        document.getElementById("theme-preview-title").textContent =
+            `${themeIcons[themeId] || "🎭"} De personages in ${themeName || theme.naam}`;
+        document.getElementById("theme-preview-subtitle").textContent =
+            `${theme.figuren.length} personages — wint dit thema, dan is jouw personage er een van.`;
+
+        const listDiv = document.getElementById("theme-preview-list");
+        listDiv.innerHTML = "";
+        const figures = [...theme.figuren].sort((a, b) => a.naam.localeCompare(b.naam, "nl"));
+        figures.forEach((figuur) => {
+            const card = document.createElement("div");
+            card.classList.add("preview-card");
+            card.innerHTML = `
+                <div class="character-name">${figuur.naam}</div>
+                <div class="character-description">${figuur.omschrijving || ""}</div>
+            `;
+            listDiv.appendChild(card);
+        });
+        show("theme-preview-container");
+    } catch (error) {
+        console.error("Error fetching theme preview:", error);
     }
 }
 
@@ -209,7 +280,7 @@ async function renderPlayers(themeVotePhase = false) {
         const data = await response.json();
         const isSpectator = !!data.spectator;
         document.querySelector("#players-container h3").textContent =
-            isSpectator ? "De spelers" : "De personages";
+            (themeVotePhase || isSpectator) ? "De spelers" : "De personages";
         const listDiv = document.getElementById("players-list");
         listDiv.innerHTML = "";
 
@@ -422,6 +493,9 @@ async function pollGameState() {
     // Only re-render when something changed, so typing a question isn't interrupted.
     if (data.state !== lastRenderedState || (data.round || null) !== lastRenderedRound) {
         await handleGameState(data);
+    } else if (data.state === "theme-vote-waiting" || data.state === "spectate-theme-vote") {
+        // Same screen, but "who still has to vote" should keep ticking.
+        await renderPlayers(true);
     }
 }
 

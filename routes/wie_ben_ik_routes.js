@@ -117,7 +117,12 @@ router.get('/api/wie-ben-ik/state', requireLogin, async (req, res) => {
       status: game.status,
       round: game.current_round,
       theme_id: game.theme_id,
-      theme_name: game.theme_name
+      theme_name: game.theme_name,
+      // Your own theme vote, so the vote screen can show (and change) it.
+      my_theme_vote: game.state === 'theme_vote' ? (me.theme_vote || null) : null,
+      my_theme_vote_name: game.state === 'theme_vote' && me.theme_vote
+        ? WieBenIk.getThemeName(me.theme_vote)
+        : null
     });
   } catch (error) {
     logger.error('Wie ben ik: error fetching game state:', error.stack || error);
@@ -171,20 +176,32 @@ router.post('/api/wie-ben-ik/theme-vote', requireLogin, async (req, res) => {
   const { theme_id } = req.body;
   logger.info(`POST /api/wie-ben-ik/theme-vote by user ${userId}: ${theme_id}`);
   try {
-    if (!theme_id || !WieBenIk.isValidThemeId(theme_id)) {
-      return res.status(400).json({ error: 'Ongeldig thema.' });
-    }
     const game = await WieBenIk.getActiveGame();
     if (!game || game.state !== 'theme_vote') {
       return res.status(400).json({ error: 'Er is nu geen themastemming.' });
     }
     const players = await WieBenIk.getPlayers(game.game_id);
-    if (!players.some(p => p.user_id === userId)) {
+    const me = players.find(p => p.user_id === userId);
+    if (!me) {
       return res.status(403).json({ error: 'Je doet niet mee met dit spel.' });
     }
-    await WieBenIk.submitThemeVote(game.game_id, userId, theme_id);
+
+    // 'Verras me': turn it into a real theme right away (never the one you
+    // already voted for, so re-rolling always gives you something new).
+    const votedThemeId = theme_id === WieBenIk.RANDOM_THEME_ID
+      ? WieBenIk.pickRandomThemeId(me.theme_vote)
+      : theme_id;
+    if (!votedThemeId || !WieBenIk.isValidThemeId(votedThemeId)) {
+      return res.status(400).json({ error: 'Ongeldig thema.' });
+    }
+
+    await WieBenIk.submitThemeVote(game.game_id, userId, votedThemeId);
     await WieBenIk.checkForEndOfThemeVote(game.game_id);
-    res.json({ status: 'success' });
+    res.json({
+      status: 'success',
+      theme_id: votedThemeId,
+      theme_name: WieBenIk.getThemeName(votedThemeId)
+    });
   } catch (error) {
     logger.error('Wie ben ik: error submitting theme vote:', error.message);
     res.status(500).json({ error: 'Failed to submit theme vote' });

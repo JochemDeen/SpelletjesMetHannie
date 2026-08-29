@@ -493,3 +493,45 @@ h3 {
 .pending {
     font-size: 10px;
 }
+
+/* The theme you voted for, and the "surprise me" option */
+.theme-option.theme-selected {
+    border-color: var(--wbi-gold);
+    background-color: rgba(217, 185, 92, 0.15);
+    cursor: default;
+}
+
+.theme-option.theme-selected:hover {
+    transform: none;
+}
+
+.theme-option.theme-random {
+    border-style: dashed;
+    border-color: var(--wbi-purple);
+}
+
+.theme-option .theme-check {
+    font-size: 1.1em;
+}
+
+/* Preview of the personages in the theme you voted for */
+#theme-preview-container {
+    margin: 20px auto;
+    width: 90%;
+    max-width: 700px;
+}
+
+#theme-preview-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 10px;
+    margin-top: 5px;
+}
+
+.preview-card {
+    padding: 12px;
+    background-color: var(--wbi-surface);
+    border: 1px solid var(--wbi-border);
+    border-radius: 10px;
+    text-align: center;
+}

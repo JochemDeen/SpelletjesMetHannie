@@ -45,3 +45,7 @@ data/frequency_scoring.ipynb
 LLM/test.py
 .gitignore
 
+public/images/IMG_6730.heic
+public/images/mask.png
+main.py
+.gitignore

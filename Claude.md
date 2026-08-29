@@ -81,7 +81,7 @@ There is exactly **one active Pictionary game at a time** across the whole site 
 `models/wieBenIk/index.js` re-exports the manager submodules as one flat `WieBenIk` object used by `routes/wie_ben_ik_routes.js`:
 - `schema.js` — creates the `wbi_games`, `wbi_players`, `wbi_questions`, `wbi_votes` and `wbi_scores` tables (lazily, on first require).
 - `characterManager.js` — loads `data/wie_ben_ik_personages.json` (8 themes plus the synthetic `alle` "all categories" option) and picks distinct random characters.
-- `gameManager.js` — the global game record and state machine, theme voting (most votes wins, random tie-break) and the 24h `scoring` pseudo-state after a game finishes (same pattern as Pictionary).
+- `gameManager.js` — the global game record and state machine, theme voting (most votes wins, random tie-break; a player can change their vote until everyone has voted, and the "Verras me!" option is translated to a random real theme by the route before it is stored) and the 24h `scoring` pseudo-state after a game finishes (same pattern as Pictionary).
 - `questionsManager.js` — questions/guesses per round, Ja/Nee/?? votes, and the round-resolution logic (`checkForEndOfVoting`: a guess with more Ja than Nee votes wins the game, otherwise the next round starts).
 - `scoringManager.js` — winner points by round won (`WINNER_POINTS`), last-game/monthly scoreboards.
 - `llmJudge.js` — Gemini call comparing a guess against the player's real character, returns `'ja'`/`'nee'`/`null` (never throws; prompt in `prompts/wie-ben-ik-judge.json`).

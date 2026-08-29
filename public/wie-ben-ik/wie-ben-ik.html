@@ -39,14 +39,21 @@
             <p id="waiting-message">Wachten op de andere spelers...</p>
         </div>
 
-        <!-- Scenario: theme vote -->
+        <!-- Scenario: theme vote (also shown after voting, so you can switch) -->
         <div id="theme-vote-container" class="hidden">
-            <h3>Kies een thema:</h3>
-            <p class="subtitle">Het thema met de meeste stemmen wint!</p>
+            <h3 id="theme-vote-title">Kies een thema:</h3>
+            <p class="subtitle" id="theme-vote-subtitle">Het thema met de meeste stemmen wint!</p>
             <div id="theme-options"></div>
             <p class="characters-link">
                 <a href="/wie-ben-ik/personages">📖 Bekijk welke personages er in elk thema zitten</a>
             </p>
+        </div>
+
+        <!-- The personages of the theme you voted for -->
+        <div id="theme-preview-container" class="hidden">
+            <h3 id="theme-preview-title">De personages</h3>
+            <p class="subtitle" id="theme-preview-subtitle"></p>
+            <div id="theme-preview-list"></div>
         </div>
 
         <!-- The other players and their characters -->

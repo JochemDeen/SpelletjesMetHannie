@@ -6,6 +6,9 @@ const logger = require('../../logger');
 const DATA_PATH = path.join(__dirname, '../../data/wie_ben_ik_personages.json');
 const ALL_THEMES_ID = 'alle';
 const ALL_THEMES_NAME = 'Alle categorieën';
+// Not a real theme: a vote for this is turned into a random real theme
+// straight away, so the tally only ever sees concrete themes.
+const RANDOM_THEME_ID = 'willekeurig';
 
 let cachedData = null;
 
@@ -52,6 +55,15 @@ function getFiguresForTheme(themeId) {
   return theme ? theme.figuren : [];
 }
 
+// Picks a random real theme (never 'alle', and never `excludeThemeId` so
+// re-rolling always gives you something else).
+function pickRandomThemeId(excludeThemeId = null) {
+  const data = loadData();
+  let candidates = data.themas.map(t => t.id).filter(id => id !== excludeThemeId);
+  if (candidates.length === 0) candidates = data.themas.map(t => t.id);
+  return candidates[Math.floor(Math.random() * candidates.length)];
+}
+
 // Picks `count` distinct random figures from the theme.
 function pickRandomFigures(themeId, count) {
   const figures = [...getFiguresForTheme(themeId)];
@@ -69,7 +81,9 @@ function pickRandomFigures(themeId, count) {
 module.exports = {
   ALL_THEMES_ID,
   ALL_THEMES_NAME,
+  RANDOM_THEME_ID,
   getThemes,
+  pickRandomThemeId,
   isValidThemeId,
   getThemeName,
   getFiguresForTheme,
