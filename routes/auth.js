@@ -7,7 +7,8 @@ const isVacation = moment().isBefore('2025-08-01');
 const bcrypt = require('bcrypt');
 const path = require('path');
 const { db } = require('../models/user');
-const logger = require('../logger');  
+const logger = require('../logger');
+const { siteInfo } = require('../models/siteInfo');
 
 
 const { requireLogin } = require('../middleware/authMiddleware');
@@ -88,6 +89,11 @@ router.get('/dashboard', requireLogin, (req, res) => {
         return res.sendFile('vacation.html', { root: path.join(__dirname, '../public') });
     }
     res.sendFile('dashboard.html', { root: path.join(__dirname, '../public') });
+});
+
+// Basic site info for the dashboard footer
+router.get('/api/site-info', requireLogin, (req, res) => {
+    res.json(siteInfo);
 });
 
 module.exports = router;

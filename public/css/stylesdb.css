@@ -103,6 +103,13 @@ h1 {
     .status-red { background-color: #e03e4e; }
     .status-blue { background-color: #007bff; }
 
+/* Small, unobtrusive footer with site info */
+.site-footer {
+  padding: 20px 10px 12px;
+  font-size: 0.75em;
+  color: #aaa;
+}
+
 /* Responsive Styles */
 @media (max-width: 600px) {
   h1 {

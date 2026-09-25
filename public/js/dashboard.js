@@ -141,11 +141,33 @@ function setupUpdateNotification() {
         }
     }
 }
+async function loadSiteFooter() {
+    const footer = document.getElementById('siteFooter');
+    if (!footer) return;
+
+    try {
+        const response = await fetch('/api/site-info');
+        if (!response.ok) throw new Error('Failed to fetch site info');
+
+        const info = await response.json();
+        if (!info.lastUpdate) return; // No info available, keep the footer hidden
+
+        const date = new Date(info.lastUpdate).toLocaleDateString('nl-NL', {
+            day: 'numeric', month: 'long', year: 'numeric'
+        });
+        footer.textContent = `Laatste update: ${date}` + (info.commit ? ` · versie ${info.commit}` : '');
+        footer.hidden = false;
+    } catch (error) {
+        console.error("Error fetching site info:", error);
+    }
+}
+
 // Run function once and refresh every 15 seconds
 document.addEventListener("DOMContentLoaded", () => {
     updatePictionaryStatus();
     updateWieBenIkStatus();
     setupUpdateNotification();
+    loadSiteFooter();
     setInterval(updatePictionaryStatus, 15000);
     setInterval(updateWieBenIkStatus, 15000);
 });
