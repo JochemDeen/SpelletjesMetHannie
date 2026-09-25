@@ -160,7 +160,7 @@ const handleDraw = async () => {
       const countdownDuration = startResponse.data.countdown; // Duration in seconds
       const wordToDraw = startResponse.data.word;
 
-      wordTitleEl.innerHTML = `Teken een <span class="highlight-word">${wordToDraw}</span>, je hebt ${countdownDuration} seconden`;
+      wordTitleEl.innerHTML = `Teken een <span class="highlight-word">${escapeHtml(wordToDraw)}</span>, je hebt ${countdownDuration} seconden`;
       console.log(`Countdown started: ${countdownDuration} seconds`);
     
       // 2. Start the timer and enable the canvas for drawing
@@ -309,7 +309,7 @@ function handleThinking(word) {
     const startBtn = document.getElementById("start-drawing-btn");
 
     if (word) {
-        wordTitleEl.innerHTML = `Je woord is: <span class="highlight-word">${word}</span>`;
+        wordTitleEl.innerHTML = `Je woord is: <span class="highlight-word">${escapeHtml(word)}</span>`;
     }
 
     // 60 seconds
@@ -920,7 +920,7 @@ async function handleGrade() {
         const imageSrc = data.imageSrc;
         const wordToDraw = data.word;
 
-        wordTitleEl.innerHTML = `Teken een <span class="highlight-word">${wordToDraw}</span>`;
+        wordTitleEl.innerHTML = `Teken een <span class="highlight-word">${escapeHtml(wordToDraw)}</span>`;
     
         const imageCanvasDiv = document.getElementById("image-canvas-guessing");
         // Add timestamp to prevent caching
@@ -1116,7 +1116,7 @@ async function updateGuessesTable() {
             <td>${guess.round_number}</td>
             <td>${guess.username || 'Onbekend'}</td>
             <td title="${fullDate}">${displayTime || 'N/A'}</td>
-            <td>${guess.text || '***'}</td>
+            <td>${guess.text ? escapeHtml(guess.text) : '***'}</td>
             <td>${guess.feedback ? guess.feedback : '<span style="font-size: 10px;">⏳</span>'}</td>`;
             tableBody.appendChild(row);
         });
@@ -1191,7 +1191,7 @@ async function handleModifyDrawing() {
 
         // Show word reminder in title element
         const wordTitleEl = document.getElementById("draw-word-title");
-        wordTitleEl.innerHTML = `Teken een <span class="highlight-word">${wordToDraw}</span>, je hebt ${countdownDuration} seconden`;
+        wordTitleEl.innerHTML = `Teken een <span class="highlight-word">${escapeHtml(wordToDraw)}</span>, je hebt ${countdownDuration} seconden`;
         console.log(`Countdown started: ${countdownDuration} seconds`);
 
         // Get canvas and load existing drawing

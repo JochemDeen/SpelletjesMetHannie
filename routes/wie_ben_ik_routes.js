@@ -423,7 +423,8 @@ router.get('/api/wie-ben-ik/last-game-score', requireLogin, async (req, res) => 
       winners: winnerNames
     });
   } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
+    logger.error(`Error in ${req.method} ${req.path}: ${error.message}`);
+    res.status(500).json({ success: false, error: 'Er is iets misgegaan.' });
   }
 });
 
@@ -434,7 +435,8 @@ router.get('/api/wie-ben-ik/monthly-scores', requireLogin, async (req, res) => {
     const scores = await WieBenIk.getMonthlyWinCounts(currentMonth);
     res.json({ success: true, scores });
   } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
+    logger.error(`Error in ${req.method} ${req.path}: ${error.message}`);
+    res.status(500).json({ success: false, error: 'Er is iets misgegaan.' });
   }
 });
 
@@ -444,7 +446,8 @@ router.get('/api/wie-ben-ik/total-scores', requireLogin, async (req, res) => {
     const scores = await WieBenIk.getTotalWinCounts();
     res.json({ success: true, scores });
   } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
+    logger.error(`Error in ${req.method} ${req.path}: ${error.message}`);
+    res.status(500).json({ success: false, error: 'Er is iets misgegaan.' });
   }
 });
 
@@ -458,7 +461,8 @@ router.get('/api/wie-ben-ik/previous-month-winner', requireLogin, async (req, re
       res.json({ success: false, message: 'Geen winnaar' });
     }
   } catch (error) {
-    res.status(500).json({ success: false, error: error.message });
+    logger.error(`Error in ${req.method} ${req.path}: ${error.message}`);
+    res.status(500).json({ success: false, error: 'Er is iets misgegaan.' });
   }
 });
 

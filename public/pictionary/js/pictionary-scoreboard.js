@@ -31,7 +31,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     
         if (data.success && Array.isArray(data.score) && data.score.length > 0) {
             lastGameHeader.textContent = `Laatste Spel: `;
-            wordTitleEl.innerHTML = `Teken een <span class="highlight-word">${data.word}</span> door ${data.drawer}`;
+            wordTitleEl.innerHTML = `Teken een <span class="highlight-word">${escapeHtml(data.word)}</span> door ${data.drawer}`;
     
             lastGameList.innerHTML = '';
     

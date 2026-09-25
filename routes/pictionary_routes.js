@@ -78,7 +78,7 @@ router.get('/api/pictionary/get-game', requireLogin, async (req, res) => {
 // ----------------------
 
 // Get last game score
-router.get('/api/pictionary/last-game-score', async (req, res) => {
+router.get('/api/pictionary/last-game-score', requireLogin, async (req, res) => {
   logger.info(`GET /api/pictionary/last-game-score for user: ${req.session.userId}`);
   try {
       const lastGameId = await Pictionary.getLatestGameId();
@@ -89,7 +89,7 @@ router.get('/api/pictionary/last-game-score', async (req, res) => {
       }
 
       const gameState = await Pictionary.getGameById(lastGameId);
-      drawer_user_id = gameState.drawer_user_id;
+      const drawer_user_id = gameState.drawer_user_id;
       const drawer_username = await Users.getUsernameById(drawer_user_id);
       const word = gameState.word;
       const lastGameScore = await Pictionary.getGameScore(lastGameId);
@@ -100,24 +100,26 @@ router.get('/api/pictionary/last-game-score', async (req, res) => {
           res.json({ success: false, message: 'Geen score beschikbaar' });
       }
   } catch (error) {
-      res.status(500).json({ success: false, error: error.message });
+      logger.error(`Error in ${req.method} ${req.path}: ${error.message}`);
+      res.status(500).json({ success: false, error: 'Er is iets misgegaan.' });
   }
 });
 
 // Get monthly scores
-router.get('/api/pictionary/monthly-scores', async (req, res) => {
+router.get('/api/pictionary/monthly-scores', requireLogin, async (req, res) => {
   logger.info(`GET /api/pictionary/monthly-scores for user: ${req.session.userId}`);
   const currentMonth = new Date().toISOString().slice(0, 7);
   try {
       const scores = await Pictionary.getMonthlyScores(currentMonth);
       res.json({ success: true, scores });
   } catch (error) {
-      res.status(500).json({ success: false, error: error.message });
+      logger.error(`Error in ${req.method} ${req.path}: ${error.message}`);
+      res.status(500).json({ success: false, error: 'Er is iets misgegaan.' });
   }
 });
 
 // Get last month's winner
-router.get('/api/pictionary/previous-month-winner', async (req, res) => {
+router.get('/api/pictionary/previous-month-winner', requireLogin, async (req, res) => {
   logger.info(`GET /api/pictionary/previous-month-winner for user: ${req.session.userId}`);
   try {
       const winner = await Pictionary.getPreviousMonthWinner();
@@ -127,7 +129,8 @@ router.get('/api/pictionary/previous-month-winner', async (req, res) => {
           res.json({ success: false, message: 'Geen winnaar' });
       }
   } catch (error) {
-      res.status(500).json({ success: false, error: error.message });
+      logger.error(`Error in ${req.method} ${req.path}: ${error.message}`);
+      res.status(500).json({ success: false, error: 'Er is iets misgegaan.' });
   }
 });
 
@@ -411,7 +414,7 @@ router.post('/api/pictionary/submit-guess', requireLogin, async (req, res) => {
     res.json({ status: 'success', message: 'Guess submitted successfully' });
   } catch (error) {
     logger.error('Error submitting guess:', error);
-    res.status(400).json({ error: error.message });
+    res.status(400).json({ error: 'Je gok kon niet worden opgeslagen.' });
   }
 });
 
@@ -619,16 +622,6 @@ router.post('/api/pictionary/submit-drawing', requireLogin, async (req, res) => 
   const { drawing } = req.body;  // The base64 data from the canvas
   logger.info(`POST /api/pictionary/submit-drawing by user: ${userId}`);
 
-    // Basic check for empty drawing data
-  if (!drawing || drawing.trim() === '' || 
-    (drawing.startsWith('data:image/png;base64,') && drawing.split(',')[1].trim() === '')) {
-    logger.info('No drawing provided. Ending round as a loss.');
-    // Here you can call a function to update the game state to "abandoned" or to give 0 points for everyone.
-    await Pictionary.handleEmptyDrawing(req.session.gameId); // Implement this function as needed.
-    return res.json({ status: 'success', message: 'No drawing provided. Round ended with 0 scores.' });
-  }
-
-
   try {
     // Retrieve the active game (global game)
     const gameState = await Pictionary.getActiveGame();
@@ -639,6 +632,15 @@ router.post('/api/pictionary/submit-drawing', requireLogin, async (req, res) => 
     if (gameState.drawer_user_id !== userId) {
       return res.status(403).json({ error: 'Not authorized: Only the drawer can submit a drawing.' });
     }
+
+    // Basic check for empty drawing data: end the game with 0 points for everyone
+    if (typeof drawing !== 'string' || drawing.trim() === '' ||
+      (drawing.startsWith('data:image/png;base64,') && drawing.split(',')[1].trim() === '')) {
+      logger.info(`No drawing provided for game ${gameState.game_id}. Ending game as a loss.`);
+      await Pictionary.handleEmptyDrawing(gameState.game_id);
+      return res.json({ status: 'success', message: 'No drawing provided. Round ended with 0 scores.' });
+    }
+
     logger.info(`Saving drawing for game ${gameState.game_id} by user: ${userId}`); 
     const filePath = await Pictionary.saveDrawing(gameState.game_id, drawing);
     logger.info(`Drawing submitted for game ${gameState.game_id} by user: ${userId}`);

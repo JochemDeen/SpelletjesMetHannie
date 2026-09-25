@@ -23,7 +23,7 @@ let wordsList = [];
 (async function loadWords() {
   try {
     const data = fs.readFileSync(wordsFilePath, 'utf-8');
-    wordsList = data.split('\n').map(word => word.trim().toLowerCase());
+    wordsList = data.split('\n').map(word => word.trim().toLowerCase()).filter(word => word.length > 0);
     logger.info(`Loaded ${wordsList.length} words into memory.`);
 
   } catch (error) {
@@ -39,7 +39,7 @@ let validationWordsList = [];
 (async function loadValidationWords() {
   try {
     const data = fs.readFileSync(validationFilePath, 'utf-8');
-    validationWordsList = data.split('\n').map(word => word.trim().toLowerCase());
+    validationWordsList = data.split('\n').map(word => word.trim().toLowerCase()).filter(word => word.length > 0);
     logger.info(`Loaded ${validationWordsList.length} validation words into memory.`);
 
   } catch (error) {

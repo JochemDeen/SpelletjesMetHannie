@@ -67,7 +67,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const isWinningGuess = q.is_guess && q.ja > q.nee;
             if (q.is_guess) row.classList.add('history-guess');
             if (isWinningGuess) row.classList.add('history-winner');
-            const label = q.is_guess ? `🎯 ${q.text}` : q.text;
+            const label = q.is_guess ? `🎯 ${escapeHtml(q.text)}` : escapeHtml(q.text);
             row.innerHTML = `
                 <td>${q.round_number}${isWinningGuess ? ' 👑' : ''}</td>
                 <td>${q.username}</td>

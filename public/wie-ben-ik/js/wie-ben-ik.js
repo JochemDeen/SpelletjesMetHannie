@@ -391,7 +391,7 @@ async function renderVoting() {
                     <span class="vote-character">${q.character_name}</span>
                     <span class="vote-character-hint">(${q.character_description || ""})</span>
                 </div>
-                <div class="vote-question-text">"${q.text}"</div>
+                <div class="vote-question-text">"${escapeHtml(q.text)}"</div>
                 ${adviceHtml}
                 <div class="vote-buttons">
                     <button class="vote-btn vote-ja" data-answer="ja">Ja</button>
@@ -460,7 +460,7 @@ async function renderHistory() {
             if (q.is_guess) row.classList.add("history-guess");
             if (q.is_mine) row.classList.add("history-mine");
             const censored = q.text === "***";
-            let label = q.is_guess ? `🎯 ${q.text}` : q.text;
+            let label = q.is_guess ? `🎯 ${escapeHtml(q.text)}` : escapeHtml(q.text);
             if (censored) label = '<span class="censored">✨ nog geheim ✨</span>';
             const name = q.is_mine ? `<strong>${q.username} (jij)</strong>` : q.username;
             const pending = '<span class="pending">⏳</span>';

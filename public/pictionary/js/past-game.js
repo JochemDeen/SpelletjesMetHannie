@@ -66,7 +66,7 @@ document.addEventListener("DOMContentLoaded", async function () {
                 <td>${guess.round_number}</td>
                 <td>${guess.username}</td>
                 <td title="${fullDate}">${displayTime || 'N/A'}</td>
-                <td>${guess.text}${guess.feedback == 5 ? ' ⭐' : ''}</td>
+                <td>${escapeHtml(guess.text)}${guess.feedback == 5 ? ' ⭐' : ''}</td>
                 <td>${guess.feedback}</td>
             `;
             tableBody.appendChild(row);

@@ -25,7 +25,9 @@
     const error = urlParams.get('error');
     if (error) {
       const errorMessage = document.getElementById('error-message');
-      errorMessage.textContent = 'Ongeldige gebruikersnaam of wachtwoord.';
+      errorMessage.textContent = error === 'locked'
+        ? 'Te veel mislukte pogingen. Probeer het over een uur opnieuw.'
+        : 'Ongeldige gebruikersnaam of wachtwoord.';
     }
   </script>
 </body>
