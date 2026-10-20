@@ -18,7 +18,7 @@
     "express-session": "^1.18.1",
     "moment": "^2.30.1",
     "sqlite3": "^5.1.7",
-    "winston": "^3.16.0"
+    "winston": "^3.19.0"
   },
   "engines": {
     "node": ">=18.17.0"
