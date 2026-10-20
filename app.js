@@ -13,9 +13,30 @@ const wieBenIkRoutes = require('./routes/wie_ben_ik_routes');
 const settingsRoutes = require('./routes/settings');
 const rateRoutes = require('./routes/ratings');
 const { requireLogin } = require('./middleware/authMiddleware');
+const logger = require('./logger');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+// Express 4 does not catch errors thrown inside async route handlers. Without
+// this handler Node exits on such an error and the whole site goes down; now
+// the error is logged instead.
+process.on('unhandledRejection', (reason) => {
+  logger.error(`Unhandled promise rejection: ${reason && reason.stack ? reason.stack : reason}`);
+});
+
+// Basic security headers: don't advertise Express, don't let browsers guess
+// content types (drawings are uploaded by players), and don't let other sites
+// show this site in a frame (clickjacking).
+app.disable('x-powered-by');
+app.use((req, res, next) => {
+  res.set({
+    'X-Content-Type-Options': 'nosniff',
+    'X-Frame-Options': 'DENY',
+    'Referrer-Policy': 'same-origin'
+  });
+  next();
+});
 
 // Middleware to parse incoming JSON and form data
 app.use(express.json({ limit: '5mb' }));
@@ -28,6 +49,10 @@ app.use((req, res, next) => (req.path.endsWith('.html') ? next() : serveStatic(r
 
 app.set('trust proxy', 1); // Trust first proxy
 
+if (!process.env.SESSION_SECRET) {
+  logger.warn('SESSION_SECRET is not set in .env: sessions are signed with the default secret from the (public) source code.');
+}
+
 // Add session management
 app.use(session({
     store: new SQLiteStore({ db: 'sessions.sqlite' }),
@@ -37,6 +62,7 @@ app.use(session({
     rolling: true, // Refresh the cookie expiry on every request, so active users stay logged in
     cookie: {
       secure: process.env.COOKIE_SECURE === 'true',
+      sameSite: 'lax', // Not sent along on POSTs coming from other sites (CSRF protection)
       maxAge: 90 * 24 * 60 * 60 * 1000 // Expire after 90 days of inactivity
     }
   }));
@@ -73,7 +99,15 @@ app.use(session({
       res.redirect('/login');
     }
   });
-  
+
+  // Errors that reach Express (e.g. a malformed JSON body) are logged here,
+  // instead of sending a stack trace with server paths to the browser.
+  app.use((err, req, res, next) => {
+    logger.error(`Error in ${req.method} ${req.path}: ${err.stack || err.message}`);
+    if (res.headersSent) return next(err);
+    res.status(err.status || 500).send('Er is iets misgegaan.');
+  });
+
   // Start the server
   app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);

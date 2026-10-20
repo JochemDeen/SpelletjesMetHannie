@@ -298,6 +298,10 @@ router.post('/api/wie-ben-ik/question', requireLogin, async (req, res) => {
     if (!questionText) {
       return res.status(400).json({ error: 'Je hebt niks ingevuld.' });
     }
+    // Questions are sent to every player on each poll (and guesses to Gemini)
+    if (questionText.length > 500) {
+      return res.status(400).json({ error: 'Je vraag is te lang.' });
+    }
     const game = await WieBenIk.getActiveGame();
     if (!game || game.state !== 'question') {
       return res.status(400).json({ error: 'Je kunt nu geen vraag stellen.' });

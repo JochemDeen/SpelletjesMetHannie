@@ -155,10 +155,9 @@ async function saveModifiedDrawing(gameId, drawingData) {
                 }
 
                 // Create backup of current drawing with round number
-                const currentPath = path.join(__dirname, '../../public', game.image_path);
-                const backupPath = currentPath.replace('.png', `_round${game.current_round}.png`);
-                
                 try {
+                    const currentPath = path.join(__dirname, '../../public', game.image_path);
+                    const backupPath = currentPath.replace('.png', `_round${game.current_round}.png`);
                     // Use fs.promises.copyFile for proper async/await support
                     const fsPromises = require('fs').promises;
                     await fsPromises.copyFile(currentPath, backupPath);
@@ -167,8 +166,15 @@ async function saveModifiedDrawing(gameId, drawingData) {
                     logger.error('Error creating backup:', copyErr);
                 }
 
-                // Save the new drawing with the same filename
-                const imagePath = await saveDrawingToFile(drawingData, gameId, game.image_path);
+                // Save the new drawing with the same filename. This callback is
+                // async, so the outer try/catch doesn't see its errors: reject here.
+                let imagePath;
+                try {
+                    imagePath = await saveDrawingToFile(drawingData, gameId, game.image_path);
+                } catch (saveErr) {
+                    logger.error('Error saving modified drawing:', saveErr);
+                    return reject(saveErr);
+                }
 
                 // Record the modification action
                 db.run(

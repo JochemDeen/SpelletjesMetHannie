@@ -107,6 +107,10 @@ router.post('/api/pictionary/rate-word', requireLogin, async (req, res) => {
   
   logger.info(`POST /api/pictionary/rate-word by user: ${userId}, word: ${word}, rating: ${rating}`);
 
+  if (typeof word !== 'string' || !['easy', 'medium', 'hard', 'drop'].includes(rating)) {
+    return res.status(400).json({ success: false, error: 'Invalid rating' });
+  }
+
   try {
     // Check if user has already rated this word
     const existingRating = await RatingsManager.getUserWordRating(userId, word);
@@ -136,10 +140,14 @@ router.post('/api/pictionary/suggest-word', requireLogin, async (req, res) => {
   logger.info(`POST /api/pictionary/suggest-word by user: ${userId}, word: ${word}, difficulty: ${difficulty}`);
 
   // Basic validation
-  if (!word || word.trim() === '') {
+  if (typeof word !== 'string' || word.trim() === '') {
     return res.status(400).json({ success: false, error: 'Word cannot be empty' });
   }
-  
+
+  if (word.length > 100) {
+    return res.status(400).json({ success: false, error: 'Word is too long' });
+  }
+
   if (!['easy', 'medium', 'hard', 'drop'].includes(difficulty)) {
     return res.status(400).json({ success: false, error: 'Invalid difficulty level' });
   }

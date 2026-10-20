@@ -55,9 +55,18 @@ router.post('/api/submit-guess', requireLogin, async (req, res) => {
     logger.info(`POST /api/submit-guess - User: ${user_id}, Guess: ${guess}`);
 
     try {
-        if (!guess) {
+        if (!guess || typeof guess !== 'string') {
             return res.status(400).json({ error: 'Guess is required.' });
           }
+        // The browser checks these too, but only the server can be trusted:
+        // guesses must be real words, and at most until the puzzle is finished.
+        if (!(await wordsService.validateWord(guess))) {
+            return res.status(400).json({ error: 'Not a valid word.' });
+        }
+        const gameState = await gameResults.getUserGameState(user_id);
+        if (gameState && gameState.finished) {
+            return res.status(400).json({ error: 'Puzzle already finished.' });
+        }
         const wordOfTheDay = await wordsService.getWordOfTheDay();
         const feedback = generateFeedback(guess, wordOfTheDay);
 
@@ -245,7 +254,6 @@ router.get('/api/mastermind/hint-status', requireLogin, async (req, res) => {
 // POST /api/mastermind/request-hint - Request a new hint
 router.post('/api/mastermind/request-hint', requireLogin, async (req, res) => {
     const userId = req.session.userId;
-    const { guesses, feedback } = req.body;
     logger.info(`POST /api/mastermind/request-hint for user ${userId}`);
 
     try {
@@ -281,8 +289,15 @@ router.post('/api/mastermind/request-hint', requireLogin, async (req, res) => {
             });
         }
 
+        // Base the hint on the guesses stored on the server, not on what the
+        // browser sends: otherwise anyone can fake a late-game state (whose
+        // prompt contains the word itself) or slip instructions into the prompt.
+        const gameState = await gameResults.getUserGameState(userId);
+        const guesses = gameState ? gameState.guesses : [];
+        const feedback = gameState ? gameState.feedback : [];
+
         // Call Gemini API to get hint
-        const hint = await hintsService.callGeminiAPI(wordOfTheDay, guesses || [], feedback || []);
+        const hint = await hintsService.callGeminiAPI(wordOfTheDay, guesses, feedback);
 
         // Save the hint
         await hintsService.saveHint(userId, wordOfTheDay, hint);
