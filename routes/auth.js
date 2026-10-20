@@ -52,6 +52,12 @@ router.post('/login', (req, res) => {
         return res.redirect('/login?error=locked');
     }
 
+    // bcrypt throws on a missing or non-text password, and inside the database
+    // callback below that would crash the whole server.
+    if (typeof username !== 'string' || typeof password !== 'string') {
+        return res.redirect('/login?error=1');
+    }
+
     db.get('SELECT * FROM users WHERE username = ? COLLATE NOCASE', [username], (err, user) => {
       if (err) {
         logger.error(err.message);
@@ -59,8 +65,16 @@ router.post('/login', (req, res) => {
       } else if (user && bcrypt.compareSync(password, user.passwordHash)) {
         logger.info(`User ${username} logged in successfully.`);
         failedLogins.delete(req.ip);
-        req.session.userId = user.id;
-        res.redirect('/dashboard');
+        // Start a fresh session on login, so a session id that existed before
+        // logging in can't be reused to ride along (session fixation).
+        req.session.regenerate((regenerateErr) => {
+          if (regenerateErr) {
+            logger.error(regenerateErr.message);
+            return res.redirect('/login?error=1');
+          }
+          req.session.userId = user.id;
+          res.redirect('/dashboard');
+        });
       } else {
         logger.info(`Failed login attempt for user: ${username} from IP ${req.ip}`);
         registerFailedLogin(req.ip);

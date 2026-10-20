@@ -1117,7 +1117,7 @@ async function updateGuessesTable() {
             <td>${guess.username || 'Onbekend'}</td>
             <td title="${fullDate}">${displayTime || 'N/A'}</td>
             <td>${guess.text ? escapeHtml(guess.text) : '***'}</td>
-            <td>${guess.feedback ? guess.feedback : '<span style="font-size: 10px;">⏳</span>'}</td>`;
+            <td>${guess.feedback ? escapeHtml(guess.feedback) : '<span style="font-size: 10px;">⏳</span>'}</td>`;
             tableBody.appendChild(row);
         });
 

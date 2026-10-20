@@ -14,7 +14,8 @@ Games:
 ## Commands
 
 - Run the app: `npm start` (runs `node app.js`, default port 3000, override with `PORT` env var)
-- No test suite, lint, or build step is configured (`npm test` is a stub).
+- No test suite, lint, or build step is configured (`npm test` is a stub). CI (`.github/workflows/ci.yml`) only runs `npm audit --audit-level=high` and checks that the server starts; Dependabot (`.github/dependabot.yml`) opens weekly dependency PRs.
+- The Lightsail server runs Node 18.20.4 on Debian 12 (glibc 2.36). Keep `sqlite3` on 5.x until the server is upgraded: the Linux binary of `sqlite3` 6 needs glibc 2.38. The `package.json` overrides move sqlite3 5's build-time tools (`node-gyp`, `tar`) to patched versions. CI runs in Debian 12 containers with Node 18 and 24, and Dependabot ignores sqlite3 major updates.
 - Admin/data maintenance is done via one-off scripts in `scripts/`, run manually from the project root (see `scripts/admin-manual.txt` for the full command reference), e.g.:
   - `node scripts/addUser.js` — add a user
   - `node scripts/review-suggestions.js`, `accept-suggestion.js`, `reject-suggestion.js` — moderate user-suggested Pictionary words
@@ -75,7 +76,7 @@ Single shared `sqlite3` connection, tables created with `CREATE TABLE IF NOT EXI
 - `scoringManager.js` — computing and persisting round/game scores.
 - `ratingsManager.js` — word difficulty ratings and user-suggested words (backs the admin scripts and `routes/ratings.js`).
 
-There is exactly **one active Pictionary game at a time** across the whole site (`games.status = 'ongoing'`), not one per user — `getActiveGame()` is the source of truth everyone's client polls against. The `games.state` column drives a per-game state machine: `choose` → `thinking` → `drawing` → `guessing` → `feedback` → (loop `guessing`/`feedback` per round, or) → `completed`, plus a `modify` side-state letting the drawer touch up their drawing once per round. `routes/pictionary_routes.js` derives a *per-viewer* projection of this shared state (e.g. non-drawers see `idle` during `choose`/`thinking`/`drawing`; non-guessers or users who already guessed this round see `guessing-watching`) rather than exposing the raw row to everyone — keep that distinction in mind when adding new states or fields, since `word`/`image_path` must stay hidden from the wrong role at the wrong phase.
+There is exactly **one active Pictionary game at a time** across the whole site (`games.status = 'ongoing'`), not one per user — `getActiveGame()` is the source of truth everyone's client polls against. The `games.state` column drives a per-game state machine: `choose` → `thinking` → `drawing` → `guessing` → `feedback` → (loop `guessing`/`feedback` per round, or) → `completed`, plus a `modify` side-state letting the drawer touch up their drawing once per round. `routes/pictionary_routes.js` derives a *per-viewer* projection of this shared state (e.g. non-drawers see `idle` during `choose`/`thinking`/`drawing`; non-guessers or users who already guessed this round see `guessing-watching`) rather than exposing the raw row to everyone — keep that distinction in mind when adding new states or fields, since `word`/`image_path` must stay hidden from the wrong role at the wrong phase. For the same reason the past-game endpoint (`/api/pictionary/get-game`) refuses ongoing games, and `set-difficulty` (whose response contains the word) is drawer-only during `choose`.
 
 ### Wie ben ik
 `models/wieBenIk/index.js` re-exports the manager submodules as one flat `WieBenIk` object used by `routes/wie_ben_ik_routes.js`:

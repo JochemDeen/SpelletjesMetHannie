@@ -74,14 +74,16 @@ async function submitGuess(gameId, userId, roundNumber, guess) {
     });
 }
 
-async function submitFeedback(actionId, feedback) {
+// Only grades guesses of the given game and round, so a drawer can't change
+// grades in other rounds or games.
+async function submitFeedback(actionId, feedback, gameId, roundNumber) {
     return new Promise((resolve, reject) => {
         const sql = `
             UPDATE actions
             SET feedback = ?
-            WHERE action_id = ?
+            WHERE action_id = ? AND game_id = ? AND round_number = ? AND action = 'guess'
         `;
-        db.run(sql, [feedback, actionId], function (err) {
+        db.run(sql, [feedback, actionId, gameId, roundNumber], function (err) {
             if (err) {
                 logger.error('Failed to update feedback:', err.message);
                 return reject(err);
