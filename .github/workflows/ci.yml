@@ -18,15 +18,13 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        # 18 is what the Lightsail server runs today, 24 is the LTS to move to.
-        # Drop 18 once the server is upgraded.
-        node-version: [18, 24]
+        # Debian 12 like the Lightsail server, with the Node it runs today (18)
+        # and the LTS to move to (24). Keep these in step with the server:
+        # native modules can need a newer OS, and only this would catch it.
+        image: ['node:18-bookworm', 'node:24-bookworm']
+    container: ${{ matrix.image }}
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-node@v7
-        with:
-          node-version: ${{ matrix.node-version }}
-          cache: npm
       - run: npm ci
       - name: No known high or critical vulnerabilities in dependencies
         run: npm audit --audit-level=high

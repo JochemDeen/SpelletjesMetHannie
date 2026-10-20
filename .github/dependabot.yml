@@ -1,6 +1,6 @@
-# Dependabot opens pull requests to keep dependencies up to date.
-# Security fixes arrive as their own PRs once "Dependabot security updates" is
-# switched on in the repository settings.
+# Dependabot opens pull requests to keep dependencies up to date. Security
+# fixes arrive as their own PRs ("Dependabot security updates" is switched on
+# in the repository settings).
 version: 2
 updates:
   - package-ecosystem: npm
@@ -12,6 +12,11 @@ updates:
       # (e.g. Express 5) still come one by one: those can need code changes.
       npm-minor-and-patch:
         update-types: [minor, patch]
+    ignore:
+      # sqlite3 6 doesn't run on the server's Debian 12 (its Linux binary needs
+      # glibc 2.38). Remove this once the server runs a newer OS.
+      - dependency-name: sqlite3
+        update-types: ['version-update:semver-major']
 
   # Keeps the actions used in .github/workflows up to date
   - package-ecosystem: github-actions

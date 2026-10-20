@@ -15,7 +15,7 @@ Games:
 
 - Run the app: `npm start` (runs `node app.js`, default port 3000, override with `PORT` env var)
 - No test suite, lint, or build step is configured (`npm test` is a stub). CI (`.github/workflows/ci.yml`) only runs `npm audit --audit-level=high` and checks that the server starts; Dependabot (`.github/dependabot.yml`) opens weekly dependency PRs.
-- The Lightsail server runs Node 18.20.4 on Debian 12 (glibc 2.36). Keep `sqlite3` on 5.x until the server is upgraded: the Linux binary of `sqlite3` 6 needs glibc 2.38. The `package.json` overrides move sqlite3 5's build-time tools (`node-gyp`, `tar`) to patched versions; CI tests on Node 18 and 24.
+- The Lightsail server runs Node 18.20.4 on Debian 12 (glibc 2.36). Keep `sqlite3` on 5.x until the server is upgraded: the Linux binary of `sqlite3` 6 needs glibc 2.38. The `package.json` overrides move sqlite3 5's build-time tools (`node-gyp`, `tar`) to patched versions. CI runs in Debian 12 containers with Node 18 and 24, and Dependabot ignores sqlite3 major updates.
 - Admin/data maintenance is done via one-off scripts in `scripts/`, run manually from the project root (see `scripts/admin-manual.txt` for the full command reference), e.g.:
   - `node scripts/addUser.js` — add a user
   - `node scripts/review-suggestions.js`, `accept-suggestion.js`, `reject-suggestion.js` — moderate user-suggested Pictionary words
