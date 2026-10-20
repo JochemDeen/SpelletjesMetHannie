@@ -1,0 +1,36 @@
+# Runs on every push to main, on every pull request (including Dependabot's)
+# and once a week: checks the dependencies for known vulnerabilities and that
+# the server still starts.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    - cron: '0 6 * * 1' # Mondays: catches advisories published since the last push
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        # 18 is what the Lightsail server runs today, 24 is the LTS to move to.
+        # Drop 18 once the server is upgraded.
+        node-version: [18, 24]
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: npm
+      - run: npm ci
+      - name: No known high or critical vulnerabilities in dependencies
+        run: npm audit --audit-level=high
+      - name: Server starts and serves the login page
+        run: |
+          node app.js &
+          curl --silent --fail --retry 15 --retry-connrefused --retry-delay 1 http://localhost:3000/login > /dev/null

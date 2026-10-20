@@ -1,0 +1,20 @@
+# Dependabot opens pull requests to keep dependencies up to date.
+# Security fixes arrive as their own PRs once "Dependabot security updates" is
+# switched on in the repository settings.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: weekly
+    groups:
+      # Bundle all minor and patch updates into one weekly PR. Major updates
+      # (e.g. Express 5) still come one by one: those can need code changes.
+      npm-minor-and-patch:
+        update-types: [minor, patch]
+
+  # Keeps the actions used in .github/workflows up to date
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
