@@ -5,7 +5,7 @@
     padding: 14px 16px;
     border-left: 4px solid var(--navy);
     border-radius: var(--radius-sm);
-    background-color: #eef1f7;
+    background-color: var(--info-bg);
 }
 
 .info-box p {
@@ -47,9 +47,9 @@
     filter: brightness(0.95);
 }
 
-.rating-btn[data-rating="easy"] { background-color: #e5f1e6; color: #2f6b3a; }
-.rating-btn[data-rating="medium"] { background-color: #f6edcf; color: #7a5d10; }
-.rating-btn[data-rating="hard"] { background-color: #f8e1dd; color: #94352b; }
+.rating-btn[data-rating="easy"] { background-color: var(--success-bg); color: var(--success-ink); }
+.rating-btn[data-rating="medium"] { background-color: var(--warning-bg); color: var(--warning-ink); }
+.rating-btn[data-rating="hard"] { background-color: var(--danger-bg); color: var(--danger-ink); }
 .rating-btn[data-rating="drop"] { background-color: var(--surface-2); color: var(--ink-soft); }
 
 .text-btn {
@@ -73,8 +73,8 @@
     text-align: center;
 }
 
-.info-message-info { background-color: #eef1f7; color: var(--navy); }
-.info-message-success { background-color: #e5f1e6; color: #2f6b3a; }
+.info-message-info { background-color: var(--info-bg); color: var(--info-ink); }
+.info-message-success { background-color: var(--success-bg); color: var(--success-ink); }
 
 .rating-progress {
     margin-top: 14px;
@@ -165,9 +165,9 @@
     text-align: center;
 }
 
-.suggestion-message.info { display: block; background-color: #eef1f7; color: var(--navy); }
-.suggestion-message.success { display: block; background-color: #e5f1e6; color: #2f6b3a; }
-.suggestion-message.error { display: block; background-color: #f8e1dd; color: #94352b; }
+.suggestion-message.info { display: block; background-color: var(--info-bg); color: var(--info-ink); }
+.suggestion-message.success { display: block; background-color: var(--success-bg); color: var(--success-ink); }
+.suggestion-message.error { display: block; background-color: var(--danger-bg); color: var(--danger-ink); }
 
 .confirm-text {
     margin: 4px 0 20px;

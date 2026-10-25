@@ -1,9 +1,15 @@
 /* public/css/base.css
    Shared look for every page: colour tokens, font, header, buttons, cards
    and toasts. Load it first; each game's own CSS only adds game-specific
-   rules on top. Wie ben ik keeps its dark look via body.theme-wbi. */
+   rules on top and uses the tokens below (no hard-coded colours), so dark
+   mode works everywhere.
+
+   Dark mode: <html data-theme="dark"> or "light" is set by /js/theme.js from
+   the choice in Settings; without a choice the device setting is followed. */
 
 :root {
+    color-scheme: light;
+
     /* Surfaces */
     --bg: #f7f2e7;
     --surface: #fffdf8;
@@ -20,6 +26,8 @@
     --gray: #6d6d6d;         /* Woordle "incorrect" tile */
     --gold: #c9a227;
     --navy: #233056;
+    --on-navy: #ffffff;
+    --purple: #6b5fc4;
     --danger: #b9473c;
 
     /* Roles */
@@ -30,33 +38,111 @@
     --on-accent: #2d2a32;
     --focus: #2f6fb3;
 
+    /* Soft backgrounds with matching text, for notes, badges and answers */
+    --highlight-bg: #fbf3d9;     /* announcements, hints, last month's winner */
+    --highlight-border: #ecd9a0;
+    --success-bg: #e5f1e6;
+    --success-ink: #2f6b3a;
+    --warning-bg: #f6edcf;
+    --warning-ink: #7a5d10;
+    --danger-bg: #f8e1dd;
+    --danger-ink: #94352b;
+    --info-bg: #eef1f7;
+    --info-ink: #233056;
+
+    /* Woordle board and keyboard */
+    --key-bg: #ddd5c4;
+    --tile-filled-border: #b9ad94;
+
     --radius: 14px;
     --radius-sm: 10px;
     --shadow: 0 2px 10px rgba(70, 50, 20, 0.08);
     --shadow-lift: 0 8px 22px rgba(70, 50, 20, 0.14);
+    --backdrop: rgba(30, 25, 20, 0.45);
 
     --font: 'Nunito', system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif;
     --font-heading: var(--font);
     --tap: 44px;             /* minimum touch target */
 }
 
-/* Wie ben ik: midnight blue with gold (its own --wbi-* tokens live in wie-ben-ik.css) */
-.theme-wbi {
-    --bg: #17172e;
-    --surface: #21213c;
-    --surface-2: #2b2b4a;
-    --border: #3b3b60;
-    --ink: #e9e7f2;
-    --ink-soft: #a7a3c6;
-    --primary: #d9b95c;
-    --primary-hover: #e6c86c;
-    --on-primary: #17172e;
-    --accent: #8b7fd4;
-    --on-accent: #ffffff;
-    --focus: #f0d78a;
-    --shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
-    --shadow-lift: 0 8px 22px rgba(0, 0, 0, 0.45);
-    --font-heading: Georgia, 'Times New Roman', serif;
+/* Dark palette. Written twice: once for an explicit choice in Settings, once
+   for "follow the device" (no data-theme, device in dark mode). Keep both in sync. */
+:root[data-theme="dark"] {
+    color-scheme: dark;
+    --bg: #1c1a17;
+    --surface: #26231f;
+    --surface-2: #322e29;
+    --border: #443e37;
+    --ink: #f0ebe1;
+    --ink-soft: #b7ad9e;
+    --green: #6aa16e;
+    --ochre: #bf9f45;
+    --gray: #57534e;
+    --gold: #d9b95c;
+    --navy: #a3b3e8;
+    --on-navy: #161a2b;
+    --purple: #b3a9f2;
+    --danger: #e0705f;
+    --primary: #74b37f;
+    --primary-hover: #87c391;
+    --on-primary: #10220f;
+    --on-accent: #1c1a17;
+    --focus: #8ab4f8;
+    --highlight-bg: #3a3221;
+    --highlight-border: #5e4f2a;
+    --success-bg: #22382a;
+    --success-ink: #a3d9ab;
+    --warning-bg: #3a3221;
+    --warning-ink: #e6c86c;
+    --danger-bg: #43241f;
+    --danger-ink: #f2aba0;
+    --info-bg: #252b3d;
+    --info-ink: #b4c2ee;
+    --key-bg: #47413a;
+    --tile-filled-border: #7a7064;
+    --shadow: 0 2px 10px rgba(0, 0, 0, 0.35);
+    --shadow-lift: 0 8px 22px rgba(0, 0, 0, 0.5);
+    --backdrop: rgba(0, 0, 0, 0.6);
+}
+
+@media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+        color-scheme: dark;
+        --bg: #1c1a17;
+        --surface: #26231f;
+        --surface-2: #322e29;
+        --border: #443e37;
+        --ink: #f0ebe1;
+        --ink-soft: #b7ad9e;
+        --green: #6aa16e;
+        --ochre: #bf9f45;
+        --gray: #57534e;
+        --gold: #d9b95c;
+        --navy: #a3b3e8;
+        --on-navy: #161a2b;
+        --purple: #b3a9f2;
+        --danger: #e0705f;
+        --primary: #74b37f;
+        --primary-hover: #87c391;
+        --on-primary: #10220f;
+        --on-accent: #1c1a17;
+        --focus: #8ab4f8;
+        --highlight-bg: #3a3221;
+        --highlight-border: #5e4f2a;
+        --success-bg: #22382a;
+        --success-ink: #a3d9ab;
+        --warning-bg: #3a3221;
+        --warning-ink: #e6c86c;
+        --danger-bg: #43241f;
+        --danger-ink: #f2aba0;
+        --info-bg: #252b3d;
+        --info-ink: #b4c2ee;
+        --key-bg: #47413a;
+        --tile-filled-border: #7a7064;
+        --shadow: 0 2px 10px rgba(0, 0, 0, 0.35);
+        --shadow-lift: 0 8px 22px rgba(0, 0, 0, 0.5);
+        --backdrop: rgba(0, 0, 0, 0.6);
+    }
 }
 
 *, *::before, *::after {
@@ -65,6 +151,7 @@
 
 html {
     -webkit-text-size-adjust: 100%;
+    background-color: var(--bg);
 }
 
 body {
@@ -168,11 +255,6 @@ button, input, select, textarea {
     font-weight: 800;
     text-align: center;
     color: var(--ink);
-}
-
-.theme-wbi .site-title {
-    color: var(--primary);
-    letter-spacing: 0.5px;
 }
 
 .site-nav {
@@ -286,7 +368,7 @@ button, input, select, textarea {
 
 .btn-danger {
     background-color: var(--danger);
-    color: #fff;
+    color: var(--on-primary);
 }
 
 .btn-block {
@@ -342,7 +424,7 @@ button, input, select, textarea {
 
 .toast-error {
     background-color: var(--danger);
-    color: #fff;
+    color: var(--on-primary);
 }
 
 .toast-success {
@@ -407,7 +489,7 @@ button, input, select, textarea {
     align-items: center;
     justify-content: center;
     padding: 16px;
-    background-color: rgba(30, 25, 20, 0.45);
+    background-color: var(--backdrop);
 }
 
 .modal {

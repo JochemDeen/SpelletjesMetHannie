@@ -3,6 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="/js/theme.js"></script>
   <meta name="theme-color" content="#f7f2e7">
   <title>Instellingen · Spelletjes met Hannie</title>
   <link rel="icon" type="image/png" href="/favicon-96x96.png" sizes="96x96">
@@ -42,6 +43,24 @@
         </span>
       </label>
       <p class="muted settings-note">Woordle kun je altijd spelen.</p>
+    </section>
+    <section class="card">
+      <h2 class="settings-heading">Weergave</h2>
+      <p class="muted">Geldt voor dit apparaat.</p>
+      <div class="theme-choice" role="radiogroup" aria-label="Weergave">
+        <label class="theme-option-label">
+          <input type="radio" name="theme" value="system">
+          <span><span class="theme-choice-icon" aria-hidden="true">🌗</span>Automatisch<small>zoals je apparaat</small></span>
+        </label>
+        <label class="theme-option-label">
+          <input type="radio" name="theme" value="light">
+          <span><span class="theme-choice-icon" aria-hidden="true">☀️</span>Licht</span>
+        </label>
+        <label class="theme-option-label">
+          <input type="radio" name="theme" value="dark">
+          <span><span class="theme-choice-icon" aria-hidden="true">🌙</span>Donker</span>
+        </label>
+      </div>
     </section>
     <p class="settings-links"><a href="/logout">Uitloggen</a></p>
   </main>

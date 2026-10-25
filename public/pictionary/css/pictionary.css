@@ -215,7 +215,7 @@
 .tool-btn.active,
 .size-btn.active {
     border-color: var(--primary);
-    background-color: #e5f1e6;
+    background-color: var(--success-bg);
 }
 
 .tool-btn:disabled {
@@ -362,7 +362,7 @@
 }
 
 .guess-table tr.top-guess td {
-    background-color: #eef6ee;
+    background-color: var(--success-bg);
     font-weight: 700;
 }
 

@@ -2,13 +2,12 @@
 #blocked-container {
     margin: 30px auto;
     padding: 30px 20px;
-    background-color: var(--wbi-surface);
-    border: 1px solid var(--wbi-border);
-    border-radius: 12px;
+    background-color: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
     text-align: center;
     font-size: 1.1em;
-    color: var(--wbi-text);
-    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+    box-shadow: var(--shadow);
 }
 
 #browser-container {
@@ -20,9 +19,9 @@
     min-height: var(--tap);
     padding: 10px 14px;
     font-size: 1em;
-    background-color: var(--wbi-surface-light);
-    color: var(--wbi-text);
-    border: 1px solid var(--wbi-border);
+    background-color: var(--surface);
+    color: var(--ink);
+    border: 2px solid var(--border);
     border-radius: 8px;
     max-width: 100%;
     cursor: pointer;
@@ -30,7 +29,7 @@
 
 #theme-select:focus {
     outline: none;
-    border-color: var(--wbi-gold);
+    border-color: var(--primary);
 }
 
 #theme-count {
@@ -46,7 +45,8 @@
 
 .character-card {
     padding: 12px;
-    background-color: var(--wbi-surface);
-    border: 1px solid var(--wbi-border);
-    border-radius: 10px;
+    background-color: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    box-shadow: var(--shadow);
 }

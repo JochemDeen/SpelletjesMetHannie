@@ -18,8 +18,8 @@
     gap: 12px;
     margin-bottom: 20px;
     padding: 14px 52px 14px 16px;
-    background-color: #fbf3d9;
-    border: 1px solid #ecd9a0;
+    background-color: var(--highlight-bg);
+    border: 1px solid var(--highlight-border);
     border-radius: var(--radius);
 }
 
@@ -48,7 +48,7 @@
 }
 
 .announcement-close:hover {
-    background-color: rgba(0, 0, 0, 0.06);
+    background-color: var(--surface-2);
 }
 
 /* Game cards */
@@ -106,17 +106,17 @@
     right: 10px;
     padding: 4px 12px;
     border-radius: 999px;
-    color: #fff;
+    color: var(--on-primary);
     font-size: 0.9rem;
     font-weight: 800;
     box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
 }
 
-.status-green { background-color: var(--primary); }
-.status-yellow { background-color: #e0b330; color: #2d2a32; }
-.status-gray { background-color: #8c8790; }
-.status-blue { background-color: var(--navy); }
-.status-red { background-color: var(--danger); }
+.status-green { background-color: var(--primary); color: var(--on-primary); }
+.status-yellow { background-color: var(--ochre); color: var(--on-accent); }
+.status-gray { background-color: var(--surface-2); color: var(--ink-soft); }
+.status-blue { background-color: var(--navy); color: var(--on-navy); }
+.status-red { background-color: var(--danger); color: var(--on-primary); }
 
 .dashboard-links {
     margin: 28px 0 0;
