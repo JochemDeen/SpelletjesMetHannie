@@ -1,18 +1,13 @@
 // routes/ratings.js
 const express = require('express');
 const router = express.Router();
-const path = require('path');
 const { requireLogin } = require('../middleware/authMiddleware');
+const { servePage } = require('../utils/servePage');
 const logger = require('../logger');
-const Users = require('../models/user');
-const wordsService = require('../models/wordsService');
 const RatingsManager = require('../models/pictionary/ratingsManager');
 
 // Pictionary rate words page
-router.get('/pictionary/rate-words', requireLogin, (req, res) => {
-    logger.info(`GET /pictionary/rate-words for user: ${req.session.userId}`);
-    res.sendFile('rate-words.html', { root: path.join(__dirname, '../public/pictionary') });
-});
+router.get('/pictionary/rate-words', requireLogin, servePage('pictionary/rate-words.html'));
 
 // Get a random word for rating with multi-tier selection priority
 router.get('/api/pictionary/random-word-to-rate', requireLogin, async (req, res) => {

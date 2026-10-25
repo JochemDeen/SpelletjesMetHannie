@@ -2,43 +2,58 @@
 <html lang="nl">
 <head>
   <meta charset="UTF-8">
-  <title>Spel Statistieken</title>
-  <link rel="stylesheet" href="/css/mastermind.css">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="stylesheet" href="/css/stats.css"> 
+  <meta name="theme-color" content="#f7f2e7">
+  <title>Statistieken · Woordle</title>
+  <link rel="icon" type="image/png" href="/favicon-96x96.png" sizes="96x96">
+  <link rel="shortcut icon" href="/favicon.ico">
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+  <link rel="manifest" href="/site.webmanifest">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap">
+  <link rel="stylesheet" href="/css/base.css">
+  <link rel="stylesheet" href="/css/woordle.css">
 </head>
 <body>
-    <header id="game-header">
-      <a href="/dashboard" class="home-button">
-        <img src="/images/home.png" alt="Home" />
-      </a>
-      <h1>Statistieken</h1>
-      <nav id="nav-links">
-        <a href="/mastermind" id="play-link">Spelen</a>
-        <a href="/mastermind/compare" id="compare-link">Samenvatting</a>
-        <a href="/mastermind/stats" id="stats-link">Stats</a>
-        <a href="/mastermind/scoreboard" id="scoreboard-link">Scoreboard</a>
-      </nav>
-    </header>
+  <header class="site-header">
+    <a href="/dashboard" class="home-link" aria-label="Naar het overzicht" title="Naar het overzicht">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+    </a>
+    <h1 class="site-title">Woordle</h1>
+    <nav class="site-nav" aria-label="Woordle">
+      <a href="/mastermind">Spelen</a>
+      <a href="/mastermind/compare">Samenvatting</a>
+      <a href="/mastermind/stats" aria-current="page">Statistieken</a>
+      <a href="/mastermind/scoreboard">Scorebord</a>
+    </nav>
+  </header>
 
-    <div id="stats-summary">
-        <p><span id="total-games">...</span><br>Gespeeld</p>
-        <p><span id="percent-correct">...</span><br>Win %</p>
-        <p><span id="current-streak">...</span><br>Winreeks</p>
-        <p><span id="max-streak">...</span><br>Max Winreeks</p>
-        <p><span id="total-score">...</span><br>Score</p> 
-        <p><span id="monthly-score">...</span><br>Maand-Score</p> 
-    </div>
-    <div id="guess-distribution">
-        <h2>Verdeling van Pogingen</h2>
-        <!-- Guess distribution bars will be generated dynamically here -->
-    </div>
-    <div id="average-stats">
-        <p><span id="average-guess">...</span><br>Gemiddelde poging</p>
-        <p><span id="median-guess">...</span><br>Mediaan poging</p>
-        <p><span id="latest-guess-time">...</span><br>Laatste poging</p>
-    </div>
-    
+  <main class="page woordle-page">
+    <section class="card">
+      <h2>Jouw spellen</h2>
+      <div class="stat-tiles" id="stats-summary"></div>
+    </section>
+
+    <section class="card">
+      <h2>Punten</h2>
+      <div class="stat-tiles" id="score-summary"></div>
+    </section>
+
+    <section class="card">
+      <h2>Geraden in … pogingen</h2>
+      <div class="distribution" id="guess-distribution"></div>
+    </section>
+
+    <section class="card">
+      <h2>Pogingen per gewonnen spel</h2>
+      <div class="stat-tiles" id="average-stats"></div>
+      <p class="muted latest-guess">Laatst gespeeld: <span id="latest-guess-time">–</span></p>
+    </section>
+  </main>
+
+  <script src="/js/common.js"></script>
+  <script src="/js/woordle-stats.js"></script>
   <script src="/js/stats.js"></script>
 </body>
 </html>

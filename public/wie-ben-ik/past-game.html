@@ -2,22 +2,38 @@
 <html lang="nl">
 <head>
   <meta charset="UTF-8">
-  <title>Wie ben ik? - Vorige Spel</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#17172e">
+  <title>Vorige spellen · Wie ben ik?</title>
+  <link rel="icon" type="image/png" href="/favicon-96x96.png" sizes="96x96">
+  <link rel="shortcut icon" href="/favicon.ico">
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+  <link rel="manifest" href="/site.webmanifest">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap">
+  <link rel="stylesheet" href="/css/base.css">
   <link rel="stylesheet" href="/wie-ben-ik/css/wie-ben-ik.css">
   <link rel="stylesheet" href="/wie-ben-ik/css/past-game.css">
 </head>
-<body>
-    <a href="/dashboard" class="home-button">
-        <img src="/images/home.png" alt="Home" />
+<body class="theme-wbi">
+  <header class="site-header">
+    <a href="/dashboard" class="home-link" aria-label="Naar het overzicht" title="Naar het overzicht">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
     </a>
+    <h1 class="site-title">Wie ben ik?</h1>
+    <nav class="site-nav" aria-label="Wie ben ik">
+      <a href="/wie-ben-ik">Spelen</a>
+      <a href="/wie-ben-ik/scoreboard">Scorebord</a>
+      <a href="/wie-ben-ik/personages">Personages</a>
+    </nav>
+  </header>
 
-    <h1>Wie ben ik? Spellen</h1>
-
+  <main class="page wbi-page">
     <div class="date-navigation">
-        <button id="prevDateButton" class="nav-arrow"><<</button>
+        <button id="prevDateButton" class="btn btn-secondary nav-arrow" aria-label="Vorig spel">‹</button>
         <span id="game-info"></span>
-        <button id="nextDateButton" class="nav-arrow">>></button>
+        <button id="nextDateButton" class="btn btn-secondary nav-arrow" aria-label="Volgend spel">›</button>
     </div>
 
     <div id="game-state-container">
@@ -48,7 +64,9 @@
         </div>
     </div>
 
-    <script src="/js/escape-html.js"></script>
+  </main>
+
+    <script src="/js/common.js"></script>
     <script src="/wie-ben-ik/js/past-game.js"></script>
 </body>
 </html>

@@ -1,5 +1,4 @@
-// models/users.js
-const sqlite3 = require('sqlite3').verbose();
+// models/user.js
 const db = require('./db'); // Use shared database connection
 
 
@@ -11,17 +10,6 @@ async function getUsernameById(user_id) {
         return reject(err);
       }
       resolve(row ? row.username : null);
-    });
-  });
-}
-async function getAllUserIds() {
-  return new Promise((resolve, reject) => {
-    const sql = `SELECT id FROM users`;
-    db.all(sql, [], (err, rows) => {
-      if (err) {
-        return reject(err);
-      }
-      resolve(rows.map(row => row.id));
     });
   });
 }
@@ -65,7 +53,6 @@ async function getActiveWieBenIkUserIds() {
 module.exports = {
   db,
   getUsernameById,
-  getAllUserIds,
   getActivePictionaryUserIds,
   getActiveWieBenIkUserIds
 };

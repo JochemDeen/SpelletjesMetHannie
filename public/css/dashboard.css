@@ -1,0 +1,165 @@
+/* public/css/dashboard.css: the game overview after logging in */
+
+.greeting {
+    margin: 0;
+    color: var(--ink-soft);
+    font-weight: 600;
+}
+
+.dashboard {
+    max-width: 980px;
+}
+
+/* Announcement banner */
+.announcement {
+    position: relative;
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 20px;
+    padding: 14px 52px 14px 16px;
+    background-color: #fbf3d9;
+    border: 1px solid #ecd9a0;
+    border-radius: var(--radius);
+}
+
+.announcement-icon {
+    font-size: 1.4rem;
+    line-height: 1.3;
+}
+
+.announcement-text {
+    margin: 0;
+}
+
+.announcement-close {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    width: var(--tap);
+    height: var(--tap);
+    border: none;
+    border-radius: 50%;
+    background: none;
+    color: var(--ink-soft);
+    font-size: 1.6rem;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.announcement-close:hover {
+    background-color: rgba(0, 0, 0, 0.06);
+}
+
+/* Game cards */
+.game-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 20px;
+}
+
+.game-card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding-bottom: 18px;
+    background-color: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    overflow: hidden;
+    color: inherit;
+    text-decoration: none;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.game-card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--shadow-lift);
+}
+
+.game-card img {
+    display: block;
+    width: 100%;
+    height: auto;
+    aspect-ratio: 1 / 1;
+    object-fit: cover;
+    background-color: var(--surface-2);
+}
+
+.game-name {
+    margin-top: 14px;
+    font-size: 1.4rem;
+    font-weight: 800;
+}
+
+.game-tagline {
+    color: var(--ink-soft);
+    font-size: 0.95rem;
+}
+
+/* Status badge on the picture */
+.status {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    padding: 4px 12px;
+    border-radius: 999px;
+    color: #fff;
+    font-size: 0.9rem;
+    font-weight: 800;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+}
+
+.status-green { background-color: var(--primary); }
+.status-yellow { background-color: #e0b330; color: #2d2a32; }
+.status-gray { background-color: #8c8790; }
+.status-blue { background-color: var(--navy); }
+.status-red { background-color: var(--danger); }
+
+.dashboard-links {
+    margin: 28px 0 0;
+    text-align: center;
+    font-weight: 700;
+}
+
+.dashboard-links a {
+    display: inline-block;
+    padding: 10px 8px;
+}
+
+.site-footer {
+    padding: 0 16px 16px;
+    text-align: center;
+    font-size: 0.8rem;
+    color: var(--ink-soft);
+}
+
+/* Phones: two cards per row so all three games fit without much scrolling */
+@media (max-width: 560px) {
+    .game-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+    }
+
+    .game-card {
+        padding-bottom: 12px;
+    }
+
+    .game-name {
+        margin-top: 8px;
+        font-size: 1.15rem;
+    }
+
+    .game-tagline {
+        display: none;
+    }
+
+    .status {
+        top: 6px;
+        right: 6px;
+        padding: 2px 9px;
+        font-size: 0.8rem;
+    }
+}

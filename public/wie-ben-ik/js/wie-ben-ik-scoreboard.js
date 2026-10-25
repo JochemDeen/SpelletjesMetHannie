@@ -38,9 +38,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (data.success) {
             lastGameHeader.textContent = 'Laatste Spel:';
             const winnersText = (data.winners && data.winners.length > 0)
-                ? `👑 Gewonnen door <span class="highlight-word">${data.winners.join(' en ')}</span> in ronde ${data.round} 👑`
+                ? `👑 Gewonnen door <span class="highlight-word">${data.winners.map(escapeHtml).join(' en ')}</span> in ronde ${data.round} 👑`
                 : 'Niemand heeft gewonnen';
-            titleEl.innerHTML = `Thema: <span class="highlight-word">${data.theme_name || '?'}</span> — ${winnersText}`;
+            titleEl.innerHTML = `Thema: <span class="highlight-word">${escapeHtml(data.theme_name || '?')}</span> — ${winnersText}`;
 
             linkContainer.innerHTML = '';
             const viewGameContainer = document.createElement('div');
@@ -81,7 +81,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
             const listItem = document.createElement('li');
             listItem.innerHTML = `<span class="rank">${currentRank}.</span>
-                                  <span class="username">${entry.username}</span>
+                                  <span class="username">${escapeHtml(entry.username)}</span>
                                   <span class="score">${entry.wins}</span>`;
             orderedList.appendChild(listItem);
         });
@@ -98,14 +98,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     function renderPreviousMonthWinner(data) {
         const title = document.getElementById('previous-month-winner-title');
         const info = document.getElementById('previous-month-winner-info');
-        const section = document.querySelector('.previous-month-winner');
+        const section = document.querySelector('.winner-card');
 
         if (data.success && data.winner) {
             title.textContent = `Winnaar van ${getMonthName(getPreviousMonth())}:`;
             info.textContent = `${data.winner} met ${data.wins} keer goed geraden!`;
-            section.style.display = 'block';
+            section.classList.remove('hidden');
         } else {
-            section.style.display = 'none';
+            section.classList.add('hidden');
         }
     }
 

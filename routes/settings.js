@@ -1,16 +1,13 @@
 // routes/settings.js
 const express = require('express');
-const path = require('path');
 const router = express.Router();
 const db = require('../models/db');
 const logger = require('../logger');
 const { requireLogin } = require('../middleware/authMiddleware');
+const { servePage } = require('../utils/servePage');
 
 // Serve the settings page
-router.get('/', requireLogin, (req, res) => {
-    logger.info('GET /settings');
-    res.sendFile('settings.html', { root: path.join(__dirname, '../public') });
-  });
+router.get('/', requireLogin, servePage('settings.html'));
   
 // Get all settings for the logged-in user
 router.get('/api', requireLogin, (req, res) => {
@@ -40,41 +37,32 @@ router.get('/api', requireLogin, (req, res) => {
   });
 });
 
-// Update pictionary setting
-router.post('/api/pictionary', requireLogin, (req, res) => {
+// Toggle settings: each URL stores one on/off key with value "1" or "0".
+const TOGGLES = {
+  '/api/pictionary': 'pictionaryEnabled',
+  '/api/wie-ben-ik': 'wieBenIkEnabled'
+};
+
+for (const [url, key] of Object.entries(TOGGLES)) {
+  router.post(url, requireLogin, (req, res) => {
     const userId = req.session.userId;
-    const { pictionaryEnabled } = req.body; // "1" or "0"
-    logger.info(`POST /settings/api/pictionary userId: ${userId}, pictionaryEnabled: ${pictionaryEnabled}`);
+    const value = String(req.body[key]);
+    logger.info(`POST /settings${url} userId: ${userId}, ${key}: ${value}`);
+    if (value !== '0' && value !== '1') {
+      return res.status(400).json({ error: 'Ongeldige waarde' });
+    }
     const sql = `
       INSERT OR REPLACE INTO user_settings (user_id, setting_key, setting_value)
-      VALUES (?, 'pictionaryEnabled', ?)
+      VALUES (?, ?, ?)
     `;
-    db.run(sql, [userId, pictionaryEnabled], function(err) {
+    db.run(sql, [userId, key, value], (err) => {
       if (err) {
         logger.error('Error updating setting:', err.message);
         return res.status(500).json({ error: 'Internal Server Error' });
       }
-      res.json({ success: true, pictionaryEnabled });
+      res.json({ success: true, [key]: value });
     });
   });
-
-// Update wie ben ik setting
-router.post('/api/wie-ben-ik', requireLogin, (req, res) => {
-    const userId = req.session.userId;
-    const { wieBenIkEnabled } = req.body; // "1" or "0"
-    logger.info(`POST /settings/api/wie-ben-ik userId: ${userId}, wieBenIkEnabled: ${wieBenIkEnabled}`);
-    const sql = `
-      INSERT OR REPLACE INTO user_settings (user_id, setting_key, setting_value)
-      VALUES (?, 'wieBenIkEnabled', ?)
-    `;
-    db.run(sql, [userId, wieBenIkEnabled], function(err) {
-      if (err) {
-        logger.error('Error updating setting:', err.message);
-        return res.status(500).json({ error: 'Internal Server Error' });
-      }
-      res.json({ success: true, wieBenIkEnabled });
-    });
-  });
-
+}
 
 module.exports = router;

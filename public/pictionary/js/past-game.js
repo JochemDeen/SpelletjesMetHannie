@@ -1,106 +1,90 @@
-//path: public/pictionary/js/past-game.js
-document.addEventListener("DOMContentLoaded", async function () {
-    const urlParams = new URLSearchParams(window.location.search);
-    let gameId = urlParams.get("game_id");
+// public/pictionary/js/past-game.js: a finished Pictionary game, with
+// arrows to step through older and newer games.
 
-    if (!gameId) {
-        console.error("No game_id provided");
-        return;
-    }
+const DIFFICULTY_LABELS = { easy: 'Makkelijk', medium: 'Gemiddeld', hard: 'Moeilijk' };
 
-    async function fetchGameData(gameId) {
+function formatGameDate(value) {
+    return new Date(value.replace(' ', 'T') + 'Z').toLocaleDateString('nl-NL', {
+        day: 'numeric', month: 'long', year: 'numeric'
+    });
+}
+
+// SQLite timestamps are UTC without a zone ("2026-10-25 14:03:00")
+function formatGuessTime(value) {
+    if (!value) return { time: '–', full: '' };
+    const date = new Date(value.replace(' ', 'T') + 'Z');
+    if (Number.isNaN(date.getTime())) return { time: '–', full: '' };
+    return {
+        time: date.toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit' }),
+        full: date.toLocaleString('nl-NL', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
+    };
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    const prevButton = document.getElementById('prevDateButton');
+    const nextButton = document.getElementById('nextDateButton');
+    let gameId = new URLSearchParams(window.location.search).get('game_id');
+
+    async function show(id) {
+        let data;
         try {
-            const response = await fetch(`/api/pictionary/get-game?game_id=${gameId}`);
-            if (!response.ok) throw new Error("Failed to fetch game data.");
-            return await response.json();
+            data = await api(`/api/pictionary/get-game?game_id=${encodeURIComponent(id)}`);
         } catch (error) {
-            console.error("Error fetching game data:", error);
+            toast(error.message, { type: 'error' });
+            return;
         }
-    }
+        gameId = id;
+        history.replaceState(null, '', `?game_id=${id}`);
 
-    async function updateGameView(gameId) {
-        const data = await fetchGameData(gameId);
-        if (!data) return;
-        console.log(data);
+        document.getElementById('game-info').textContent = `Spel ${id} · ${formatGameDate(data.date)}`;
+        prevButton.disabled = !data.prev_game_id;
+        nextButton.disabled = !data.next_game_id;
+        prevButton.onclick = () => show(data.prev_game_id);
+        nextButton.onclick = () => show(data.next_game_id);
 
-        const date = formatDate(new Date(data.date));
-
-        // Update game info (game ID + date)
-        document.getElementById("game-info").textContent = `Spel ${gameId} (${date})`;
-
-        // Handle navigation buttons
-        const prevButton = document.getElementById("prevDateButton");
-        const nextButton = document.getElementById("nextDateButton");
-
-        if (data.prev_game_id) {
-            prevButton.style.display = "inline-block";
-            prevButton.onclick = () => updateGameView(data.prev_game_id);
-        } else {
-            prevButton.style.display = "none";
-        }
-
-        if (data.next_game_id) {
-            nextButton.style.display = "inline-block";
-            nextButton.onclick = () => updateGameView(data.next_game_id);
-        } else {
-            nextButton.style.display = "none";
-        }
-
-        const difficulty = data.difficulty === "easy" ? "Makkelijk" : data.difficulty === "medium" ? "Gemiddeld" : "Moeilijk";
-        
-        // Show the drawing
-        document.getElementById("image-canvas").innerHTML = `
-            <h3>Tekening door ${data.drawer}</h3>
-            <img src="${data.imageSrc}" alt="Drawing by ${data.drawer}" style="max-width: 100%; height: auto; border: 1px solid #ddd; border-radius: 8px;" />
-            <p style="font-size: 20px;margin: 6px 0 0 0">Getekend woord: <strong>${data.word}</strong></p>
-            <p style="font-size: 14px;margin: 0 0">(Moeilijkheidsgraad: ${difficulty})</p>
+        const drawer = escapeHtml(data.drawer);
+        document.getElementById('image-canvas').innerHTML = `
+            <h3>Tekening van ${drawer}</h3>
+            ${data.imageSrc ? `<img src="${escapeHtml(data.imageSrc)}" alt="Tekening van ${drawer}">` : '<p class="muted">Geen tekening</p>'}
+            <p class="drawing-word">Het woord was: <strong>${escapeHtml(data.word)}</strong></p>
+            <p class="muted">${DIFFICULTY_LABELS[data.difficulty] || ''}</p>
         `;
 
-        // Show guesses
-        const tableBody = document.getElementById("guessesTableBody");
-        tableBody.innerHTML = "";
+        const tableBody = document.getElementById('guessesTableBody');
+        tableBody.innerHTML = '';
         data.guesses.forEach((guess) => {
-            const row = document.createElement("tr");
-            const { displayTime, fullDate } = formatGuessTime(guess.time);
+            const { time, full } = formatGuessTime(guess.time);
+            const row = document.createElement('tr');
+            if (guess.feedback == 5) row.className = 'top-guess';
             row.innerHTML = `
-                <td>${guess.round_number}</td>
-                <td>${guess.username}</td>
-                <td title="${fullDate}">${displayTime || 'N/A'}</td>
+                <td>${escapeHtml(guess.round_number)}</td>
+                <td>${escapeHtml(guess.username)}</td>
+                <td title="${escapeHtml(full)}">${escapeHtml(time)}</td>
                 <td>${escapeHtml(guess.text)}${guess.feedback == 5 ? ' ⭐' : ''}</td>
-                <td>${escapeHtml(guess.feedback)}</td>
+                <td>${escapeHtml(guess.feedback ?? '–')}</td>
             `;
             tableBody.appendChild(row);
         });
     }
 
-    updateGameView(gameId);
-});
-const formatDate = (date) => {
-    const year = date.getFullYear();
-    const month = date.toLocaleString('nl-NL', { month: 'short' }); // jan, feb, etc.
+    document.getElementById('shareButton').addEventListener('click', async () => {
+        try {
+            const canvas = await html2canvas(document.getElementById('game-state-container'), { backgroundColor: '#f7f2e7' });
+            const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
+            const file = new File([blob], `pictionary-${gameId}.png`, { type: 'image/png' });
+            if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                await navigator.share({ files: [file] });
+            } else {
+                toast('Delen kan niet in deze browser. Probeer het op je telefoon.');
+            }
+        } catch (error) {
+            if (error.name !== 'AbortError') toast('Delen is niet gelukt.', { type: 'error' });
+        }
+    });
 
-    //const month = String(date.getMonth() + 1).padStart(2, '0');
-    const day = String(date.getDate()).padStart(2, '0');
-    return `${day} ${month} ${year}`;
-};
-function formatGuessTime(isoString) {
-    if (!isoString) return { displayTime: 'N/A', fullDate: 'N/A' }; // Handle missing time
-  
-    let normalized = isoString.replace(" ", "T") + "Z";  // Normalize for UTC parsing
-    const d = new Date(normalized);
-  
-    if (isNaN(d.getTime())) return { displayTime: 'N/A', fullDate: 'N/A' }; // Fallback if invalid
-  // Format like "1-jan 10:00"
-    // (Using Dutch style, but you can adapt)
-    const day = d.getDate();
-    const month = d.toLocaleString('nl-NL', { month: 'short' });
-    const hour = String(d.getHours()).padStart(2, '0');
-    const minute = String(d.getMinutes()).padStart(2, '0');
-  
-    // Format for display
-    const displayTime = `${hour}:${minute}`;
-    const fullDate = `${day}-${month} ${hour}:${minute}`;
-  
-    return { displayTime, fullDate };
-  }
-  
+    if (gameId) {
+        show(gameId);
+    } else {
+        toast('Geen spel gekozen.', { type: 'error' });
+    }
+});

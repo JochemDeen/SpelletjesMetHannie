@@ -2,74 +2,67 @@
 <html lang="nl">
 <head>
   <meta charset="UTF-8">
-  <title>Pictionary - Vorige Spel</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="stylesheet" href="/pictionary/css/pictionary.css">
-  <link rel="stylesheet" href="/css/compare.css">
+  <meta name="theme-color" content="#f7f2e7">
+  <title>Vorige spellen · Pictionary</title>
+  <link rel="icon" type="image/png" href="/favicon-96x96.png" sizes="96x96">
+  <link rel="shortcut icon" href="/favicon.ico">
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+  <link rel="manifest" href="/site.webmanifest">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap">
+  <link rel="stylesheet" href="/css/base.css">
   <link rel="stylesheet" href="/pictionary/css/past-game.css">
-
 </head>
 <body>
-    <a href="/dashboard" class="home-button">
-        <img src="/images/home.png" alt="Home" />
+  <header class="site-header">
+    <a href="/dashboard" class="home-link" aria-label="Naar het overzicht" title="Naar het overzicht">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
     </a>
+    <h1 class="site-title">Pictionary</h1>
+    <nav class="site-nav" aria-label="Pictionary">
+      <a href="/pictionary">Spelen</a>
+      <a href="/pictionary/scoreboard">Scorebord</a>
+    </nav>
+  </header>
 
-    <h1>Pictionary Spellen</h1>
-
+  <main class="page">
     <div class="date-navigation">
-        <button id="prevDateButton" class="nav-arrow"><<</button>
-        <span id="game-info"></span>
-        <button id="nextDateButton" class="nav-arrow">>></button>
+      <button id="prevDateButton" class="btn btn-secondary nav-arrow" aria-label="Vorig spel">‹</button>
+      <h2 id="game-info"></h2>
+      <button id="nextDateButton" class="btn btn-secondary nav-arrow" aria-label="Volgend spel">›</button>
     </div>
+
     <div id="game-state-container">
-        <div id="guess-container">
-            <div id="image-canvas"></div>
-        </div>
+      <section class="card drawing-card" id="image-canvas"></section>
 
-        <div id="guesses-table-container">
-            <table>
-              <thead>
-                <tr>
-                  <th title="Ronde">#</th>
-                  <th>Speler</th>
-                  <th>Tijd</th>
-                  <th>Beurt</th>
-                  <th>Cijfer</th>
-                </tr>
-              </thead>
-              <tbody id="guessesTableBody"></tbody>
-            </table>
+      <section class="card">
+        <h3>De gokken</h3>
+        <div class="table-scroll">
+          <table class="guess-table">
+            <thead>
+              <tr>
+                <th title="Ronde">#</th>
+                <th>Speler</th>
+                <th>Tijd</th>
+                <th>Gok</th>
+                <th>Cijfer</th>
+              </tr>
+            </thead>
+            <tbody id="guessesTableBody"></tbody>
+          </table>
         </div>
+      </section>
     </div>
-    <img id="shareButton" src="/images/whatsapp.png" alt="Share on WhatsApp" />
 
-    <script src="/js/escape-html.js"></script>
-    <script src="/pictionary/js/past-game.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" integrity="sha512-BNaRQnYJYiPSqHHDb58B0yaPfCu+Wgds8Gp/gU33kqBtgNS4tSPHuGibyoeqMV/TJlSKda6FXzoEyYGjTe+vXA==" crossorigin="anonymous"></script>
+    <p class="share-row">
+      <button id="shareButton" class="btn btn-secondary"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 16.1c-.8 0-1.4.3-2 .8l-7.1-4.2c.1-.2.1-.5.1-.7s0-.5-.1-.7L16 7.2c.5.5 1.2.8 2 .8 1.7 0 3-1.3 3-3s-1.3-3-3-3-3 1.3-3 3c0 .2 0 .5.1.7L8 9.8C7.5 9.3 6.8 9 6 9c-1.7 0-3 1.3-3 3s1.3 3 3 3c.8 0 1.5-.3 2-.8l7.1 4.2c-.1.2-.1.4-.1.6 0 1.6 1.3 2.9 2.9 2.9s2.9-1.3 2.9-2.9-1.2-2.9-2.8-2.9z"/></svg> Deel als plaatje</button>
+    </p>
+  </main>
 
+  <script src="/js/common.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js" integrity="sha512-BNaRQnYJYiPSqHHDb58B0yaPfCu+Wgds8Gp/gU33kqBtgNS4tSPHuGibyoeqMV/TJlSKda6FXzoEyYGjTe+vXA==" crossorigin="anonymous"></script>
+  <script src="/pictionary/js/past-game.js"></script>
 </body>
 </html>
-
-<script>
-    document.getElementById("shareButton").addEventListener("click", function() {
-      html2canvas(document.getElementById("game-state-container")).then(canvas => {
-          canvas.toBlob(blob => {
-              const file = new File([blob], "screenshot.png", { type: "image/png" });
-  
-              if (navigator.canShare && navigator.canShare({ files: [file] })) {
-                  navigator.share({
-                      files: [file],
-                      text: "",
-                  }).then(() => {
-                      console.log("Shared successfully");
-                  }).catch(error => {
-                      console.error("Error sharing:", error);
-                  });
-              } else {
-                  alert("Sharing not supported on this browser. Please use a compatible device.");
-              }
-          });
-      });
-  });
-  
-  </script>

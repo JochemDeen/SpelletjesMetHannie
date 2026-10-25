@@ -2,36 +2,50 @@
 <html lang="nl">
 <head>
   <meta charset="UTF-8">
-  <title>Pictionary Scoreboard</title>
-  <link rel="stylesheet" href="/pictionary/css/pictionary-scoreboard.css">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#f7f2e7">
+  <title>Scorebord · Pictionary</title>
+  <link rel="icon" type="image/png" href="/favicon-96x96.png" sizes="96x96">
+  <link rel="shortcut icon" href="/favicon.ico">
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+  <link rel="manifest" href="/site.webmanifest">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap">
+  <link rel="stylesheet" href="/css/base.css">
+  <link rel="stylesheet" href="/css/scoreboard.css">
 </head>
 <body>
-    <a href="/" class="home-button"><img src="/images/home.png" alt="Home" /></a>
-    <h1>Pictionary Scoreboard</h1>
+  <header class="site-header">
+    <a href="/dashboard" class="home-link" aria-label="Naar het overzicht" title="Naar het overzicht">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+    </a>
+    <h1 class="site-title">Pictionary</h1>
+    <nav class="site-nav" aria-label="Pictionary">
+      <a href="/pictionary">Spelen</a>
+      <a href="/pictionary/scoreboard" aria-current="page">Scorebord</a>
+    </nav>
+  </header>
 
-    <div id="scoreboard-container">
-        <!-- Last Game Score -->
-        <div class="last-game-score">
-            <h2 id="last-game-header">Laatste Spel</h2>
-            <div id="last-game-title"></div>
-            <ol id="last-game-list" class="score-list"></ol>
-        </div>
+  <main class="page scoreboard">
+    <section class="card">
+      <h2 id="last-game-header">Laatste spel</h2>
+      <div id="last-game-title"></div>
+      <ol id="last-game-list" class="score-list"></ol>
+    </section>
 
-        <!-- Monthly Scores -->
-        <div class="monthly-scores">
-            <h2 id="current-month-header"></h2>
-            <ol id="monthly-score-list" class="score-list"></ol>
-        </div>
+    <section class="card">
+      <h2 id="current-month-header"></h2>
+      <ol id="monthly-score-list" class="score-list"></ol>
+    </section>
 
-        <!-- Previous Month Winner -->
-        <div class="previous-month-winner">
-            <h2 id="previous-month-winner-title"></h2>
-            <p id="previous-month-winner-info"></p>
-        </div>
-    </div>
+    <section class="card winner-card">
+      <h2 id="previous-month-winner-title"></h2>
+      <p id="previous-month-winner-info"></p>
+    </section>
+  </main>
 
-    <script src="/js/escape-html.js"></script>
-    <script src="/pictionary/js/pictionary-scoreboard.js"></script>
+  <script src="/js/common.js"></script>
+  <script src="/pictionary/js/pictionary-scoreboard.js"></script>
 </body>
 </html>

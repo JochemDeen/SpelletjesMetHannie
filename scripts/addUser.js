@@ -17,11 +17,11 @@ db.run(
   [username, passwordHash],
   function (err) {
     if (err) {
-      return logger.info('Error adding user:', err.message);
+      return logger.error('Error adding user:', err.message);
     }
     logger.info(`User ${username} added with ID ${this.lastID}`);
     
-    // Insert default setting for pictionary (default = "1" for on)
+    // New users start with Pictionary off (Wie ben ik follows this setting)
     db.run(
       "INSERT INTO user_settings (user_id, setting_key, setting_value) VALUES (?, 'pictionaryEnabled', '0')",
       [this.lastID],

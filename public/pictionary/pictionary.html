@@ -1,151 +1,148 @@
-<!-- public/pictionary/pictionary.html -->
 <!DOCTYPE html>
 <html lang="nl">
 <head>
   <meta charset="UTF-8">
-  <title>Pictionary</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="icon" type="image/png" href="/favicon-96x96.png" sizes="96x96" />
-  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-  <link rel="shortcut icon" href="/favicon.ico" />
-  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
-  <link rel="manifest" href="/site.webmanifest" />
+  <meta name="theme-color" content="#f7f2e7">
+  <title>Pictionary</title>
+  <link rel="icon" type="image/png" href="/favicon-96x96.png" sizes="96x96">
+  <link rel="shortcut icon" href="/favicon.ico">
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+  <link rel="manifest" href="/site.webmanifest">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap">
+  <link rel="stylesheet" href="/css/base.css">
   <link rel="stylesheet" href="/pictionary/css/pictionary.css">
 </head>
-<body>    
-    <!-- Home Button -->
-    <a href="/dashboard" class="home-button">
-        <img src="/images/home.png" alt="Home" />
+<body>
+  <header class="site-header">
+    <a href="/dashboard" class="home-link" aria-label="Naar het overzicht" title="Naar het overzicht">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
     </a>
-      <!-- Title Area -->
-  <h1 id="game-title">Pictionary!</h1>
+    <h1 class="site-title">Pictionary</h1>
+    <nav class="site-nav" aria-label="Pictionary">
+      <a href="/pictionary" aria-current="page">Spelen</a>
+      <a href="/pictionary/scoreboard">Scorebord</a>
+    </nav>
+  </header>
 
+  <main class="page pictionary-page">
+    <h2 id="phase-title" class="phase-title"></h2>
 
-    <!-- Navigation Links -->
-    <div id="nav-links">
-        <a href="/pictionary/scoreboard" id="scoreboard-link">Scoreboard</a>
-    </div>
+    <!-- Not playing / waiting for the drawer -->
+    <section id="off-container" class="card message-card hidden">
+      <div class="message-icon" id="off-icon">🎨</div>
+      <p id="off-message"></p>
+    </section>
 
-    <!-- Game State Container -->
-    <div id="game-state-container">
-        <!-- Scenario: Word Selection -->
-        <div id="word-selection" class="hidden">
-            <h3>Kies een moeilijkheidsgraad:</h3>
-            <div id="difficulty-options">
-                <!-- Buttons will be generated dynamically -->
-            </div>
+    <!-- Drawer: choose a difficulty -->
+    <section id="word-selection" class="card hidden">
+      <p class="muted">Hoe moeilijker het woord, hoe meer punten je kunt verdienen.</p>
+      <div id="difficulty-options" class="difficulty-options"></div>
+    </section>
+
+    <!-- Drawer: think about the drawing -->
+    <section id="thinking-container" class="card hidden">
+      <p class="word-reveal">Je woord is: <strong id="thinking-word" class="highlight-word"></strong></p>
+      <p class="muted">Bedenk even hoe je het gaat tekenen. Het tekenen begint vanzelf over <strong id="thinking-timer">1:00</strong>.</p>
+      <button type="button" id="start-drawing-btn" class="btn btn-primary btn-block">Start met tekenen!</button>
+    </section>
+
+    <!-- Drawer: drawing (also used for the touch-up) -->
+    <section id="drawing-container" class="hidden">
+      <div class="draw-header">
+        <p class="draw-word">Teken: <strong id="draw-word" class="highlight-word"></strong></p>
+        <span id="timer-text" class="timer-text" aria-live="off">1:00</span>
+      </div>
+      <div class="timer-track"><div id="timer-bar" class="timer-bar"></div></div>
+
+      <div class="canvas-frame">
+        <canvas id="drawing-canvas" width="800" height="400" aria-label="Tekenvel"></canvas>
+      </div>
+
+      <div class="toolbar" id="toolbar">
+        <div class="swatches" role="group" aria-label="Kleur">
+          <button type="button" class="swatch active" data-color="#1f1f1f" style="--swatch: #1f1f1f" aria-label="zwart" title="zwart"></button>
+          <button type="button" class="swatch" data-color="#8e8e93" style="--swatch: #8e8e93" aria-label="grijs" title="grijs"></button>
+          <button type="button" class="swatch" data-color="#ffffff" style="--swatch: #ffffff" aria-label="wit" title="wit"></button>
+          <button type="button" class="swatch" data-color="#ff453a" style="--swatch: #ff453a" aria-label="rood" title="rood"></button>
+          <button type="button" class="swatch" data-color="#ff9500" style="--swatch: #ff9500" aria-label="oranje" title="oranje"></button>
+          <button type="button" class="swatch" data-color="#ffcc00" style="--swatch: #ffcc00" aria-label="geel" title="geel"></button>
+          <button type="button" class="swatch" data-color="#34c759" style="--swatch: #34c759" aria-label="groen" title="groen"></button>
+          <button type="button" class="swatch" data-color="#5ac8fa" style="--swatch: #5ac8fa" aria-label="lichtblauw" title="lichtblauw"></button>
+          <button type="button" class="swatch" data-color="#007aff" style="--swatch: #007aff" aria-label="blauw" title="blauw"></button>
+          <button type="button" class="swatch" data-color="#af52de" style="--swatch: #af52de" aria-label="paars" title="paars"></button>
+          <button type="button" class="swatch" data-color="#ffb6c1" style="--swatch: #ffb6c1" aria-label="roze" title="roze"></button>
+          <button type="button" class="swatch" data-color="#a27653" style="--swatch: #a27653" aria-label="bruin" title="bruin"></button>
         </div>
-
-        <!-- Scenario: Thinking Phase -->
-        <div id="thinking-container" class="hidden">
-            <div id="thinking-word-title"></div>
-            <p id="thinking-message">Je hebt even de tijd om na te denken over wat je gaat tekenen.</p>
-            <div id="thinking-timer"></div>
-            <button id="start-drawing-btn">Start met tekenen!</button>
-        </div>
-
-        <!-- Scenario: Drawing Area -->
-        <div id="drawing-container" class="hidden">
-            <div id="draw-word-title"></div>
-
-            <!-- Timer -->
-            <div id="timer-bar"></div>
-            <canvas id="drawing-canvas" width="800" height="400"></canvas>
-            <div id="tools-container">
-                <div id="color-picker">
-                    <!-- Color buttons -->
-                    <button class="color" data-color="rgb(0, 0, 0)" style="background-color: rgb(0, 0, 0);"></button>
-                    <button class="color" data-color="rgb(255, 69, 58)" style="background-color: rgb(255, 69, 58);"></button>
-                    <button class="color" data-color="rgb(0, 122, 255)" style="background-color: rgb(0, 122, 255);"></button>
-                    <button class="color" data-color="rgb(52, 199, 89)" style="background-color: rgb(52, 199, 89);"></button>
-                    <button class="color" data-color="rgb(90, 200, 250)" style="background-color: rgb(90, 200, 250);"></button>
-                    <button class="color" data-color="rgb(255, 182, 193)" style="background-color: rgb(255, 182, 193);"></button>
-                    <button class="color" data-color="rgb(255, 204, 0)" style="background-color: rgb(255, 204, 0);"></button>
-                    <button class="color" data-color="rgb(255, 149, 0)" style="background-color: rgb(255, 149, 0);"></button>
-                    <button class="color" data-color="rgb(162, 118, 83)" style="background-color: rgb(162, 118, 83);"></button>
-                    <button class="color" data-color="rgb(142, 142, 147)" style="background-color: rgb(142, 142, 147);"></button>
-                    <button class="eraser" data-tool="eraser" id="eraser-button">
-                    <img src="/images/eraser-icon.png" alt="Eraser" />
-                </button>
-                <div id="thickness-controls">
-                    <button id="thin-brush" class="thickness-btn" data-thickness="2">
-                      <div class="thickness-dot thin"></div>
-                    </button>
-                    <button id="medium-brush" class="thickness-btn active" data-thickness="6">
-                      <div class="thickness-dot medium"></div>
-                    </button>
-                    <button id="thick-brush" class="thickness-btn" data-thickness="12">
-                      <div class="thickness-dot thick"></div>
-                    </button>
-                  </div>
-                
-                <button id="undo-button" class="drawing-control-btn">
-                    <span>↩️ Ongedaan maken</span>
-                  </button>
-                  
-            </div>
-
-                <button id="finish-drawing">Klaar!</button>
-            </div>
-            
-        </div>
-
-        <!-- Scenario: Guess Submission -->
-        <div id="guess-container" class="hidden">
-
-            <div id="guessing" class="hidden">
-                <div id="image-canvas"></div>
-                <div id="guess-status">
-                    <!-- Placeholder to show other users' statuses -->
-                </div>
-            </div>
-        
-            <!-- Scenario: Guess Submission Controls (Hidden by Default) -->
-            <div id="guess-submission" class="hidden">
-                <div id="guess-submission-controls">
-                    <input type="text" id="guess-input" placeholder="Schrijf hier je keuze..." />
-                    <button id="submit-guess">Plaats je keuze</button>
-                </div>
-            </div>
-        </div>
-
-        <!-- Guesses Table (Hidden by Default) -->
-        <div id="guesses-table-container" class="hidden">
-            <table>
-              <thead>
-                <tr>
-                  <th title="Ronde">#</th>
-                  <th>Speler</th>
-                  <th>Tijd</th>
-                  <th>Beurt</th>
-                  <th>Cijfer</th>
-                </tr>
-              </thead>
-              <tbody id="guessesTableBody">
-                <!-- Rows will be dynamically added here -->
-              </tbody>
-            </table>
+        <div class="tool-row">
+          <div class="tool-group" role="group" aria-label="Gereedschap">
+            <button type="button" class="tool-btn active" data-tool="pen" aria-label="Potlood" title="Potlood">✏️</button>
+            <button type="button" class="tool-btn" data-tool="fill" aria-label="Verfemmer: vlak inkleuren" title="Vlak inkleuren">🪣</button>
+            <button type="button" class="tool-btn" data-tool="eraser" aria-label="Gum" title="Gum"><img src="/images/eraser-icon.png" alt=""></button>
           </div>
-
-        <!-- Scenario: Grading Guesses -->
-        <div id="grading-guesses" class="hidden">
-            <div id="grading-guesses-title"></div>
-            <div id="image-canvas-guessing"></div>
-            <button id="modify-drawing" class="modify-drawing-btn">Maak een kleine aanpassing</button>
-            <div id="grading-scale-label">
-                <span class="fout-label">Fout</span>
-                <span class="goed-label">Goed</span>
-            </div>
-        
-            <div id="guesses-list">
-                <!-- Dynamically loaded guesses -->
-            </div>
-            <button id="submit-grades">Beoordelen</button>
+          <div class="tool-group" role="group" aria-label="Diktes">
+            <button type="button" class="size-btn" data-size="2" aria-label="Dun" title="Dun"><span style="--dot: 4px"></span></button>
+            <button type="button" class="size-btn active" data-size="6" aria-label="Normaal" title="Normaal"><span style="--dot: 8px"></span></button>
+            <button type="button" class="size-btn" data-size="12" aria-label="Dik" title="Dik"><span style="--dot: 14px"></span></button>
+            <button type="button" class="size-btn" data-size="24" aria-label="Heel dik" title="Heel dik"><span style="--dot: 22px"></span></button>
+          </div>
+          <div class="tool-group" role="group" aria-label="Geschiedenis">
+            <button type="button" class="tool-btn" id="undo-button" aria-label="Ongedaan maken" title="Ongedaan maken">↶</button>
+            <button type="button" class="tool-btn" id="redo-button" aria-label="Opnieuw" title="Opnieuw">↷</button>
+            <button type="button" class="tool-btn" id="clear-button" aria-label="Wis alles" title="Wis alles">🗑️</button>
+          </div>
         </div>
+      </div>
 
-    </div>
-    <script src="https://cdn.jsdelivr.net/npm/axios@1.20.0/dist/axios.min.js" integrity="sha384-mIJWc6qj9ALoBF2yHkNOf0fbGel66+X3UkhYw57p36/PaTyDpO9pvnxrVZ7ZGJfi" crossorigin="anonymous"></script>
-    <script src="/js/escape-html.js"></script>
-    <script src="/pictionary/js/pictionary.js"></script>
+      <button type="button" id="finish-drawing" class="btn btn-primary btn-block finish-btn">Klaar!</button>
+    </section>
+
+    <!-- Guessers (and the drawer while waiting): the drawing -->
+    <section id="guess-container" class="card hidden">
+      <p id="drawing-caption" class="drawing-caption"></p>
+      <div id="image-canvas" class="drawing-view"></div>
+      <form id="guess-submission" class="guess-form hidden">
+        <label for="guess-input" class="visually-hidden">Jouw gok</label>
+        <input class="input" type="text" id="guess-input" maxlength="200" autocomplete="off" placeholder="Wat is het?">
+        <button type="submit" id="submit-guess" class="btn btn-primary">Raad</button>
+      </form>
+      <p id="guess-waiting" class="muted guess-waiting hidden"></p>
+    </section>
+
+    <!-- Drawer: grade the guesses -->
+    <section id="grading-guesses" class="card hidden">
+      <p class="word-reveal">Je tekende: <strong id="grading-word" class="highlight-word"></strong></p>
+      <div id="image-canvas-guessing" class="drawing-view"></div>
+      <button type="button" id="modify-drawing" class="btn btn-secondary btn-block">✏️ Maak een kleine aanpassing</button>
+      <div class="grading-legend"><span>1 = helemaal fout</span><span>5 = goed!</span></div>
+      <div id="guesses-list"></div>
+      <button type="button" id="submit-grades" class="btn btn-primary btn-block">Beoordelen</button>
+    </section>
+
+    <!-- All guesses of this game -->
+    <section id="guesses-table-container" class="card hidden">
+      <h3>De gokken</h3>
+      <div class="table-scroll">
+        <table class="guess-table">
+          <thead>
+            <tr>
+              <th title="Ronde">#</th>
+              <th>Speler</th>
+              <th>Tijd</th>
+              <th>Gok</th>
+              <th>Cijfer</th>
+            </tr>
+          </thead>
+          <tbody id="guessesTableBody"></tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <script src="/js/common.js"></script>
+  <script src="/pictionary/js/drawing-board.js"></script>
+  <script src="/pictionary/js/pictionary.js"></script>
 </body>
 </html>

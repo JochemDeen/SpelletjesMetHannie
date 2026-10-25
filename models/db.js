@@ -1,14 +1,22 @@
 //models/db.js
+// The one shared SQLite connection for the whole app.
+const path = require('path');
 const sqlite3 = require('sqlite3').verbose();
 const logger = require('../logger');
 
-const db = new sqlite3.Database('database.sqlite', (err) => {
+const DB_PATH = path.join(__dirname, '..', 'database.sqlite');
+
+const db = new sqlite3.Database(DB_PATH, (err) => {
   if (err) {
     logger.error('Failed to connect to the database:', err.message);
   } else {
     logger.info('Connected to the SQLite database');
   }
 });
+
+// Wait for a lock instead of failing right away with SQLITE_BUSY (the admin
+// scripts open their own connection to the same file).
+db.configure('busyTimeout', 5000);
 
 // Ensure tables exist
 db.serialize(() => {
@@ -27,7 +35,7 @@ db.serialize(() => {
         countdown_seconds INTEGER DEFAULT 60,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         drawing_completed_at DATETIME,
-        completed_at, DATETIME,
+        completed_at DATETIME,
         guessers TEXT NOT NULL,
         FOREIGN KEY (drawer_user_id) REFERENCES users(id)
       )
@@ -155,5 +163,7 @@ db.serialize(() => {
     });
 
 });
+
+db.DB_PATH = DB_PATH;
 
 module.exports = db;

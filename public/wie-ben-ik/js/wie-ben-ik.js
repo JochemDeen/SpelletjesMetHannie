@@ -178,7 +178,7 @@ async function submitThemeVote(themeId) {
         });
         if (!res.ok) {
             const err = await res.json();
-            alert(err.error || "Stemmen is niet gelukt.");
+            toast(err.error || "Stemmen is niet gelukt.", { type: "error" });
         }
     } catch (error) {
         console.error("Error submitting theme vote:", error);
@@ -220,7 +220,7 @@ async function renderThemeOptions(myThemeId = null) {
                 : `<small>(${theme.aantal} personages)</small>`;
             btn.innerHTML = `
                 <span class="theme-icon">${themeIcons[theme.id] || "🎭"}</span>
-                <span class="theme-name">${theme.naam}</span>
+                <span class="theme-name">${escapeHtml(theme.naam)}</span>
                 ${count}
                 ${selected ? '<span class="theme-check">✅</span>' : ""}
             `;
@@ -259,8 +259,8 @@ async function renderThemePreview(themeId, themeName) {
             const card = document.createElement("div");
             card.classList.add("preview-card");
             card.innerHTML = `
-                <div class="character-name">${figuur.naam}</div>
-                <div class="character-description">${figuur.omschrijving || ""}</div>
+                <div class="character-name">${escapeHtml(figuur.naam)}</div>
+                <div class="character-description">${escapeHtml(figuur.omschrijving || "")}</div>
             `;
             listDiv.appendChild(card);
         });
@@ -292,25 +292,25 @@ async function renderPlayers(themeVotePhase = false) {
             if (themeVotePhase) {
                 const voted = player.has_voted_theme ? "✅ heeft gestemd" : "⏳ moet nog stemmen";
                 card.innerHTML = `
-                    <div class="player-name">${player.username}${player.is_me ? " (jij)" : ""}</div>
+                    <div class="player-name">${escapeHtml(player.username)}${player.is_me ? " (jij)" : ""}</div>
                     <div class="player-status">${voted}</div>
                 `;
             } else if (isSpectator) {
                 card.innerHTML = `
-                    <div class="player-name">${player.username}</div>
+                    <div class="player-name">${escapeHtml(player.username)}</div>
                     <div class="character-name mystery">🤫</div>
                 `;
             } else if (player.is_me) {
                 card.innerHTML = `
-                    <div class="player-name">${player.username} (jij)</div>
+                    <div class="player-name">${escapeHtml(player.username)} (jij)</div>
                     <div class="character-name mystery">???</div>
                     <div class="character-description">Raad wie je bent!</div>
                 `;
             } else {
                 card.innerHTML = `
-                    <div class="player-name">${player.username}</div>
-                    <div class="character-name">${player.character_name || "?"}</div>
-                    <div class="character-description">${player.character_description || ""}</div>
+                    <div class="player-name">${escapeHtml(player.username)}</div>
+                    <div class="character-name">${escapeHtml(player.character_name || "?")}</div>
+                    <div class="character-description">${escapeHtml(player.character_description || "")}</div>
                 `;
             }
             listDiv.appendChild(card);
@@ -331,7 +331,7 @@ async function submitQuestion() {
     const text = input.value.trim();
 
     if (!text) {
-        alert("Je hebt niks ingevuld!");
+        toast("Je hebt niks ingevuld!", { type: "error" });
         return;
     }
     const isGuess = guessCheckbox.checked;
@@ -348,7 +348,7 @@ async function submitQuestion() {
         });
         if (!response.ok) {
             const err = await response.json();
-            alert(err.error || "Versturen is niet gelukt.");
+            toast(err.error || "Versturen is niet gelukt.", { type: "error" });
         } else {
             input.value = "";
             guessCheckbox.checked = false;
@@ -381,15 +381,15 @@ async function renderVoting() {
             if (q.is_guess) card.classList.add("vote-guess");
 
             const adviceHtml = (q.is_guess && q.llm_advice)
-                ? `<div class="llm-advice">💡 De computer denkt: <strong>${q.llm_advice.toUpperCase()}</strong></div>`
+                ? `<div class="llm-advice">💡 De computer denkt: <strong>${escapeHtml(q.llm_advice.toUpperCase())}</strong></div>`
                 : "";
 
             card.innerHTML = `
                 <div class="vote-question-header">
                     ${q.is_guess ? '<span class="guess-badge">🎯 GOK</span>' : ""}
-                    <span class="vote-asker">${q.username}</span> is
-                    <span class="vote-character">${q.character_name}</span>
-                    <span class="vote-character-hint">(${q.character_description || ""})</span>
+                    <span class="vote-asker">${escapeHtml(q.username)}</span> is
+                    <span class="vote-character">${escapeHtml(q.character_name)}</span>
+                    <span class="vote-character-hint">(${escapeHtml(q.character_description || "")})</span>
                 </div>
                 <div class="vote-question-text">"${escapeHtml(q.text)}"</div>
                 ${adviceHtml}
@@ -419,7 +419,7 @@ async function renderVoting() {
                         });
                         if (!res.ok) {
                             const err = await res.json();
-                            alert(err.error || "Stemmen is niet gelukt.");
+                            toast(err.error || "Stemmen is niet gelukt.", { type: "error" });
                         }
                     } catch (error) {
                         console.error("Error submitting vote:", error);
@@ -462,7 +462,7 @@ async function renderHistory() {
             const censored = q.text === "***";
             let label = q.is_guess ? `🎯 ${escapeHtml(q.text)}` : escapeHtml(q.text);
             if (censored) label = '<span class="censored">✨ nog geheim ✨</span>';
-            const name = q.is_mine ? `<strong>${q.username} (jij)</strong>` : q.username;
+            const name = q.is_mine ? `<strong>${escapeHtml(q.username)} (jij)</strong>` : q.username;
             const pending = '<span class="pending">⏳</span>';
             row.innerHTML = `
                 <td>${q.round_number}</td>

@@ -1,0 +1,448 @@
+/* public/css/woordle.css: Woordle (Mastermind) game, statistics and summary pages */
+
+.woordle-page h2 {
+    margin: 0 0 12px;
+    font-size: 1.15rem;
+}
+
+/* ---------- Stat tiles + guess distribution (stats page and end-of-game popup) ---------- */
+
+.stat-tiles {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(70px, 1fr));
+    gap: 10px;
+}
+
+.stat-tile {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 10px 6px;
+    border-radius: var(--radius-sm);
+    background-color: var(--surface-2);
+    text-align: center;
+}
+
+.stat-number {
+    font-size: 1.8rem;
+    font-weight: 800;
+    line-height: 1.1;
+    color: var(--ink);
+}
+
+.stat-label {
+    font-size: 0.85rem;
+    color: var(--ink-soft);
+}
+
+.distribution {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.dist-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.dist-label {
+    width: 1.2em;
+    font-weight: 800;
+    text-align: right;
+}
+
+.dist-track {
+    flex: 1;
+}
+
+.dist-bar {
+    padding: 3px 8px;
+    border-radius: 6px;
+    background-color: var(--gray);
+    color: #fff;
+    font-weight: 800;
+    text-align: right;
+    transition: width 0.4s ease-out;
+}
+
+.dist-bar-highlight {
+    background-color: var(--green);
+}
+
+.latest-guess {
+    margin: 12px 0 0;
+    text-align: center;
+}
+
+/* ---------- Summary page ---------- */
+
+.date-navigation {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.results-date-header {
+    margin: 0;
+    font-size: 1.3rem;
+    text-align: center;
+    text-transform: capitalize;
+}
+
+.nav-arrow {
+    width: var(--tap);
+    padding: 0;
+    font-size: 1.6rem;
+}
+
+.nav-arrow:disabled {
+    visibility: hidden;
+}
+
+#compare-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+    gap: 14px;
+}
+
+.compare-message {
+    grid-column: 1 / -1;
+    text-align: center;
+}
+
+.compare-message .btn {
+    margin-top: 12px;
+}
+
+.result-card {
+    padding: 14px;
+}
+
+.result-header {
+    display: flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 4px 10px;
+    margin-bottom: 10px;
+}
+
+.result-name {
+    font-weight: 800;
+    font-size: 1.1rem;
+}
+
+.result-meta {
+    flex: 1;
+    color: var(--ink-soft);
+    font-size: 0.9rem;
+}
+
+.result-score {
+    font-weight: 800;
+    color: var(--primary);
+}
+
+.mini-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 34px);
+    gap: 4px;
+    justify-content: center;
+}
+
+.mini-tile {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 34px;
+    border-radius: 6px;
+    color: #fff;
+    font-weight: 800;
+    text-transform: uppercase;
+}
+
+.mini-tile.correct,
+.tile.correct {
+    background-color: var(--green);
+}
+
+.mini-tile.misplaced,
+.tile.misplaced {
+    background-color: var(--ochre);
+}
+
+.mini-tile.incorrect,
+.tile.incorrect {
+    background-color: var(--gray);
+}
+
+.share-row {
+    margin-top: 20px;
+    text-align: center;
+}
+
+.share-row svg,
+.btn svg {
+    width: 20px;
+    height: 20px;
+    fill: currentColor;
+}
+
+/* ---------- Game page ---------- */
+
+.woordle-game {
+    /* Tile size: as big as fits the width (5 tiles) and the height (6 rows
+       plus header and keyboard), between 40 and 62px */
+    --tile: clamp(40px, min((100vw - 56px) / 5, (100dvh - 400px) / 6), 62px);
+    --key-height: 54px;
+}
+
+.game-layout {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    max-width: 520px;
+    margin: 0 auto;
+    padding: 14px 8px 12px;
+}
+
+.board {
+    display: grid;
+    grid-template-rows: repeat(6, var(--tile));
+    gap: 6px;
+}
+
+.board-row {
+    display: grid;
+    grid-template-columns: repeat(5, var(--tile));
+    gap: 6px;
+}
+
+.tile {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: var(--tile);
+    height: var(--tile);
+    border: 2px solid var(--border);
+    border-radius: 8px;
+    background-color: var(--surface);
+    color: var(--ink);
+    font-size: calc(var(--tile) * 0.5);
+    font-weight: 800;
+    text-transform: uppercase;
+    user-select: none;
+}
+
+.tile.filled {
+    border-color: #b9ad94;
+}
+
+.tile.correct,
+.tile.misplaced,
+.tile.incorrect {
+    border-color: transparent;
+    color: #fff;
+}
+
+.tile.pop {
+    animation: pop 0.1s ease-out;
+}
+
+.tile.flip {
+    animation: flip 0.5s ease-in-out;
+}
+
+.board-row.shake {
+    animation: shake 0.45s;
+}
+
+.tile.bounce {
+    animation: bounce 0.6s ease;
+}
+
+@keyframes pop {
+    from { transform: scale(0.85); }
+    50% { transform: scale(1.1); }
+    to { transform: scale(1); }
+}
+
+@keyframes flip {
+    0% { transform: rotateX(0); }
+    50% { transform: rotateX(90deg); }
+    100% { transform: rotateX(0); }
+}
+
+@keyframes shake {
+    10%, 90% { transform: translateX(-2px); }
+    20%, 80% { transform: translateX(4px); }
+    30%, 50%, 70% { transform: translateX(-6px); }
+    40%, 60% { transform: translateX(6px); }
+}
+
+@keyframes bounce {
+    0%, 20% { transform: translateY(0); }
+    40% { transform: translateY(-24px); }
+    50% { transform: translateY(4px); }
+    60% { transform: translateY(-12px); }
+    80% { transform: translateY(2px); }
+    100% { transform: translateY(0); }
+}
+
+.game-actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px;
+    min-height: var(--tap);
+}
+
+/* On-screen keyboard */
+.keyboard {
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    width: 100%;
+    user-select: none;
+}
+
+.keyboard-row {
+    display: flex;
+    justify-content: center;
+    gap: 5px;
+}
+
+.key {
+    flex: 1;
+    max-width: 46px;
+    height: var(--key-height);
+    padding: 0;
+    border: none;
+    border-radius: 7px;
+    background-color: #ddd5c4;
+    color: var(--ink);
+    font-size: 1.15rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    cursor: pointer;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+}
+
+.key:active {
+    filter: brightness(0.9);
+}
+
+.key.wide {
+    flex: 1.6;
+    max-width: 74px;
+    font-size: 0.85rem;
+}
+
+.key.correct { background-color: var(--green); color: #fff; }
+.key.misplaced { background-color: var(--ochre); color: #fff; }
+.key.incorrect { background-color: var(--gray); color: #fff; }
+
+.keyboard-spacer {
+    flex: 0.5;
+    max-width: 23px;
+}
+
+/* Modals */
+.help-example {
+    display: flex;
+    gap: 5px;
+    --tile: 40px;
+}
+
+.hint-response {
+    margin: 12px 0;
+    padding: 14px;
+    border-left: 4px solid var(--ochre);
+    border-radius: var(--radius-sm);
+    background-color: #fbf3d9;
+    font-size: 1.05rem;
+    white-space: pre-wrap;
+}
+
+.hint-loading {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 12px 0;
+    color: var(--ink-soft);
+}
+
+.hint-loading.hidden {
+    display: none;
+}
+
+.spinner {
+    width: 20px;
+    height: 20px;
+    border: 3px solid var(--border);
+    border-top-color: var(--primary);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+.end-title {
+    margin: 0 0 4px;
+    text-align: center;
+    font-size: 1.5rem;
+}
+
+.end-answer {
+    margin: 0 0 14px;
+    text-align: center;
+}
+
+.end-answer strong {
+    letter-spacing: 2px;
+    text-transform: uppercase;
+}
+
+.end-subtitle {
+    margin: 16px 0 8px;
+    font-size: 1rem;
+}
+
+.countdown {
+    margin: 16px 0;
+    text-align: center;
+}
+
+.countdown strong {
+    font-size: 1.2rem;
+    font-variant-numeric: tabular-nums;
+}
+
+.end-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    justify-content: center;
+}
+
+@media (max-width: 380px) {
+    .woordle-game {
+        --key-height: 48px;
+    }
+
+    .key {
+        font-size: 1rem;
+    }
+
+    .keyboard-row {
+        gap: 4px;
+    }
+}

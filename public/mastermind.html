@@ -2,59 +2,103 @@
 <html lang="nl">
 <head>
   <meta charset="UTF-8">
-  <title>Mastermind</title>
-  <link rel="stylesheet" href="/css/mastermind.css">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="icon" type="image/png" href="/favicon-96x96.png" sizes="96x96" />
-<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-<link rel="shortcut icon" href="/favicon.ico" />
-<link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
-<link rel="manifest" href="/site.webmanifest" />
-
-
+  <meta name="theme-color" content="#f7f2e7">
+  <title>Woordle</title>
+  <link rel="icon" type="image/png" href="/favicon-96x96.png" sizes="96x96">
+  <link rel="shortcut icon" href="/favicon.ico">
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+  <link rel="manifest" href="/site.webmanifest">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap">
+  <link rel="stylesheet" href="/css/base.css">
+  <link rel="stylesheet" href="/css/woordle.css">
 </head>
-<body>
-    <header id="game-header">
-      <a href="/dashboard" class="home-button">
-        <img src="/images/home.png" alt="Home" />
-      </a>
-      <h1>Raad het woord!</h1>
-      <nav id="nav-links">
-        <a href="/mastermind" id="play-link">Spelen</a>
-        <a href="/mastermind/compare" id="compare-link">Samenvatting</a>
-        <a href="/mastermind/stats" id="stats-link">Stats</a>
-        <a href="/mastermind/scoreboard" id="scoreboard-link">Scoreboard</a>
-      </nav>
-    </header>
-    
-    <div id="game-container">
-        <!-- Grid will be generated dynamically -->
+<body class="woordle-game">
+  <header class="site-header">
+    <a href="/dashboard" class="home-link" aria-label="Naar het overzicht" title="Naar het overzicht">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+    </a>
+    <h1 class="site-title">Woordle</h1>
+    <nav class="site-nav" aria-label="Woordle">
+      <a href="/mastermind" aria-current="page">Spelen</a>
+      <a href="/mastermind/compare">Samenvatting</a>
+      <a href="/mastermind/stats">Statistieken</a>
+      <a href="/mastermind/scoreboard">Scorebord</a>
+    </nav>
+    <button type="button" class="header-action" id="help-button" aria-label="Hoe speel je?" title="Hoe speel je?">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20zm1 17h-2v-2h2v2zm2.07-7.75-.9.92C13.45 12.9 13 13.5 13 15h-2v-.5c0-1.1.45-2.1 1.17-2.83l1.24-1.26A1.98 1.98 0 0 0 12 7a2 2 0 0 0-2 2H8a4 4 0 1 1 8 0c0 .88-.36 1.68-.93 2.25z"/></svg>
+    </button>
+  </header>
 
+  <main class="game-layout">
+    <div id="board" class="board" aria-label="Speelbord" role="grid"></div>
+    <p id="status-line" class="status-line visually-hidden" aria-live="polite"></p>
+
+    <div class="game-actions">
+      <button type="button" id="hint-toggle" class="btn btn-secondary hidden">💡 Hint van Ollie</button>
+      <button type="button" id="result-button" class="btn btn-primary hidden">📊 Resultaat</button>
+    </div>
+
+    <div id="keyboard" class="keyboard" aria-label="Toetsenbord"></div>
+  </main>
+
+  <!-- How to play -->
+  <div class="modal-backdrop hidden" id="help-modal">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="help-title">
+      <button type="button" class="modal-close" data-close aria-label="Sluiten">×</button>
+      <h2 id="help-title">Hoe speel je Woordle?</h2>
+      <p>Raad het woord van de dag in 6 pogingen. Elke dag is er een nieuw woord van 5 letters, voor iedereen hetzelfde.</p>
+      <p>Na elke poging zie je met kleuren hoe dichtbij je zat:</p>
+      <div class="help-example">
+        <div class="tile correct">G</div><div class="tile filled">E</div><div class="tile filled">S</div><div class="tile filled">T</div><div class="tile filled">E</div>
       </div>
-
-      <div id="hint-toggle-container">
-        <span id="hint-toggle">Vraag Ollie</span>
+      <p><strong>Groen:</strong> de G zit in het woord, op de goede plek.</p>
+      <div class="help-example">
+        <div class="tile filled">B</div><div class="tile misplaced">L</div><div class="tile filled">U</div><div class="tile filled">E</div><div class="tile filled">S</div>
       </div>
-
-      <div id="hint-panel" style="display: none;">
-        <div id="hint-quota"></div>
-        <button id="request-hint-btn">Vraag een hint</button>
-        <div id="hint-response"></div>
-        <div id="hint-loading" style="display: none;">
-          <span class="spinner"></span> Ollie denkt na...
-        </div>
+      <p><strong>Geel:</strong> de L zit in het woord, maar op een andere plek.</p>
+      <div class="help-example">
+        <div class="tile filled">K</div><div class="tile filled">A</div><div class="tile filled">M</div><div class="tile incorrect">E</div><div class="tile filled">R</div>
       </div>
+      <p><strong>Grijs:</strong> de E zit niet (vaker) in het woord.</p>
+      <p class="muted">Kom je er niet uit? Ollie geeft je een paar keer per maand een hint. Hoe minder pogingen, hoe meer punten voor het maandklassement.</p>
+    </div>
+  </div>
 
-      <div id="keyboard">
-         
-          <img id="shareButton" src="/images/share-ios.svg" alt="Share on WhatsApp" />
+  <!-- Hint from Ollie -->
+  <div class="modal-backdrop hidden" id="hint-modal">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="hint-title">
+      <button type="button" class="modal-close" data-close aria-label="Sluiten">×</button>
+      <h2 id="hint-title">💡 Hint van Ollie</h2>
+      <p id="hint-quota" class="muted"></p>
+      <div id="hint-response" class="hint-response hidden"></div>
+      <div id="hint-loading" class="hint-loading hidden"><span class="spinner"></span> Ollie denkt na…</div>
+      <button type="button" id="request-hint-btn" class="btn btn-primary btn-block">Vraag een hint</button>
+    </div>
+  </div>
 
-        <div class="keyboard-row" id="row-1"></div>
-        <div class="keyboard-row" id="row-2"></div>
-        <div class="keyboard-row" id="row-3"></div>
+  <!-- End of game -->
+  <div class="modal-backdrop hidden" id="end-modal">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="end-title">
+      <button type="button" class="modal-close" data-close aria-label="Sluiten">×</button>
+      <h2 id="end-title" class="end-title"></h2>
+      <p id="end-answer" class="end-answer"></p>
+      <div class="stat-tiles" id="end-stats"></div>
+      <h3 class="end-subtitle">Geraden in … pogingen</h3>
+      <div class="distribution" id="end-distribution"></div>
+      <p class="countdown">Nieuw woord over <strong id="countdown">--:--:--</strong></p>
+      <div class="end-buttons">
+        <button type="button" id="share-button" class="btn btn-primary"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 16.1c-.8 0-1.4.3-2 .8l-7.1-4.2c.1-.2.1-.5.1-.7s0-.5-.1-.7L16 7.2c.5.5 1.2.8 2 .8 1.7 0 3-1.3 3-3s-1.3-3-3-3-3 1.3-3 3c0 .2 0 .5.1.7L8 9.8C7.5 9.3 6.8 9 6 9c-1.7 0-3 1.3-3 3s1.3 3 3 3c.8 0 1.5-.3 2-.8l7.1 4.2c-.1.2-.1.4-.1.6 0 1.6 1.3 2.9 2.9 2.9s2.9-1.3 2.9-2.9-1.2-2.9-2.8-2.9z"/></svg> Deel</button>
+        <a href="/mastermind/compare" class="btn btn-secondary">Bekijk de anderen</a>
       </div>
-      <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.js" integrity="sha384-qmDHVszK26iWDlfhGzXz71t2qRopa/FvIuOkCTJJT4QRkIZf9h+OiJZzco9XtgPX" crossorigin="anonymous"></script>
+    </div>
+  </div>
 
+  <script src="/js/common.js"></script>
+  <script src="/js/woordle-stats.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.js" integrity="sha384-qmDHVszK26iWDlfhGzXz71t2qRopa/FvIuOkCTJJT4QRkIZf9h+OiJZzco9XtgPX" crossorigin="anonymous"></script>
   <script src="/js/mastermind.js"></script>
 </body>
 </html>

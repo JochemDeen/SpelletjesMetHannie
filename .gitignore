@@ -4,6 +4,8 @@ node_modules/
 # Logs
 logs
 *.log
+*.log.*
+npm-debug.log*
 
 # Runtime data
 pids
@@ -16,36 +18,31 @@ pids
 # Database files
 *.sqlite
 
-#Drawings
+# Player drawings
 public/images/drawings/
 public/uploads/
-# OS files
+
+# OS / IDE files
 .DS_Store
-
-# NPM debug file
-npm-debug.log*
-
-# IDE files
 .idea/
 .vscode/
+
+# Local word-list workbooks and notebooks
+data/*.numbers
 data/dutch_words_pictionary_full.csv
 data/goodreads_library_export2.csv
-data/Pictionary_easy.numbers
-data/Pictionary_hard.numbers
-data/Pictionary_medium.numbers
 data/Pictionary_words.csv
-data/Pictionary_words.numbers
-data/.ipynb_checkpoints/frequency_scoring-checkpoint.ipynb
-.gitignore
-uv.lock
-pyproject.toml
 data/frequency_scoring.ipynb
-.python-version
-.gitignore
-LLM/test.py
-.gitignore
+data/.ipynb_checkpoints/
 
+# Local Python experiments
+.venv/
+.python-version
+pyproject.toml
+uv.lock
+main.py
+LLM/
+
+# Local images that are not part of the site
 public/images/IMG_6730.heic
 public/images/mask.png
-main.py
-.gitignore

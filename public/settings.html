@@ -2,36 +2,51 @@
 <html lang="nl">
 <head>
   <meta charset="UTF-8">
-  <title>Instellingen</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#f7f2e7">
+  <title>Instellingen · Spelletjes met Hannie</title>
+  <link rel="icon" type="image/png" href="/favicon-96x96.png" sizes="96x96">
+  <link rel="shortcut icon" href="/favicon.ico">
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+  <link rel="manifest" href="/site.webmanifest">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap">
+  <link rel="stylesheet" href="/css/base.css">
   <link rel="stylesheet" href="/css/settings.css">
-  <script src="/js/settings.js" defer></script>
 </head>
 <body>
-  <header>
-    <h1>Instellingen</h1>
-    <a href="/" class="home-button">
-      <img src="/images/home.png" alt="Home" />
+  <header class="site-header">
+    <a href="/dashboard" class="home-link" aria-label="Naar het overzicht" title="Naar het overzicht">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
     </a>
+    <h1 class="site-title">Instellingen</h1>
   </header>
-  <main>
-    <section>
-      <div class="toggle-container">
-        <label class="switch">
-          <input type="checkbox" id="pictionaryToggle">
-          <span class="slider"></span>
-        </label>
-        <span class="toggle-label">Mee doen met Pictionary</span>
-      </div>
-      <div class="toggle-container">
-        <label class="switch">
-          <input type="checkbox" id="wieBenIkToggle">
-          <span class="slider"></span>
-        </label>
-        <span class="toggle-label">Mee doen met Wie ben ik?</span>
-      </div>
-      <div id="message"></div>
+
+  <main class="page">
+    <section class="card">
+      <h2 class="settings-heading">Meedoen</h2>
+      <p class="muted">Een nieuw potje start met iedereen die hier aan staat.</p>
+      <label class="toggle-row" for="pictionaryToggle">
+        <span class="toggle-label">Pictionary</span>
+        <span class="switch">
+          <input type="checkbox" id="pictionaryToggle" role="switch">
+          <span class="slider" aria-hidden="true"></span>
+        </span>
+      </label>
+      <label class="toggle-row" for="wieBenIkToggle">
+        <span class="toggle-label">Wie ben ik?</span>
+        <span class="switch">
+          <input type="checkbox" id="wieBenIkToggle" role="switch">
+          <span class="slider" aria-hidden="true"></span>
+        </span>
+      </label>
+      <p class="muted settings-note">Woordle kun je altijd spelen.</p>
     </section>
+    <p class="settings-links"><a href="/logout">Uitloggen</a></p>
   </main>
+
+  <script src="/js/common.js"></script>
+  <script src="/js/settings.js"></script>
 </body>
 </html>

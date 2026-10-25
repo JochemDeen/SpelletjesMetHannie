@@ -1,5 +1,5 @@
 //models/wieBenIk/schema.js
-// Creates the "Wie ben ik" tables (lazily, like wordsService does for mastermind).
+// Creates the "Wie ben ik" tables (lazily, on first require).
 const db = require('../db');
 const logger = require('../../logger');
 

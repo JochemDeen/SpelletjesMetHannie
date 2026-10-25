@@ -2,72 +2,70 @@
 <html lang="nl">
 <head>
   <meta charset="UTF-8">
-  <title>Dashboard</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" integrity="sha512-Fo3rlrZj/k7ujTnHg4CGR2D7kSs0v4LLanw2qksYuRlEzO+tcaEPQogQ0KaoGN26/zrn20ImR1DfuLWnOo7aBA==" crossorigin="anonymous">
-  <link rel="stylesheet" href="/css/stylesdb.css">
-  <link rel="icon" type="image/png" href="/favicon-96x96.png" sizes="96x96" />
-  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-  <link rel="shortcut icon" href="/favicon.ico" />
-  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
-  <link rel="manifest" href="/site.webmanifest" />
-  
-  <script src="/js/dashboard.js"></script>
+  <meta name="theme-color" content="#f7f2e7">
+  <title>Spelletjes met Hannie</title>
+  <link rel="icon" type="image/png" href="/favicon-96x96.png" sizes="96x96">
+  <link rel="shortcut icon" href="/favicon.ico">
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+  <link rel="manifest" href="/site.webmanifest">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap">
+  <link rel="stylesheet" href="/css/base.css">
+  <link rel="stylesheet" href="/css/dashboard.css">
 </head>
 <body>
-  <header>
-    <a href="/settings" class="settings-icon">
-      <i class="fas fa-cog"></i>
+  <header class="site-header">
+    <h1 class="site-title">Spelletjes</h1>
+    <p class="greeting" id="greeting">Kies een spelletje</p>
+    <a href="/settings" class="header-action" aria-label="Instellingen" title="Instellingen">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19.14 12.94a7.07 7.07 0 0 0 .05-.94 7.07 7.07 0 0 0-.05-.94l2.03-1.58a.49.49 0 0 0 .12-.61l-1.92-3.32a.49.49 0 0 0-.59-.22l-2.39.96a7.03 7.03 0 0 0-1.62-.94l-.36-2.54a.48.48 0 0 0-.48-.41h-3.84a.48.48 0 0 0-.48.41l-.36 2.54a7.4 7.4 0 0 0-1.62.94l-2.39-.96a.48.48 0 0 0-.59.22L2.74 8.87a.48.48 0 0 0 .12.61l2.03 1.58a7.3 7.3 0 0 0 0 1.88l-2.03 1.58a.49.49 0 0 0-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.04.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.48-.41l.36-2.54a7.4 7.4 0 0 0 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32a.48.48 0 0 0-.12-.61zM12 15.6A3.6 3.6 0 1 1 12 8.4a3.6 3.6 0 0 1 0 7.2z"/></svg>
     </a>
   </header>
 
-    <!-- New update notification area -->
-    <div class="update-container" id="updateContainer">
-      <div class="update-content">
-        <i class="fas fa-bullhorn"></i>
-        <span id="updateText">Welkom! Nieuw spel: Wie ben ik!? <br>Wil je niet mee doen? Zet het uit in de settings.</span>
-      </div>
-      <button class="update-close" id="closeUpdate">
-        <i class="fas fa-times"></i>
-      </button>
+  <main class="page dashboard">
+    <!-- Announcement: bump UPDATE_VERSION in dashboard.js for a new message -->
+    <div class="announcement" id="updateContainer" role="status">
+      <span class="announcement-icon" aria-hidden="true">📣</span>
+      <p class="announcement-text">
+        Nieuw: <strong>Mastermind heet nu Woordle</strong> en alles heeft een frisse look!
+        Doe je niet mee met een spel? Zet het uit in de <a href="/settings">instellingen</a>.
+      </p>
+      <button class="announcement-close" id="closeUpdate" aria-label="Melding sluiten">×</button>
     </div>
-  
-  
-  <h1>Kies een spelletje</h1>
-  <div class="game-grid">
-    <div class="game-card">
-      <a href="/mastermind">
-        <img src="/images/mastermind.png" alt="Mastermind">
-        <h2>Mastermind</h2>
-      </a>
-    </div>
-    <!-- Pictionary -->
-    <div class="game-card">
-      <a href="/pictionary">
-        <img src="/images/pictionary.png" alt="Pictionary">
-        <h2>Pictionary</h2>
-        <div class="status-temp status-red">Stopped</div> 
-      </a>
-    </div>
-    <!-- Wie ben ik -->
-    <div class="game-card">
-      <a href="/wie-ben-ik">
-        <img src="/images/wie_ben_ik.png" alt="Wie ben ik?">
-        <h2>Wie ben ik?</h2>
-        <div class="status-temp status-yellow" id="wie-ben-ik-status">Wachten</div>
-      </a>
-    </div>
-  </div>
 
-    <!-- New Pictionary word rating link -->
-    <!-- <div class="rating-link">
-      <a href="/pictionary/rate-words">
-        <i class="fas fa-star"></i> Beoordeel Pictionary woorden
+    <div class="game-grid">
+      <a class="game-card" href="/mastermind">
+        <img src="/images/woordle.webp" alt="" width="480" height="480">
+        <span class="game-name">Woordle</span>
+        <span class="game-tagline">Raad het woord van de dag</span>
+        <span class="status status-blue hidden" id="mastermind-status"></span>
       </a>
-    </div> -->
+      <a class="game-card" href="/pictionary">
+        <img src="/images/pictionary.webp" alt="" width="480" height="480">
+        <span class="game-name">Pictionary</span>
+        <span class="game-tagline">Tekenen en raden</span>
+        <span class="status status-gray" id="pictionary-status">…</span>
+      </a>
+      <a class="game-card" href="/wie-ben-ik">
+        <img src="/images/wie_ben_ik.webp" alt="" width="480" height="480">
+        <span class="game-name">Wie ben ik?</span>
+        <span class="game-tagline">Raad wie jij bent</span>
+        <span class="status status-gray" id="wie-ben-ik-status">…</span>
+      </a>
+    </div>
+
+    <p class="dashboard-links">
+      <a href="/settings">Instellingen</a>
+      <span aria-hidden="true">·</span>
+      <a href="/logout">Uitloggen</a>
+    </p>
+  </main>
 
   <footer class="site-footer" id="siteFooter" hidden></footer>
 
+  <script src="/js/common.js"></script>
+  <script src="/js/dashboard.js"></script>
 </body>
 </html>

@@ -2,16 +2,14 @@
 
 const express = require('express');
 const router = express.Router();
-const moment = require('moment');
-const isVacation = moment().isBefore('2025-08-01');
 const bcrypt = require('bcrypt');
-const path = require('path');
-const { db } = require('../models/user');
+const { db, getUsernameById } = require('../models/user');
 const logger = require('../logger');
 const { siteInfo } = require('../models/siteInfo');
 
 
 const { requireLogin } = require('../middleware/authMiddleware');
+const { servePage } = require('../utils/servePage');
 
 // Brute-force protection: after MAX_FAILED_LOGINS wrong passwords from the same
 // IP address, that address is locked out for LOCKOUT_MS. Kept in memory, so a
@@ -38,10 +36,7 @@ function registerFailedLogin(ip) {
     failedLogins.set(ip, entry);
 }
 
-router.get('/login', (req, res) => {
-    logger.info('GET /login');
-    res.sendFile('login.html', { root: path.join(__dirname, '../public') });
-});
+router.get('/login', servePage('login.html'));
 
 router.post('/login', (req, res) => {
     const { username, password } = req.body;
@@ -96,18 +91,22 @@ router.get('/logout', (req, res) => {
 });
 
 
-// Dashboard Route
-router.get('/dashboard', requireLogin, (req, res) => {
-    if (isVacation) {
-        logger.info('Vacation mode: showing vacation page to authenticated user.');
-        return res.sendFile('vacation.html', { root: path.join(__dirname, '../public') });
-    }
-    res.sendFile('dashboard.html', { root: path.join(__dirname, '../public') });
-});
+router.get('/dashboard', requireLogin, servePage('dashboard.html'));
 
 // Basic site info for the dashboard footer
 router.get('/api/site-info', requireLogin, (req, res) => {
     res.json(siteInfo);
+});
+
+// Who is logged in (for the greeting on the dashboard)
+router.get('/api/me', requireLogin, async (req, res) => {
+    try {
+        const username = await getUsernameById(req.session.userId);
+        res.json({ username });
+    } catch (error) {
+        logger.error('Error fetching current user:', error);
+        res.status(500).json({ error: 'Er is iets misgegaan.' });
+    }
 });
 
 module.exports = router;

@@ -1,16 +1,11 @@
 //models/pictionary/gameManager.js
-const sqlite3 = require('sqlite3').verbose();
-const { log } = require('winston');
 const logger = require('../../logger');
 const db = require('../db'); 
-const fs = require('fs');
-const path = require('path');
-const drawingManager = require('./drawingManager');
 
 // Returns the current global active game (if any), ignoring the current user.
 async function getActiveGame() {
     return new Promise((resolve, reject) => {
-        logger.info("Fetching active game...");
+        logger.debug("Fetching active game...");
 
         const sql = `
             SELECT g.*, u.username AS drawer_name
@@ -28,11 +23,11 @@ async function getActiveGame() {
             }
 
             if (row) {
-                logger.info(`Active game found: ${JSON.stringify(row)}`);
+                logger.debug(`Active game found: ${JSON.stringify(row)}`);
                 return resolve(row);
             }
 
-            logger.info("No active game found. Checking recent completed games...");
+            logger.debug("No active game found. Checking recent completed games...");
 
             const now = new Date();
 
@@ -57,14 +52,14 @@ async function getActiveGame() {
                     const completedAt = new Date(lastGame.completed_at);
                     const diffHoursCompleted = (now - completedAt) / (1000 * 60 * 60); // Convert ms to hours
 
-                    logger.info(`Last game completed at: ${completedAt}, ${diffHoursCompleted.toFixed(2)} hours ago`);
+                    logger.debug(`Last game completed at: ${completedAt}, ${diffHoursCompleted.toFixed(2)} hours ago`);
 
                     if (diffHoursCompleted < 24) {
                         lastGameEndedLessThan24hAgo = true;
-                        logger.info(`✅ Condition met: Last game ended less than 24 hours ago.`);
+                        logger.debug(`✅ Condition met: Last game ended less than 24 hours ago.`);
                     }
                 } else {
-                    logger.info("No completed games found.");
+                    logger.debug("No completed games found.");
                 }
 
                 // Fetch the last created game
@@ -88,19 +83,19 @@ async function getActiveGame() {
                         const createdAt = new Date(lastCreatedGame.created_at);
                         const diffHoursCreated = (now - createdAt) / (1000 * 60 * 60); // Convert ms to hours
 
-                        logger.info(`Last game created at: ${createdAt}, ${diffHoursCreated.toFixed(2)} hours ago`);
+                        logger.debug(`Last game created at: ${createdAt}, ${diffHoursCreated.toFixed(2)} hours ago`);
 
                         if (diffHoursCreated < 24) {
                             lastGameStartedLessThan24hAgo = true;
-                            logger.info(`✅ Condition met: Last game started less than 24 hours ago.`);
+                            logger.debug(`✅ Condition met: Last game started less than 24 hours ago.`);
                         }
                     } else {
-                        logger.info("No created games found.");
+                        logger.debug("No created games found.");
                     }
 
                     // If either condition is met, return "scoring" state
                     if (lastGameEndedLessThan24hAgo || lastGameStartedLessThan24hAgo) {
-                        logger.info("✅ Returning 'scoring' state due to recent game.");
+                        logger.debug("✅ Returning 'scoring' state due to recent game.");
                         return resolve({
                             game_id: lastGame?.game_id || lastCreatedGame?.game_id,
                             state: 'scoring',
@@ -109,7 +104,7 @@ async function getActiveGame() {
                     }
 
                     // If neither condition is met, return null
-                    logger.info("❌ No conditions met. Returning null.");
+                    logger.debug("❌ No conditions met. Returning null.");
                     resolve(null);
                 });
             });
@@ -198,30 +193,6 @@ async function getActiveGame() {
     });
 }
 
-// Retrieves the game state for a given user.
-async function getGameState(userId) {
-  return new Promise((resolve, reject) => {
-    const sql = `
-      SELECT g.*, u.username AS drawer_name
-      FROM games g
-      JOIN users u ON g.drawer_user_id = u.id
-      WHERE g.status = 'ongoing' AND (g.drawer_user_id = ? OR g.guessers LIKE ?)
-    `;
-    const guesserSearch = `%${userId}%`;
-    logger.info(`Fetching game state for user ${userId} with guesserSearch: ${guesserSearch}`);
-    db.get(sql, [userId, guesserSearch], (err, row) => {
-      if (err) {
-        logger.error('Failed to fetch game state:', err.message);
-        return reject(err);
-      }
-      if (!row) {
-        logger.info(`No active game found for user ${userId}`);
-        return resolve(null);
-      }
-      resolve(row);
-    });
-  });
-}
 
 async function checkForEndOfGuessing(gameId) {
     return new Promise((resolve, reject) => {
@@ -446,42 +417,15 @@ async function getNextGameId(gameId) {
     });
 }
 
-async function startModificationTimer(gameId) {
-    try {
-        const MODIFICATION_DURATION = 10; // 10 seconds for modifications
-        const endTime = new Date(Date.now() + MODIFICATION_DURATION * 1000);
-        
-        return new Promise((resolve, reject) => {
-            db.run(
-                'UPDATE games SET drawing_completed_at = ? WHERE game_id = ?',
-                [endTime, gameId],
-                function(err) {
-                    if (err) {
-                        logger.error(`Error starting modification timer for game ${gameId}:`, err);
-                        return reject(err);
-                    }
-                    logger.info(`Started modification timer for game ${gameId}`);
-                    resolve(MODIFICATION_DURATION);
-                }
-            );
-        });
-    } catch (error) {
-        logger.error(`Error starting modification timer for game ${gameId}:`, error);
-        throw error;
-    }
-}
-
 module.exports = {
     getActiveGame,
     createNewGame,
     getGameById,
-    getGameState,
     checkForEndOfGuessing,
     checkForEndOfFeedback,
     setGameState,
     getLatestGameId,
     setDifficulty,
     getPreviousGameId,
-    getNextGameId,
-    startModificationTimer
+    getNextGameId
 };

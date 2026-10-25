@@ -1,107 +1,78 @@
-/* Base Styles */
-body {
-    font-family: 'Poppins', sans-serif;
-    background-color: #f0f4f8;
-    color: #333;
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-}
+/* public/css/scoreboard.css: shared by the Woordle, Pictionary and Wie ben ik scoreboards */
 
-#scoreboard-container {
+.scoreboard {
     display: flex;
     flex-direction: column;
-    align-items: center;
-    gap: 30px;
-    margin: 20px auto;
-    padding: 0 20px;
-    width: 100%;
-    max-width: 800px;
+    gap: 16px;
+    max-width: 640px;
 }
 
-/* Score Lists */
-.score-list, .highest-score-list {
-    list-style: none;
-    width: 100%;
-    max-width: 600px;
-    padding: 0;
+.scoreboard .card + .card {
+    margin-top: 0;
+}
+
+.scoreboard h2 {
+    margin: 0 0 10px;
+    font-size: 1.2rem;
+}
+
+.scoreboard .score-list li:hover {
+    background-color: var(--surface-2);
+}
+
+.highlight-word {
+    color: var(--primary);
+    font-weight: 800;
+}
+
+#last-game-title {
+    margin-bottom: 8px;
+    font-size: 1.05rem;
+}
+
+/* Last month's winner */
+.winner-card {
+    text-align: center;
+    background-color: #fbf3d9;
+    border-color: #ecd9a0;
+}
+
+.theme-wbi .winner-card {
+    background-color: var(--surface-2);
+    border-color: var(--primary);
+}
+
+.winner-card h2 {
+    margin-bottom: 4px;
+}
+
+.winner-card h2::before {
+    content: "👑 ";
+}
+
+#previous-month-winner-info {
     margin: 0;
-    background: #ffffff;
-    border-radius: 10px;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    font-size: 1.15rem;
+    font-weight: 700;
 }
 
-/* List Items */
-li {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 12px 16px;
-    border-bottom: 1px solid #e0e0e0;
-    transition: background-color 0.2s;
-}
-
-li:hover {
-    background-color: #f9fafb;
-}
-
-.rank {
-    font-weight: bold;
-    color: #4a90e2;
-}
-
-.username {
-    flex: 1;
-    padding-left: 10px;
-    color: #333;
-    font-size: 1.1em;
-}
-
-.score {
-    font-weight: bold;
-    color: #27ae60;
-}
-
-/* Section Headers - h1 handled by mastermind.css */
-h2 {
-    font-size: 1.5em;
-    margin: 20px 0;
-    color: #2c3e50;
+.view-game-container {
+    margin-top: 12px;
     text-align: center;
 }
 
-.month-header {
-    font-size: 1.6em;
-    margin-bottom: 10px;
-    color: #555;
+.view-game-button {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--tap);
+    padding: 8px 20px;
+    border-radius: var(--radius-sm);
+    background-color: var(--primary);
+    color: var(--on-primary);
+    font-weight: 700;
+    text-decoration: none;
 }
 
-/* Mobile Styles */
-@media (max-width: 600px) {
-    li {
-        display: grid;
-        grid-template-columns: 1fr 4fr 1fr;
-        gap: 10px;
-        align-items: center;
-        padding: 10px 16px;
-    }
-
-    .rank {
-        text-align: left;
-        font-size: 1em;
-    }
-
-    .username {
-        text-align: left;
-        font-size: 1em;
-        padding-left: 5px;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-    }
-
-    .score {
-        text-align: right;
-        font-size: 1em;
-    }
+.view-game-button:hover {
+    background-color: var(--primary-hover);
 }

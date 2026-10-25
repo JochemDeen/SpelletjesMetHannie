@@ -2,49 +2,56 @@
 <html lang="nl">
 <head>
   <meta charset="UTF-8">
-  <title>Spel Statistieken</title>
-  <link rel="stylesheet" href="/css/mastermind.css">
-  <link rel="stylesheet" href="/css/stats.css">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="stylesheet" href="/css/scoreboard.css"> 
+  <meta name="theme-color" content="#f7f2e7">
+  <title>Scorebord · Woordle</title>
+  <link rel="icon" type="image/png" href="/favicon-96x96.png" sizes="96x96">
+  <link rel="shortcut icon" href="/favicon.ico">
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+  <link rel="manifest" href="/site.webmanifest">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap">
+  <link rel="stylesheet" href="/css/base.css">
+  <link rel="stylesheet" href="/css/scoreboard.css">
 </head>
 <body>
-    <header id="game-header">
-      <a href="/dashboard" class="home-button">
-        <img src="/images/home.png" alt="Home" />
-      </a>
-      <h1>Scoreboard</h1>
-      <nav id="nav-links">
-        <a href="/mastermind" id="play-link">Spelen</a>
-        <a href="/mastermind/compare" id="compare-link">Samenvatting</a>
-        <a href="/mastermind/stats" id="stats-link">Stats</a>
-        <a href="/mastermind/scoreboard" id="scoreboard-link">Scoreboard</a>
-      </nav>
-    </header>
+  <header class="site-header">
+    <a href="/dashboard" class="home-link" aria-label="Naar het overzicht" title="Naar het overzicht">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+    </a>
+    <h1 class="site-title">Woordle</h1>
+    <nav class="site-nav" aria-label="Woordle">
+      <a href="/mastermind">Spelen</a>
+      <a href="/mastermind/compare">Samenvatting</a>
+      <a href="/mastermind/stats">Statistieken</a>
+      <a href="/mastermind/scoreboard" aria-current="page">Scorebord</a>
+    </nav>
+  </header>
 
-    <div id="scoreboard-container">
-        <!-- Monthly Scores Section -->
-        <div class="monthly-scores" data-month-section>
-            <h2 data-month></h2>
-            <ol data-month-list class="score-list"></ol>
-        </div>
-        <div id="previous-month-winner" class="previous-month-winner">
-            <h2 id="previous-month-winner-title"></h2>
-            <p id="previous-month-winner-info"></p>
-          </div>
-          
-        <!-- Most Months at the Top Section -->
-        <div class="highest-scorers">
-            <h2>Gewonnen Maanden:</h2>
-            <ol id="highest-scorer-list" class="highest-score-list"></ol>
-        </div>
+  <main class="page scoreboard">
+    <section class="card" data-month-section>
+      <h2 data-month></h2>
+      <ol data-month-list class="score-list"></ol>
+    </section>
 
-        <!-- All-Time Highest Monthly Scores Section -->
-        <div class="top-monthly-scores">
-            <h2>Topscores:</h2>
-            <ol id="top-monthly-scores-list" class="score-list"></ol>
-        </div>
-    </div>
-    <script src="/js/scoreboard.js"></script>
+    <section class="card winner-card" id="previous-month-winner">
+      <h2 id="previous-month-winner-title"></h2>
+      <p id="previous-month-winner-info"></p>
+    </section>
+
+    <section class="card">
+      <h2>Gewonnen maanden</h2>
+      <ol id="highest-scorer-list" class="score-list"></ol>
+    </section>
+
+    <section class="card">
+      <h2>Hoogste maandscores ooit</h2>
+      <ol id="top-monthly-scores-list" class="score-list"></ol>
+    </section>
+  </main>
+
+  <script src="/js/common.js"></script>
+  <script src="/js/scoreboard.js"></script>
 </body>
 </html>

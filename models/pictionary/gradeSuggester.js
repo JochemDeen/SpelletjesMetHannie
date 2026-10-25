@@ -1,11 +1,10 @@
 //models/pictionary/gradeSuggester.js
 // Gemini-backed grade suggester for Pictionary: given the drawn word and the
 // guesses of a round, suggest a score (1-5) per guess for the drawer to review.
-// Follows the same Gemini call pattern as models/wieBenIk/llmJudge.js.
 const fs = require('fs');
 const path = require('path');
-const https = require('https');
 const logger = require('../../logger');
+const { callGemini } = require('../gemini');
 
 function loadPrompt() {
   const promptsPath = path.join(__dirname, '../../prompts/pictionary-grade-judge.json');
@@ -51,48 +50,7 @@ async function suggestGrades(word, guesses) {
 
     logger.info(`Pictionary: suggesting grades for ${guesses.length} guesses against word "${word}"`);
 
-    const requestBody = {
-      contents: [{ parts: [{ text: prompt }] }],
-      generationConfig: {
-        temperature: 0,
-        maxOutputTokens: 200
-      }
-    };
-
-    const answer = await new Promise((resolve, reject) => {
-      const modelId = 'gemini-3.1-flash-lite';
-      const url = new URL(`https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent?key=${apiKey}`);
-      const options = {
-        hostname: url.hostname,
-        path: url.pathname + url.search,
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        timeout: 15000
-      };
-
-      const req = https.request(options, (res) => {
-        let data = '';
-        res.on('data', (chunk) => { data += chunk; });
-        res.on('end', () => {
-          try {
-            const response = JSON.parse(data);
-            if (response.error) {
-              return reject(new Error(response.error.message || 'Gemini API error'));
-            }
-            const text = response.candidates?.[0]?.content?.parts?.[0]?.text;
-            resolve(text ? text.trim() : null);
-          } catch (err) {
-            reject(err);
-          }
-        });
-      });
-      req.on('timeout', () => {
-        req.destroy(new Error('Gemini request timed out'));
-      });
-      req.on('error', reject);
-      req.write(JSON.stringify(requestBody));
-      req.end();
-    });
+    const answer = await callGemini(prompt, { temperature: 0, maxOutputTokens: 200 });
 
     if (!answer) return suggestions;
 

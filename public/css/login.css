@@ -1,0 +1,49 @@
+/* public/css/login.css */
+
+body {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+}
+
+.login-container {
+    width: 100%;
+    max-width: 380px;
+    padding: 28px 24px;
+    text-align: center;
+}
+
+.login-logo {
+    border-radius: 18px;
+}
+
+.login-container h1 {
+    margin: 10px 0 20px;
+    font-size: 1.5rem;
+}
+
+.login-container form {
+    text-align: left;
+}
+
+.login-container label {
+    display: block;
+    margin-bottom: 6px;
+    font-weight: 700;
+}
+
+.login-container .input {
+    margin-bottom: 16px;
+}
+
+.login-container .btn {
+    margin-top: 4px;
+}
+
+.error {
+    min-height: 1.4em;
+    margin: 14px 0 0;
+    color: var(--danger);
+    font-weight: 700;
+}

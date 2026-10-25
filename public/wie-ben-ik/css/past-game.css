@@ -1,45 +1,32 @@
 /* Wie ben ik? past game — extends the mystery theme from wie-ben-ik.css */
 .date-navigation {
     display: flex;
-    justify-content: center;
+    justify-content: space-between;
     align-items: center;
-    gap: 15px;
-    margin: 10px 0 20px 0;
+    gap: 12px;
+    margin: 0 0 16px;
     font-weight: bold;
-    color: var(--wbi-text);
+    text-align: center;
 }
 
 .nav-arrow {
-    padding: 6px 14px;
-    font-size: 1em;
-    font-weight: bold;
-    background-color: var(--wbi-surface-light);
-    color: var(--wbi-gold);
-    border: 1px solid var(--wbi-border);
-    border-radius: 8px;
-    cursor: pointer;
-}
-
-.nav-arrow:hover:not(:disabled) {
-    border-color: var(--wbi-gold);
+    width: var(--tap);
+    padding: 0;
+    font-size: 1.6rem;
 }
 
 .nav-arrow:disabled {
-    color: var(--wbi-muted);
-    opacity: 0.5;
-    cursor: not-allowed;
+    visibility: hidden;
 }
 
 #winner-banner {
     margin: 10px auto 20px auto;
     padding: 15px;
-    width: 90%;
-    max-width: 600px;
     background-color: rgba(217, 185, 92, 0.12);
     border: 1px solid var(--wbi-gold);
     border-radius: 12px;
     text-align: center;
-    font-family: Georgia, 'Times New Roman', serif;
+    font-family: var(--font-heading);
     font-size: 1.2em;
     font-weight: bold;
     color: var(--wbi-gold);

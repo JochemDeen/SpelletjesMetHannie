@@ -2,8 +2,6 @@
 #blocked-container {
     margin: 30px auto;
     padding: 30px 20px;
-    width: 80%;
-    max-width: 500px;
     background-color: var(--wbi-surface);
     border: 1px solid var(--wbi-border);
     border-radius: 12px;
@@ -15,12 +13,11 @@
 
 #browser-container {
     margin: 20px auto;
-    width: 90%;
-    max-width: 700px;
     text-align: center;
 }
 
 #theme-select {
+    min-height: var(--tap);
     padding: 10px 14px;
     font-size: 1em;
     background-color: var(--wbi-surface-light);
@@ -42,7 +39,7 @@
 
 #characters-list {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(min(200px, 100%), 1fr));
     gap: 10px;
     margin-top: 5px;
 }
