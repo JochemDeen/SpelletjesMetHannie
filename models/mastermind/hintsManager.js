@@ -1,9 +1,10 @@
-// models/hintsService.js
-const logger = require('../logger');
+// models/mastermind/hintsManager.js
+const logger = require('../../logger');
+const { callGemini, isGeminiAvailable } = require('../gemini');
 const fs = require('fs');
 const path = require('path');
 
-const db = require('./db');
+const db = require('../db');
 
 const MONTHLY_HINT_LIMIT = 4;
 
@@ -11,7 +12,7 @@ const MONTHLY_HINT_LIMIT = 4;
  * Load prompts from JSON file
  */
 function loadPrompts() {
-    const promptsPath = path.join(__dirname, '../prompts/mastermind-hints.json');
+    const promptsPath = path.join(__dirname, '../../prompts/mastermind-hints.json');
     try {
         const data = fs.readFileSync(promptsPath, 'utf8');
         return JSON.parse(data);
@@ -287,16 +288,9 @@ function buildPrompt(tier, promptTemplate, wordOfTheDay, analysis, guesses, feed
 }
 
 /**
- * Call Gemini API to get a hint
+ * Ask Gemini for a hint that fits the player's progress
  */
-async function callGeminiAPI(wordOfTheDay, guesses, feedback) {
-    const apiKey = process.env.GEMINI_API_KEY;
-
-    if (!apiKey) {
-        logger.error('GEMINI_API_KEY not configured');
-        throw new Error('Hint service not configured');
-    }
-
+async function generateHint(wordOfTheDay, guesses, feedback) {
     // Analyze game state
     const analysis = analyzeGameState(wordOfTheDay, guesses, feedback);
     const guessCount = guesses ? guesses.length : 0;
@@ -313,89 +307,26 @@ async function callGeminiAPI(wordOfTheDay, guesses, feedback) {
 
     logger.info(`Prompt: ${prompt}`);
 
-    const requestBody = {
-        contents: [{
-            parts: [{
-                text: prompt
-            }]
-        }],
-        generationConfig: {
-            temperature: 0.7,
-            maxOutputTokens: 500
-        }
-    };
-
-    const https = require('https');
-
-    return new Promise((resolve, reject) => {
-        const modelId = "gemini-3.1-flash-lite";
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/${modelId}:generateContent?key=${apiKey}`;
-
-        const urlObj = new URL(url);
-        const options = {
-            hostname: urlObj.hostname,
-            path: urlObj.pathname + urlObj.search,
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            }
-        };
-
-        const req = https.request(options, (res) => {
-            let data = '';
-
-            res.on('data', (chunk) => {
-                data += chunk;
-            });
-
-            res.on('end', () => {
-                try {
-                    const response = JSON.parse(data);
-
-                    if (response.error) {
-                        logger.error('Gemini API error:', response.error);
-                        return reject(new Error(response.error.message || 'Gemini API error'));
-                    }
-
-                    const hint = response.candidates?.[0]?.content?.parts?.[0]?.text;
-
-                    if (!hint) {
-                        logger.error('No hint in Gemini response:', response);
-                        return reject(new Error('Failed to generate hint'));
-                    }
-
-                    logger.info('Successfully generated hint from Gemini');
-                    logger.info(hint);
-                    resolve(hint.trim());
-                } catch (err) {
-                    logger.error('Error parsing Gemini response:', err);
-                    reject(new Error('Failed to parse hint response'));
-                }
-            });
-        });
-
-        req.on('error', (err) => {
-            logger.error('Gemini API request error:', err);
-            reject(new Error('Failed to connect to hint service'));
-        });
-
-        req.write(JSON.stringify(requestBody));
-        req.end();
-    });
+    const hint = await callGemini(prompt, { temperature: 0.7, maxOutputTokens: 500 });
+    if (!hint) {
+        throw new Error('Failed to generate hint');
+    }
+    logger.info(`Hint from Gemini: ${hint}`);
+    return hint;
 }
 
 /**
  * Check if hints feature is available (API key configured)
  */
 function isHintServiceAvailable() {
-    return !!process.env.GEMINI_API_KEY;
+    return isGeminiAvailable();
 }
 
 module.exports = {
     getMonthlyHintCount,
     getHintForToday,
     saveHint,
-    callGeminiAPI,
+    generateHint,
     isHintServiceAvailable,
     MONTHLY_HINT_LIMIT
 };

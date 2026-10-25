@@ -1,12 +1,11 @@
 // routes/pictionary_routes.js
 const express = require('express');
 const router = express.Router();
-const path = require('path');
 const { requireLogin } = require('../middleware/authMiddleware');
+const { servePage } = require('../utils/servePage');
 const logger = require('../logger');
 const Users = require('../models/user');
 
-const wordsService = require('../models/wordsService');
 const Pictionary = require('../models/pictionary');
 
 // games.guessers is stored as a JSON string like "[2,3]": parse it instead of
@@ -21,16 +20,10 @@ function isGuesser(gameState, userId) {
 
 
 // Pictionary Game Page
-router.get('/pictionary', requireLogin, (req, res) => {
-    logger.info(`GET /pictionary for user: ${req.session.userId}`);
-    res.sendFile('pictionary.html', { root: path.join(__dirname, '../public/pictionary') });
-  });
+router.get('/pictionary', requireLogin, servePage('pictionary/pictionary.html'));
 
 // Scoreboard Page
-router.get('/pictionary/scoreboard', requireLogin, (req, res) => {
-    logger.info(`GET /pictionary/scoreboard for user: ${req.session.userId}`);
-    res.sendFile('pictionary-scoreboard.html', { root: path.join(__dirname, '../public/pictionary') });
-  });
+router.get('/pictionary/scoreboard', requireLogin, servePage('pictionary/pictionary-scoreboard.html'));
 
 // ----------------------
 // Last game page
@@ -289,7 +282,7 @@ router.post('/api/pictionary/set-difficulty', requireLogin, async (req, res) => 
       const maxPoints = await Pictionary.getMaxScore(difficulty);
 
       // Generate and assign the word
-      const word = wordsService.getRandomPictionaryWord(difficulty);
+      const word = Pictionary.getRandomPictionaryWord(difficulty);
       logger.info(`Assigned word for game ${gameId}: ${word} (difficulty: ${difficulty})`);
 
       // Store the chosen word, difficulty and update game state to 'drawing'

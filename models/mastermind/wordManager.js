@@ -1,21 +1,12 @@
-//models/wordsService.js
+//models/mastermind/wordManager.js
 const fs = require('fs');
 const path = require('path');
-const logger = require('../logger');  
+const logger = require('../../logger');
 
-const db = require('./db');
-
-db.serialize(() => {
-  db.run(`
-      CREATE TABLE IF NOT EXISTS mastermind_word (
-      date TEXT PRIMARY KEY,
-      word TEXT NOT NULL
-      )
-  `);
-});
+const db = require('../db');
 
 // Load the words from the file
-const wordsFilePath = path.resolve(__dirname, '../data/filtered_woorden.txt');
+const wordsFilePath = path.resolve(__dirname, '../../data/filtered_woorden.txt');
 let wordsList = [];
 
 // Load words into memory when the service starts
@@ -31,7 +22,7 @@ let wordsList = [];
 })();
 
 // Load validation words from 5wordlist.txt
-const validationFilePath = path.resolve(__dirname, '../data/5wordlist.txt');
+const validationFilePath = path.resolve(__dirname, '../../data/5wordlist.txt');
 let validationWordsList = [];
 
 // Load validation words into memory when the service starts
@@ -50,30 +41,6 @@ let validationWordsList = [];
 // Function to get or set the word of the day in the database
 function getRandomWord(list = wordsList) {
   return list[Math.floor(Math.random() * list.length)];
-}
-
-const fileMap = {
-  easy: path.join(__dirname, "../data/Pictionary_easy.csv"),
-  medium: path.join(__dirname, "../data/Pictionary_medium.csv"),
-  hard: path.join(__dirname, "../data/Pictionary_hard.csv")
-};
-
-
-function getRandomPictionaryWord(difficulty = "easy") {
-  const filePath = fileMap[difficulty] || fileMap.easy;
-
-  try {
-    const data = fs.readFileSync(filePath, "utf-8");
-    const words = data.split("\n").map(word => word.trim()).filter(word => word.length > 0);
-
-    if (words.length === 0) return "No words available";
-
-    const randomIndex = Math.floor(Math.random() * words.length);
-    return words[randomIndex];
-  } catch (error) {
-    console.error(`Error reading file: ${filePath}`, error);
-    return "Error";
-  }
 }
 
 // Get words used in the past month
@@ -144,16 +111,48 @@ async function validateWord(word) {
   return validationWordsList.includes(word.toLowerCase());
 }
 
-// Export the file paths for other modules to use
-function getPictionaryWordFiles() {
-  return fileMap;
+
+// Wordle-style feedback per letter: exact matches first, then misplaced
+// letters, each letter of the word used at most once.
+function generateFeedback(guess, wordOfTheDay) {
+  if (!guess || !wordOfTheDay || guess.length !== wordOfTheDay.length) {
+      throw new Error('Invalid guess or word of the day. They must be non-empty and of equal length.');
+  }
+
+  guess = guess.toLowerCase();
+  wordOfTheDay = wordOfTheDay.toLowerCase();
+  
+  const feedback = new Array(guess.length).fill('incorrect');
+  const usedIndices = new Set();
+  
+  // Step 1: Mark exact matches as 'correct' and track used indices
+  for (let i = 0; i < guess.length; i++) {
+      if (guess[i] === wordOfTheDay[i]) {
+          feedback[i] = 'correct';
+          usedIndices.add(i);
+      }
+  }
+
+  // Step 2: Mark misplaced letters
+  for (let i = 0; i < guess.length; i++) {
+      if (feedback[i] === 'correct') continue; // Skip if already marked correct
+      
+      // Find if guess[i] exists in wordOfTheDay but at a different position
+      for (let j = 0; j < wordOfTheDay.length; j++) {
+          if (guess[i] === wordOfTheDay[j] && !usedIndices.has(j)) {
+              feedback[i] = 'misplaced';
+              usedIndices.add(j); // Mark this position as used in wordOfTheDay
+              break;
+          }
+      }
+  }
+  
+  return feedback;
 }
 
-
 module.exports = {
+  generateFeedback,
   getWordOfTheDay,
   validateWord,
-  getRandomPictionaryWord,
-  getRandomWord,
-  getPictionaryWordFiles
+  getRandomWord
 };

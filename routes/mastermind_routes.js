@@ -1,36 +1,22 @@
-// routes/games.js
+// routes/mastermind_routes.js
+// Mastermind, shown to players as "Woordle".
 
 const express = require('express');
 const router = express.Router();
-const path = require('path');
 const { requireLogin } = require('../middleware/authMiddleware');
-const gameResults = require('../models/gameResults'); // Assuming this module handles game data storage
-const wordsService = require('../models/wordsService'); // Assuming this module handles word validation and word of the day
+const { servePage } = require('../utils/servePage');
+const Mastermind = require('../models/mastermind');
 const logger = require('../logger');
-const { getMonthlyScores, getHighestScorerCounts } = require('../models/gameResults');
-const hintsService = require('../models/hintsService');
 
 
 // Mastermind Game Page
-router.get('/mastermind', requireLogin, (req, res) => {
-  logger.info(`GET /mastermind for user: ${req.session.userId}`);
-  res.sendFile('mastermind.html', { root: path.join(__dirname, '../public') });
-});
+router.get('/mastermind', requireLogin, servePage('mastermind.html'));
 
-router.get('/mastermind/stats', requireLogin, (req, res) => {
-  logger.info(`GET /mastermind/stats for user: ${req.session.userId}`);
-    res.sendFile('mastermind-stats.html', { root: path.join(__dirname, '../public') });
-});
+router.get('/mastermind/stats', requireLogin, servePage('mastermind-stats.html'));
 
-router.get('/mastermind/compare', requireLogin, (req, res) => {
-    logger.info(`GET /compare/stats for user: ${req.session.userId}`);
-    res.sendFile('mastermind-compare.html', { root: path.join(__dirname, '../public') });
-});
+router.get('/mastermind/compare', requireLogin, servePage('mastermind-compare.html'));
 
-router.get('/mastermind/scoreboard', requireLogin, (req, res) => {
-  logger.info(`GET /compare/scoreboard for user: ${req.session.userId}`);
-  res.sendFile('mastermind-scoreboard.html', { root: path.join(__dirname, '../public') });
-});
+router.get('/mastermind/scoreboard', requireLogin, servePage('mastermind-scoreboard.html'));
 
 
 
@@ -39,7 +25,7 @@ router.post('/api/validate-word', requireLogin, async (req, res) => {
     const { word } = req.body;
     logger.info(`POST /api/validate-word - User: ${req.session.userId}, Word: ${word}`);
     try {
-        const isValid = await wordsService.validateWord(word);
+        const isValid = await Mastermind.validateWord(word);
         logger.info(`Validation result for word "${word}": ${isValid}`);
         res.json({ valid: isValid });
     } catch (error) {
@@ -60,21 +46,21 @@ router.post('/api/submit-guess', requireLogin, async (req, res) => {
           }
         // The browser checks these too, but only the server can be trusted:
         // guesses must be real words, and at most until the puzzle is finished.
-        if (!(await wordsService.validateWord(guess))) {
+        if (!(await Mastermind.validateWord(guess))) {
             return res.status(400).json({ error: 'Not a valid word.' });
         }
-        const gameState = await gameResults.getUserGameState(user_id);
+        const gameState = await Mastermind.getUserGameState(user_id);
         if (gameState && gameState.finished) {
             return res.status(400).json({ error: 'Puzzle already finished.' });
         }
-        const wordOfTheDay = await wordsService.getWordOfTheDay();
-        const feedback = generateFeedback(guess, wordOfTheDay);
+        const wordOfTheDay = await Mastermind.getWordOfTheDay();
+        const feedback = Mastermind.generateFeedback(guess, wordOfTheDay);
 
         // Check if the guess is correct
         const correct = feedback.every((entry) => entry === 'correct');
 
         // Update game results for the user
-        await gameResults.updateUserGuess(user_id, guess, feedback, wordOfTheDay);
+        await Mastermind.updateUserGuess(user_id, guess, feedback, wordOfTheDay);
         
         logger.info(`User ${user_id} guess processed - Correct: ${correct}`);
         res.json({ correct, feedback });
@@ -89,7 +75,7 @@ router.get('/api/load-game-state', requireLogin, async (req, res) => {
     const user_id = req.session.userId;
     logger.info(`GET /api/load-game-state for user ${user_id}`);
     try {
-      const gameState = await gameResults.getUserGameState(user_id);
+      const gameState = await Mastermind.getUserGameState(user_id);
       if (gameState) {
         res.json({ success: true, state: gameState });
       } else {
@@ -101,51 +87,14 @@ router.get('/api/load-game-state', requireLogin, async (req, res) => {
     }
   });
 
-// Helper function to generate feedback for the guess
-function generateFeedback(guess, wordOfTheDay) {
-  if (!guess || !wordOfTheDay || guess.length !== wordOfTheDay.length) {
-      throw new Error('Invalid guess or word of the day. They must be non-empty and of equal length.');
-  }
-
-  guess = guess.toLowerCase();
-  wordOfTheDay = wordOfTheDay.toLowerCase();
-  
-  const feedback = new Array(guess.length).fill('incorrect');
-  const usedIndices = new Set();
-  
-  // Step 1: Mark exact matches as 'correct' and track used indices
-  for (let i = 0; i < guess.length; i++) {
-      if (guess[i] === wordOfTheDay[i]) {
-          feedback[i] = 'correct';
-          usedIndices.add(i);
-      }
-  }
-
-  // Step 2: Mark misplaced letters
-  for (let i = 0; i < guess.length; i++) {
-      if (feedback[i] === 'correct') continue; // Skip if already marked correct
-      
-      // Find if guess[i] exists in wordOfTheDay but at a different position
-      for (let j = 0; j < wordOfTheDay.length; j++) {
-          if (guess[i] === wordOfTheDay[j] && !usedIndices.has(j)) {
-              feedback[i] = 'misplaced';
-              usedIndices.add(j); // Mark this position as used in wordOfTheDay
-              break;
-          }
-      }
-  }
-  
-  return feedback;
-}
-
   router.get('/api/get-results', requireLogin, async (req, res) => {
     const user_id = req.session.userId;
     const date = req.query.date; // Fetch date from query parameters
 
     try {
-      const userGameState = await gameResults.getUserGameState(user_id, date);
+      const userGameState = await Mastermind.getUserGameState(user_id, date);
       if (userGameState && userGameState.finished) {
-        const results = await gameResults.getAllResults(user_id, date);
+        const results = await Mastermind.getAllResults(user_id, date);
         res.json({ success: true, results });
       } else {
         res.status(403).json({ success: false, message: 'You need to solve the puzzle before accessing the results.' });
@@ -159,7 +108,7 @@ function generateFeedback(guess, wordOfTheDay) {
 router.get('/api/get-stats', requireLogin, async (req, res) => {
 const user_id = req.session.userId;
 try {
-    const stats = await gameResults.getUserStats(user_id);
+    const stats = await Mastermind.getUserStats(user_id);
     res.json({ success: true, stats });
 } catch (error) {
     logger.error('Error getting user stats:', error);
@@ -172,7 +121,7 @@ router.get('/api/get-monthly-scores', requireLogin, async (req, res) => {
   logger.info('GET /api/get-monthly-scores');
   try {
     const month = req.query.month || new Date().toISOString().slice(0, 7);
-    const scores = await getMonthlyScores(month);
+    const scores = await Mastermind.getMonthlyScores(month);
     res.json({ success: true, scores });
   } catch (error) {
     logger.error('Error fetching monthly scores:', error);
@@ -184,7 +133,7 @@ router.get('/api/get-monthly-scores', requireLogin, async (req, res) => {
 router.get('/api/get-highest-scorer-counts', requireLogin, async (req, res) => {
   logger.info('GET /api/get-highest-scorer-counts');
   try {
-      const highestScores = await getHighestScorerCounts(); // Now returns the array directly
+      const highestScores = await Mastermind.getHighestScorerCounts(); // Now returns the array directly
       res.json({ success: true, highestScores });
   } catch (error) {
       logger.error('Error fetching highest scorer counts:', error);
@@ -197,7 +146,7 @@ router.get('/api/get-top-monthly-scores', requireLogin, async (req, res) => {
   logger.info('GET /api/get-top-monthly-scores');
   try {
     const limit = parseInt(req.query.limit, 10) || 3;
-    const topScores = await gameResults.getTopMonthlyScores(limit);
+    const topScores = await Mastermind.getTopMonthlyScores(limit);
     res.json({ success: true, topScores });
   } catch (error) {
     logger.error('Error fetching top monthly scores:', error);
@@ -208,7 +157,7 @@ router.get('/api/get-top-monthly-scores', requireLogin, async (req, res) => {
 // GET /api/get-earliest-date
 router.get('/api/get-earliest-date', requireLogin, async (req, res) => {
   try {
-      const earliestDate = await gameResults.getEarliestDate(); // Delegate to the model
+      const earliestDate = await Mastermind.getEarliestDate(); // Delegate to the model
       if (earliestDate) {
           res.json({ success: true, earliestDate });
       } else {
@@ -227,7 +176,7 @@ router.get('/api/mastermind/hint-status', requireLogin, async (req, res) => {
 
     try {
         // Check if hint service is available
-        if (!hintsService.isHintServiceAvailable()) {
+        if (!Mastermind.isHintServiceAvailable()) {
             return res.json({
                 available: false,
                 hintsRemaining: 0,
@@ -236,13 +185,13 @@ router.get('/api/mastermind/hint-status', requireLogin, async (req, res) => {
             });
         }
 
-        const monthlyCount = await hintsService.getMonthlyHintCount(userId);
-        const todayHint = await hintsService.getHintForToday(userId);
+        const monthlyCount = await Mastermind.getMonthlyHintCount(userId);
+        const todayHint = await Mastermind.getHintForToday(userId);
 
         res.json({
             available: true,
-            hintsRemaining: Math.max(0, hintsService.MONTHLY_HINT_LIMIT - monthlyCount),
-            totalHints: hintsService.MONTHLY_HINT_LIMIT,
+            hintsRemaining: Math.max(0, Mastermind.MONTHLY_HINT_LIMIT - monthlyCount),
+            totalHints: Mastermind.MONTHLY_HINT_LIMIT,
             todayHint: todayHint
         });
     } catch (error) {
@@ -258,30 +207,30 @@ router.post('/api/mastermind/request-hint', requireLogin, async (req, res) => {
 
     try {
         // Check if hint service is available
-        if (!hintsService.isHintServiceAvailable()) {
+        if (!Mastermind.isHintServiceAvailable()) {
             return res.status(503).json({
                 success: false,
                 error: 'Hint service is not configured'
             });
         }
 
-        const wordOfTheDay = await wordsService.getWordOfTheDay();
+        const wordOfTheDay = await Mastermind.getWordOfTheDay();
 
         // Check if hint already requested today
-        const existingHint = await hintsService.getHintForToday(userId);
+        const existingHint = await Mastermind.getHintForToday(userId);
         if (existingHint) {
-            const monthlyCount = await hintsService.getMonthlyHintCount(userId);
+            const monthlyCount = await Mastermind.getMonthlyHintCount(userId);
             return res.json({
                 success: true,
                 hint: existingHint,
-                hintsRemaining: Math.max(0, hintsService.MONTHLY_HINT_LIMIT - monthlyCount),
+                hintsRemaining: Math.max(0, Mastermind.MONTHLY_HINT_LIMIT - monthlyCount),
                 alreadyRequested: true
             });
         }
 
         // Check monthly quota
-        const monthlyCount = await hintsService.getMonthlyHintCount(userId);
-        if (monthlyCount >= hintsService.MONTHLY_HINT_LIMIT) {
+        const monthlyCount = await Mastermind.getMonthlyHintCount(userId);
+        if (monthlyCount >= Mastermind.MONTHLY_HINT_LIMIT) {
             return res.status(403).json({
                 success: false,
                 error: 'Je hebt je maandelijkse limiet van hints bereikt',
@@ -292,21 +241,21 @@ router.post('/api/mastermind/request-hint', requireLogin, async (req, res) => {
         // Base the hint on the guesses stored on the server, not on what the
         // browser sends: otherwise anyone can fake a late-game state (whose
         // prompt contains the word itself) or slip instructions into the prompt.
-        const gameState = await gameResults.getUserGameState(userId);
+        const gameState = await Mastermind.getUserGameState(userId);
         const guesses = gameState ? gameState.guesses : [];
         const feedback = gameState ? gameState.feedback : [];
 
         // Call Gemini API to get hint
-        const hint = await hintsService.callGeminiAPI(wordOfTheDay, guesses, feedback);
+        const hint = await Mastermind.generateHint(wordOfTheDay, guesses, feedback);
 
         // Save the hint
-        await hintsService.saveHint(userId, wordOfTheDay, hint);
+        await Mastermind.saveHint(userId, wordOfTheDay, hint);
 
         const newMonthlyCount = monthlyCount + 1;
         res.json({
             success: true,
             hint: hint,
-            hintsRemaining: Math.max(0, hintsService.MONTHLY_HINT_LIMIT - newMonthlyCount)
+            hintsRemaining: Math.max(0, Mastermind.MONTHLY_HINT_LIMIT - newMonthlyCount)
         });
     } catch (error) {
         logger.error('Error requesting hint:', error);

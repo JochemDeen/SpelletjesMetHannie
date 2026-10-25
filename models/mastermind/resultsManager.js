@@ -1,33 +1,8 @@
-// models/gameResults.js
-const logger = require('../logger');  
+// models/mastermind/resultsManager.js
+const logger = require('../../logger');
 
-const db = require('./db');
+const db = require('../db');
 
-db.serialize(() => {
-    db.run(`
-        CREATE TABLE IF NOT EXISTS mastermind_results (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        user_id TEXT NOT NULL,
-        guess TEXT NOT NULL,
-        feedback TEXT NOT NULL,
-        wordOfTheDay TEXT NOT NULL,
-        timestamp TEXT NOT NULL
-        )
-    `);
-
-    db.run(`
-        CREATE TABLE IF NOT EXISTS mastermind_hints (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        user_id INTEGER NOT NULL,
-        word_of_the_day TEXT NOT NULL,
-        date TEXT NOT NULL,
-        hint_response TEXT NOT NULL,
-        used_at TEXT NOT NULL,
-        UNIQUE(user_id, date)
-        )
-    `);
-  });
-  
 // Function to update user guess, store feedback, and word of the day
 async function updateUserGuess(user_id, guess, feedback, wordOfTheDay) {
     return new Promise((resolve, reject) => {
@@ -102,7 +77,7 @@ async function getAllResults(user_id, date) {
                 return reject(err);
               }
               if (rows.length) {
-                const userDb = require('./user');
+                const userDb = require('../user');
                 const resultsMap = new Map();
 
                 for (const row of rows) {

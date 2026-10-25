@@ -1,8 +1,8 @@
 // routes/wie_ben_ik_routes.js
 const express = require('express');
 const router = express.Router();
-const path = require('path');
 const { requireLogin } = require('../middleware/authMiddleware');
+const { servePage } = require('../utils/servePage');
 const logger = require('../logger');
 
 const WieBenIk = require('../models/wieBenIk');
@@ -10,20 +10,11 @@ const WieBenIk = require('../models/wieBenIk');
 // ----------------------
 // Pages
 // ----------------------
-router.get('/wie-ben-ik', requireLogin, (req, res) => {
-  logger.info(`GET /wie-ben-ik for user: ${req.session.userId}`);
-  res.sendFile('wie-ben-ik.html', { root: path.join(__dirname, '../public/wie-ben-ik') });
-});
+router.get('/wie-ben-ik', requireLogin, servePage('wie-ben-ik/wie-ben-ik.html'));
 
-router.get('/wie-ben-ik/scoreboard', requireLogin, (req, res) => {
-  logger.info(`GET /wie-ben-ik/scoreboard for user: ${req.session.userId}`);
-  res.sendFile('wie-ben-ik-scoreboard.html', { root: path.join(__dirname, '../public/wie-ben-ik') });
-});
+router.get('/wie-ben-ik/scoreboard', requireLogin, servePage('wie-ben-ik/wie-ben-ik-scoreboard.html'));
 
-router.get('/wie-ben-ik/personages', requireLogin, (req, res) => {
-  logger.info(`GET /wie-ben-ik/personages for user: ${req.session.userId}`);
-  res.sendFile('wie-ben-ik-personages.html', { root: path.join(__dirname, '../public/wie-ben-ik') });
-});
+router.get('/wie-ben-ik/personages', requireLogin, servePage('wie-ben-ik/wie-ben-ik-personages.html'));
 
 // ----------------------
 // Load Game State (per-viewer projection)

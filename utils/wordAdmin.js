@@ -1,34 +1,14 @@
 // utils/wordAdmin.js
 const fs = require('fs');
-const path = require('path');
 const logger = require('../logger');
 
-// Initialize database connection
 const db = require('../models/db');
 
-// Get path to word files
-const fileMap = {
-  easy: path.join(__dirname, "../data/Pictionary_easy.csv"),
-  medium: path.join(__dirname, "../data/Pictionary_medium.csv"),
-  hard: path.join(__dirname, "../data/Pictionary_hard.csv")
-};
+const { WORD_FILES: fileMap, loadWordList } = require('../models/pictionary/wordManager');
 
 // Function to get all words from a file
 function getWordsFromFile(difficulty) {
-  const filePath = fileMap[difficulty];
-  if (!filePath) {
-    throw new Error(`Invalid difficulty: ${difficulty}`);
-  }
-  
-  try {
-    const data = fs.readFileSync(filePath, 'utf-8');
-    return data.split('\n')
-      .map(word => word.trim())
-      .filter(word => word.length > 0);
-  } catch (error) {
-    console.error(`Error reading ${difficulty} words file:`, error);
-    return [];
-  }
+  return loadWordList(difficulty);
 }
 
 // Function to save words to a file

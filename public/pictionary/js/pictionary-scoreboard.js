@@ -49,7 +49,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     
                 const listItem = document.createElement('li');
                 listItem.innerHTML = `<span class="rank">${currentRank}.</span>
-                                      <span class="username">${entry.username}</span>
+                                      <span class="username">${escapeHtml(entry.username)}</span>
                                       <span class="score">${entry.score}</span>`;
                 lastGameList.appendChild(listItem);
             });
@@ -95,7 +95,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     
             const listItem = document.createElement('li');
             listItem.innerHTML = `<span class="rank">${currentRank}.</span>
-                                  <span class="username">${score.username}</span>
+                                  <span class="username">${escapeHtml(score.username)}</span>
                                   <span class="score">${score.total_score}</span>`;
             orderedList.appendChild(listItem);
         });

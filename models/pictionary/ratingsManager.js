@@ -1,12 +1,13 @@
 //models/pictionary/ratingsManager.js
-const fs = require('fs');
-const path = require('path');
 const logger = require('../../logger');
 const db = require('../db');
-const wordsService = require('../wordsService');
+const { WORD_FILES, loadWordList } = require('./wordManager');
 
-// Get file paths from wordsService
-const fileMap = wordsService.getPictionaryWordFiles();
+// Every word in the standard lists as { word, difficulty, id }
+function loadAllListWords() {
+  return Object.keys(WORD_FILES).flatMap(difficulty =>
+    loadWordList(difficulty).map(word => ({ word, difficulty, id: `${difficulty}_${word}` })));
+}
 
 // Check if a word already exists in suggestions
 async function getSuggestionByWord(word) {
@@ -25,96 +26,14 @@ async function getSuggestionByWord(word) {
 
 // Check if a word exists in the standard word lists
 async function checkWordExistsInWordLists(word) {
-  return new Promise((resolve, reject) => {
-    let wordExists = false;
-    let filesChecked = 0;
-    
-    // Function to check a word file
-    const checkWordFile = (filePath, callback) => {
-      fs.readFile(filePath, 'utf8', (err, data) => {
-        if (err) {
-          logger.error(`Error reading file ${filePath}:`, err);
-          callback(false);
-          return;
-        }
-        
-        const words = data.split('\n')
-          .map(w => w.trim().toLowerCase())
-          .filter(w => w.length > 0);
-          
-        callback(words.includes(word.toLowerCase()));
-      });
-    };
-    
-    // Check each difficulty file
-    Object.values(fileMap).forEach(filePath => {
-      checkWordFile(filePath, (exists) => {
-        if (exists) {
-          wordExists = true;
-        }
-        
-        filesChecked++;
-        
-        // Once all files are checked
-        if (filesChecked === Object.keys(fileMap).length) {
-          resolve(wordExists);
-        }
-      });
-    });
-  });
+  const lowerCaseWord = word.toLowerCase();
+  return loadAllListWords().some(w => w.word.toLowerCase() === lowerCaseWord);
 }
 
 // Get word info from the standard word lists (to get the correct word_id)
 async function getWordInfoFromLists(word) {
-  return new Promise((resolve, reject) => {
-    let wordInfo = null;
-    let filesChecked = 0;
-    const lowerCaseWord = word.toLowerCase();
-    
-    // Function to check a word file
-    const checkWordFile = (difficulty, filePath, callback) => {
-      fs.readFile(filePath, 'utf8', (err, data) => {
-        if (err) {
-          logger.error(`Error reading file ${filePath}:`, err);
-          callback(null);
-          return;
-        }
-        
-        const words = data.split('\n')
-          .map(w => w.trim())
-          .filter(w => w.length > 0);
-        
-        // Find the word (case insensitive but preserve original case)
-        const foundWord = words.find(w => w.toLowerCase() === lowerCaseWord);
-        
-        if (foundWord) {
-          callback({
-            word: foundWord,
-            difficulty,
-            id: `${difficulty}_${foundWord}`
-          });
-        } else {
-          callback(null);
-        }
-      });
-    };
-    
-    // Check each difficulty file
-    Object.entries(fileMap).forEach(([difficulty, filePath]) => {
-      checkWordFile(difficulty, filePath, (info) => {
-        if (info) {
-          wordInfo = info;
-        }
-        
-        filesChecked++;
-        
-        // Once all files are checked
-        if (filesChecked === Object.keys(fileMap).length) {
-          resolve(wordInfo);
-        }
-      });
-    });
-  });
+  const lowerCaseWord = word.toLowerCase();
+  return loadAllListWords().find(w => w.word.toLowerCase() === lowerCaseWord) || null;
 }
 
 
@@ -183,95 +102,36 @@ async function insertSuggestedWord(userId, word, difficulty) {
   
 // Get a word the user hasn't rated yet
 async function getUnratedWordForUser(userId) {
+  const allWords = loadAllListWords();
   return new Promise((resolve, reject) => {
-    // Get all words from all difficulty levels
-    const allWordSets = [];
-    let processedSets = 0;
-    
-    // Function to read a word file
-    const readWordFile = (filePath, difficulty, callback) => {
-      fs.readFile(filePath, 'utf8', (err, data) => {
-        if (err) {
-          logger.error(`Error reading file ${filePath}:`, err);
-          callback([]);
-          return;
-        }
-        
-        const words = data.split('\n')
-          .map(word => word.trim())
-          .filter(word => word.length > 0);
-          
-        callback(words.map(word => ({ 
-          word, 
-          difficulty,
-          id: `${difficulty}_${word}`
-        })));
-      });
-    };
-    
-    // Read each difficulty file
-    Object.entries(fileMap).forEach(([difficulty, filePath]) => {
-      readWordFile(filePath, difficulty, (wordObjects) => {
-        allWordSets.push(...wordObjects);
-        processedSets++;
-        
-        // Once all files are processed
-        if (processedSets === Object.keys(fileMap).length) {
-          // Get words user has already rated
-          db.all(
-            `SELECT word FROM pictionary_word_ratings WHERE user_id = ?`,
-            [userId],
-            (err, ratedWords) => {
-              if (err) {
-                reject(err);
-                return;
-              }
-              
-              // Convert to a set for faster lookups
-              const ratedWordsSet = new Set(ratedWords.map(rw => rw.word.toLowerCase()));
-              
-              // Filter to unrated words
-              const unratedWords = allWordSets.filter(w => !ratedWordsSet.has(w.word.toLowerCase()));
-              
-              // Also get suggested words not by this user
-              db.all(
-                `SELECT id, word, difficulty FROM pictionary_word_suggestions 
-                 WHERE user_id != ? AND status = 'pending'`,
-                [userId],
-                (err, suggestedWords) => {
-                  if (err) {
-                    reject(err);
-                    return;
-                  }
-                  
-                  // Format suggested words
-                  const suggestedWordObjects = suggestedWords.map(sw => ({
-                    word: sw.word,
-                    difficulty: sw.difficulty,
-                    id: `suggested_${sw.id}`,
-                    isUserSuggestion: true
-                  }));
-                  
-                  // Add unrated suggested words
-                  unratedWords.push(
-                    ...suggestedWordObjects.filter(sw => !ratedWordsSet.has(sw.word.toLowerCase()))
-                  );
-                  
-                  if (unratedWords.length === 0) {
-                    // User has rated all words
-                    resolve(null);
-                  } else {
-                    // Return a random unrated word
-                    const randomWord = unratedWords[Math.floor(Math.random() * unratedWords.length)];
-                    resolve(randomWord);
-                  }
-                }
-              );
+    db.all(
+      `SELECT word FROM pictionary_word_ratings WHERE user_id = ?`,
+      [userId],
+      (err, ratedWords) => {
+        if (err) return reject(err);
+        const ratedWordsSet = new Set(ratedWords.map(rw => rw.word.toLowerCase()));
+        const unratedWords = allWords.filter(w => !ratedWordsSet.has(w.word.toLowerCase()));
+
+        // Also offer pending words suggested by other users
+        db.all(
+          `SELECT id, word, difficulty FROM pictionary_word_suggestions
+           WHERE user_id != ? AND status = 'pending'`,
+          [userId],
+          (err, suggestedWords) => {
+            if (err) return reject(err);
+            unratedWords.push(...suggestedWords
+              .filter(sw => !ratedWordsSet.has(sw.word.toLowerCase()))
+              .map(sw => ({ word: sw.word, difficulty: sw.difficulty, id: `suggested_${sw.id}`, isUserSuggestion: true })));
+
+            if (unratedWords.length === 0) {
+              resolve(null); // User has rated all words
+            } else {
+              resolve(unratedWords[Math.floor(Math.random() * unratedWords.length)]);
             }
-          );
-        }
-      });
-    });
+          }
+        );
+      }
+    );
   });
 }
 
@@ -325,39 +185,15 @@ async function getRandomWordWithPreference(userId) {
 
 // Get a random word from one of the standard files
 async function getRandomRegularWord() {
-  return new Promise((resolve, reject) => {
-    // Pick a random difficulty
-    const difficulties = Object.keys(fileMap);
-    const randomDifficulty = difficulties[Math.floor(Math.random() * difficulties.length)];
-    const filePath = fileMap[randomDifficulty];
-    
-    fs.readFile(filePath, 'utf8', (err, data) => {
-      if (err) {
-        reject(err);
-        return;
-      }
-      
-      const words = data.split('\n')
-        .map(word => word.trim())
-        .filter(word => word.length > 0);
-        
-      if (words.length === 0) {
-        reject(new Error(`No words found in ${randomDifficulty} file`));
-        return;
-      }
-      
-      const randomWord = words[Math.floor(Math.random() * words.length)];
-      
-      resolve({
-        word: randomWord,
-        difficulty: randomDifficulty,
-        id: `${randomDifficulty}_${randomWord}`
-      });
-    });
-  });
+  const difficulties = Object.keys(WORD_FILES);
+  const difficulty = difficulties[Math.floor(Math.random() * difficulties.length)];
+  const words = loadWordList(difficulty);
+  if (words.length === 0) {
+    throw new Error(`No words found in ${difficulty} file`);
+  }
+  const word = words[Math.floor(Math.random() * words.length)];
+  return { word, difficulty, id: `${difficulty}_${word}` };
 }
-// Add this function to ratingsManager.js
-
 // Get a suggested word from another user
 async function getOtherUserSuggestion(userId) {
     return new Promise((resolve, reject) => {

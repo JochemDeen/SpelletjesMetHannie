@@ -1,16 +1,13 @@
 // routes/settings.js
 const express = require('express');
-const path = require('path');
 const router = express.Router();
 const db = require('../models/db');
 const logger = require('../logger');
 const { requireLogin } = require('../middleware/authMiddleware');
+const { servePage } = require('../utils/servePage');
 
 // Serve the settings page
-router.get('/', requireLogin, (req, res) => {
-    logger.info('GET /settings');
-    res.sendFile('settings.html', { root: path.join(__dirname, '../public') });
-  });
+router.get('/', requireLogin, servePage('settings.html'));
   
 // Get all settings for the logged-in user
 router.get('/api', requireLogin, (req, res) => {

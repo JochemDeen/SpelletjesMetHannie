@@ -3,13 +3,13 @@
 const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcrypt');
-const path = require('path');
 const { db } = require('../models/user');
 const logger = require('../logger');
 const { siteInfo } = require('../models/siteInfo');
 
 
 const { requireLogin } = require('../middleware/authMiddleware');
+const { servePage } = require('../utils/servePage');
 
 // Brute-force protection: after MAX_FAILED_LOGINS wrong passwords from the same
 // IP address, that address is locked out for LOCKOUT_MS. Kept in memory, so a
@@ -36,10 +36,7 @@ function registerFailedLogin(ip) {
     failedLogins.set(ip, entry);
 }
 
-router.get('/login', (req, res) => {
-    logger.info('GET /login');
-    res.sendFile('login.html', { root: path.join(__dirname, '../public') });
-});
+router.get('/login', servePage('login.html'));
 
 router.post('/login', (req, res) => {
     const { username, password } = req.body;
@@ -94,10 +91,7 @@ router.get('/logout', (req, res) => {
 });
 
 
-// Dashboard Route
-router.get('/dashboard', requireLogin, (req, res) => {
-    res.sendFile('dashboard.html', { root: path.join(__dirname, '../public') });
-});
+router.get('/dashboard', requireLogin, servePage('dashboard.html'));
 
 // Basic site info for the dashboard footer
 router.get('/api/site-info', requireLogin, (req, res) => {

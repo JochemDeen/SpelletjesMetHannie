@@ -7,7 +7,7 @@ const SQLiteStore = require('connect-sqlite3')(session);
 
 const path = require('path');
 const authRoutes = require('./routes/auth');
-const gameRoutes = require('./routes/games');
+const mastermindRoutes = require('./routes/mastermind_routes');
 const pictionaryRoutes = require('./routes/pictionary_routes');
 const wieBenIkRoutes = require('./routes/wie_ben_ik_routes');
 const settingsRoutes = require('./routes/settings');
@@ -45,7 +45,9 @@ app.use(express.urlencoded({ extended: true, limit: '5mb' }));
 
 // Serve static files from the 'public' directory. Assets (css/js/images) are
 // served right away; .html pages only after the login check further down.
-const serveStatic = express.static(path.join(__dirname, 'public'));
+// redirect: false, so /pictionary reaches its route instead of being redirected
+// to the public/pictionary/ folder.
+const serveStatic = express.static(path.join(__dirname, 'public'), { redirect: false });
 app.use((req, res, next) => (req.path.endsWith('.html') ? next() : serveStatic(req, res, next)));
 
 if (!process.env.SESSION_SECRET) {
@@ -75,8 +77,8 @@ app.use((req, res, next) => {
 // Use authentication routes
 app.use('/', authRoutes);
 
-// Use game routes
-app.use('/', gameRoutes);
+// Use mastermind routes
+app.use('/', mastermindRoutes);
 
 // Use pictionary routes
 app.use('/', pictionaryRoutes);
