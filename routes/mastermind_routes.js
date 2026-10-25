@@ -6,264 +6,259 @@ const router = express.Router();
 const { requireLogin } = require('../middleware/authMiddleware');
 const { servePage } = require('../utils/servePage');
 const Mastermind = require('../models/mastermind');
+const { todayNL, monthNL, isDateString, isMonthString } = require('../models/mastermind/dates');
 const logger = require('../logger');
 
-
-// Mastermind Game Page
+// Pages
 router.get('/mastermind', requireLogin, servePage('mastermind.html'));
-
 router.get('/mastermind/stats', requireLogin, servePage('mastermind-stats.html'));
-
 router.get('/mastermind/compare', requireLogin, servePage('mastermind-compare.html'));
-
 router.get('/mastermind/scoreboard', requireLogin, servePage('mastermind-scoreboard.html'));
+router.get('/woordle', (req, res) => res.redirect('/mastermind'));
 
-
+// Guesses of one player are handled one at a time, so two quick submits
+// can't both pass the "6 guesses max" check.
+const guessQueues = new Map(); // user_id -> promise of the guess being handled
+function oneAtATime(userId, task) {
+  const previous = guessQueues.get(userId) || Promise.resolve();
+  const current = previous.catch(() => {}).then(task);
+  guessQueues.set(userId, current);
+  current.finally(() => {
+    if (guessQueues.get(userId) === current) guessQueues.delete(userId);
+  }).catch(() => {});
+  return current;
+}
 
 // Validate Word Endpoint
 router.post('/api/validate-word', requireLogin, async (req, res) => {
-    const { word } = req.body;
-    logger.info(`POST /api/validate-word - User: ${req.session.userId}, Word: ${word}`);
-    try {
-        const isValid = await Mastermind.validateWord(word);
-        logger.info(`Validation result for word "${word}": ${isValid}`);
-        res.json({ valid: isValid });
-    } catch (error) {
-        logger.error('Error validating word:', error);
-        res.status(500).send('An error occurred while validating the word.');
-    }
+  const { word } = req.body;
+  try {
+    const isValid = await Mastermind.validateWord(word);
+    res.json({ valid: isValid });
+  } catch (error) {
+    logger.error('Error validating word:', error);
+    res.status(500).json({ error: 'Er is iets misgegaan.' });
+  }
 });
 
 // Submit Guess Endpoint
 router.post('/api/submit-guess', requireLogin, async (req, res) => {
-    const { guess } = req.body;
-    const user_id = req.session.userId;
-    logger.info(`POST /api/submit-guess - User: ${user_id}, Guess: ${guess}`);
+  const { guess } = req.body;
+  const user_id = req.session.userId;
+  logger.info(`POST /api/submit-guess - User: ${user_id}`);
 
-    try {
-        if (!guess || typeof guess !== 'string') {
-            return res.status(400).json({ error: 'Guess is required.' });
-          }
-        // The browser checks these too, but only the server can be trusted:
-        // guesses must be real words, and at most until the puzzle is finished.
-        if (!(await Mastermind.validateWord(guess))) {
-            return res.status(400).json({ error: 'Not a valid word.' });
-        }
-        const gameState = await Mastermind.getUserGameState(user_id);
-        if (gameState && gameState.finished) {
-            return res.status(400).json({ error: 'Puzzle already finished.' });
-        }
-        const wordOfTheDay = await Mastermind.getWordOfTheDay();
-        const feedback = Mastermind.generateFeedback(guess, wordOfTheDay);
+  try {
+    const result = await oneAtATime(user_id, async () => {
+      // The browser checks these too, but only the server can be trusted:
+      // guesses must be real words, and at most until the puzzle is finished.
+      if (!(await Mastermind.validateWord(guess))) {
+        return { status: 400, body: { error: 'Dat woord kennen we niet.' } };
+      }
+      const date = todayNL();
+      const gameState = await Mastermind.getUserGameState(user_id, date);
+      if (gameState && gameState.finished) {
+        return { status: 400, body: { error: 'Je hebt het woord van vandaag al gespeeld.' } };
+      }
+      const wordOfTheDay = await Mastermind.getWordOfTheDay(date);
+      const feedback = Mastermind.generateFeedback(guess, wordOfTheDay);
+      const correct = feedback.every(entry => entry === 'correct');
+      await Mastermind.updateUserGuess(user_id, guess.toLowerCase(), feedback, wordOfTheDay, date);
 
-        // Check if the guess is correct
-        const correct = feedback.every((entry) => entry === 'correct');
-
-        // Update game results for the user
-        await Mastermind.updateUserGuess(user_id, guess, feedback, wordOfTheDay);
-        
-        logger.info(`User ${user_id} guess processed - Correct: ${correct}`);
-        res.json({ correct, feedback });
-    } catch (error) {
-        logger.error('Error submitting guess:', error);
-        res.status(500).send('An error occurred while submitting the guess.');
-    }
+      const guessCount = (gameState ? gameState.currentRow : 0) + 1;
+      const finished = correct || guessCount >= Mastermind.MAX_GUESSES;
+      logger.info(`User ${user_id} guess ${guessCount} processed - Correct: ${correct}`);
+      // The answer is only revealed once the game is over
+      return { status: 200, body: { correct, feedback, finished, answer: finished ? wordOfTheDay : undefined } };
+    });
+    res.status(result.status).json(result.body);
+  } catch (error) {
+    logger.error('Error submitting guess:', error);
+    res.status(500).json({ error: 'Je gok kon niet worden opgeslagen.' });
+  }
 });
 
 // Load Game State Endpoint
 router.get('/api/load-game-state', requireLogin, async (req, res) => {
-    const user_id = req.session.userId;
-    logger.info(`GET /api/load-game-state for user ${user_id}`);
-    try {
-      const gameState = await Mastermind.getUserGameState(user_id);
-      if (gameState) {
-        res.json({ success: true, state: gameState });
-      } else {
-        res.json({ success: false, message: 'No game state found.' });
+  const user_id = req.session.userId;
+  try {
+    const date = todayNL();
+    const gameState = await Mastermind.getUserGameState(user_id, date);
+    if (gameState) {
+      if (gameState.finished) {
+        gameState.answer = await Mastermind.getWordOfTheDay(date);
       }
-    } catch (error) {
-      logger.error('Error loading game state:', error);
-      res.status(500).send('An error occurred while loading the game state.');
+      res.json({ success: true, state: gameState, date });
+    } else {
+      res.json({ success: false, message: 'No game state found.', date });
     }
-  });
+  } catch (error) {
+    logger.error('Error loading game state:', error);
+    res.status(500).json({ error: 'Er is iets misgegaan.' });
+  }
+});
 
-  router.get('/api/get-results', requireLogin, async (req, res) => {
-    const user_id = req.session.userId;
-    const date = req.query.date; // Fetch date from query parameters
-
-    try {
-      const userGameState = await Mastermind.getUserGameState(user_id, date);
-      if (userGameState && userGameState.finished) {
-        const results = await Mastermind.getAllResults(user_id, date);
-        res.json({ success: true, results });
-      } else {
-        res.status(403).json({ success: false, message: 'You need to solve the puzzle before accessing the results.' });
-      }
-    } catch (error) {
-      logger.error('Error getting results:', error);
-      res.status(500).json({ error: 'An error occurred while retrieving the results.' });
+router.get('/api/get-results', requireLogin, async (req, res) => {
+  const user_id = req.session.userId;
+  const date = req.query.date || todayNL();
+  if (!isDateString(date)) {
+    return res.status(400).json({ success: false, error: 'Ongeldige datum.' });
+  }
+  try {
+    const userGameState = await Mastermind.getUserGameState(user_id, date);
+    if (userGameState && userGameState.finished) {
+      const results = await Mastermind.getAllResults(user_id, date);
+      res.json({ success: true, results });
+    } else {
+      res.status(403).json({ success: false, message: 'Speel eerst zelf het woord van die dag.' });
     }
-  });
+  } catch (error) {
+    logger.error('Error getting results:', error);
+    res.status(500).json({ error: 'Er is iets misgegaan.' });
+  }
+});
 
 router.get('/api/get-stats', requireLogin, async (req, res) => {
-const user_id = req.session.userId;
-try {
-    const stats = await Mastermind.getUserStats(user_id);
+  try {
+    const stats = await Mastermind.getUserStats(req.session.userId);
     res.json({ success: true, stats });
-} catch (error) {
+  } catch (error) {
     logger.error('Error getting user stats:', error);
-    res.status(500).json({ error: 'An error occurred while retrieving user statistics.' });
-}
+    res.status(500).json({ error: 'Er is iets misgegaan.' });
+  }
 });
 
-// Endpoint for Get Monthly Scores
+// Scores per player for one month (default: the current Dutch month)
 router.get('/api/get-monthly-scores', requireLogin, async (req, res) => {
-  logger.info('GET /api/get-monthly-scores');
+  const month = req.query.month || monthNL();
+  if (!isMonthString(month)) {
+    return res.status(400).json({ success: false, error: 'Ongeldige maand.' });
+  }
   try {
-    const month = req.query.month || new Date().toISOString().slice(0, 7);
     const scores = await Mastermind.getMonthlyScores(month);
-    res.json({ success: true, scores });
+    res.json({ success: true, month, scores });
   } catch (error) {
     logger.error('Error fetching monthly scores:', error);
-    res.status(500).json({ success: false, error: 'An error occurred while retrieving monthly scores.' });
+    res.status(500).json({ success: false, error: 'Er is iets misgegaan.' });
   }
 });
 
-// Endpoint for Get Highest Scorer Counts
-router.get('/api/get-highest-scorer-counts', requireLogin, async (req, res) => {
-  logger.info('GET /api/get-highest-scorer-counts');
+// Winner(s) of last month
+router.get('/api/get-previous-month-winner', requireLogin, async (req, res) => {
   try {
-      const highestScores = await Mastermind.getHighestScorerCounts(); // Now returns the array directly
-      res.json({ success: true, highestScores });
+    const winner = await Mastermind.getPreviousMonthWinner();
+    res.json({ success: true, ...winner });
   } catch (error) {
-      logger.error('Error fetching highest scorer counts:', error);
-      res.status(500).json({ success: false, error: 'An error occurred while retrieving highest scorer counts.' });
+    logger.error('Error fetching previous month winner:', error);
+    res.status(500).json({ success: false, error: 'Er is iets misgegaan.' });
   }
 });
 
-// Endpoint for Get Top Monthly Scores (all-time highest monthly scores)
-router.get('/api/get-top-monthly-scores', requireLogin, async (req, res) => {
-  logger.info('GET /api/get-top-monthly-scores');
+// Number of months won per player
+router.get('/api/get-highest-scorer-counts', requireLogin, async (req, res) => {
   try {
-    const limit = parseInt(req.query.limit, 10) || 3;
+    const highestScores = await Mastermind.getHighestScorerCounts();
+    res.json({ success: true, highestScores });
+  } catch (error) {
+    logger.error('Error fetching highest scorer counts:', error);
+    res.status(500).json({ success: false, error: 'Er is iets misgegaan.' });
+  }
+});
+
+// All-time highest monthly scores
+router.get('/api/get-top-monthly-scores', requireLogin, async (req, res) => {
+  try {
+    const limit = Math.min(parseInt(req.query.limit, 10) || 3, 20);
     const topScores = await Mastermind.getTopMonthlyScores(limit);
     res.json({ success: true, topScores });
   } catch (error) {
     logger.error('Error fetching top monthly scores:', error);
-    res.status(500).json({ success: false, error: 'An error occurred while retrieving top monthly scores.' });
+    res.status(500).json({ success: false, error: 'Er is iets misgegaan.' });
   }
 });
 
-// GET /api/get-earliest-date
 router.get('/api/get-earliest-date', requireLogin, async (req, res) => {
   try {
-      const earliestDate = await Mastermind.getEarliestDate(); // Delegate to the model
-      if (earliestDate) {
-          res.json({ success: true, earliestDate });
-      } else {
-          res.status(404).json({ success: false, message: 'No results available.' });
-      }
+    const earliestDate = await Mastermind.getEarliestDate();
+    if (earliestDate) {
+      res.json({ success: true, earliestDate });
+    } else {
+      res.status(404).json({ success: false, message: 'Nog geen resultaten.' });
+    }
   } catch (error) {
-      logger.error('Error fetching earliest date:', error);
-      res.status(500).json({ success: false, message: 'An error occurred while fetching the earliest date.' });
+    logger.error('Error fetching earliest date:', error);
+    res.status(500).json({ success: false, message: 'Er is iets misgegaan.' });
   }
 });
 
-// GET /api/mastermind/hint-status - Get hint quota and today's hint if exists
+// Hint quota and today's hint if there is one
 router.get('/api/mastermind/hint-status', requireLogin, async (req, res) => {
-    const userId = req.session.userId;
-    logger.info(`GET /api/mastermind/hint-status for user ${userId}`);
-
-    try {
-        // Check if hint service is available
-        if (!Mastermind.isHintServiceAvailable()) {
-            return res.json({
-                available: false,
-                hintsRemaining: 0,
-                totalHints: 0,
-                todayHint: null
-            });
-        }
-
-        const monthlyCount = await Mastermind.getMonthlyHintCount(userId);
-        const todayHint = await Mastermind.getHintForToday(userId);
-
-        res.json({
-            available: true,
-            hintsRemaining: Math.max(0, Mastermind.MONTHLY_HINT_LIMIT - monthlyCount),
-            totalHints: Mastermind.MONTHLY_HINT_LIMIT,
-            todayHint: todayHint
-        });
-    } catch (error) {
-        logger.error('Error getting hint status:', error);
-        res.status(500).json({ error: 'Failed to get hint status' });
+  const userId = req.session.userId;
+  try {
+    if (!Mastermind.isHintServiceAvailable()) {
+      return res.json({ available: false, hintsRemaining: 0, totalHints: 0, todayHint: null });
     }
+    const monthlyCount = await Mastermind.getMonthlyHintCount(userId);
+    const todayHint = await Mastermind.getHintForToday(userId);
+    res.json({
+      available: true,
+      hintsRemaining: Math.max(0, Mastermind.MONTHLY_HINT_LIMIT - monthlyCount),
+      totalHints: Mastermind.MONTHLY_HINT_LIMIT,
+      todayHint
+    });
+  } catch (error) {
+    logger.error('Error getting hint status:', error);
+    res.status(500).json({ error: 'Er is iets misgegaan.' });
+  }
 });
 
-// POST /api/mastermind/request-hint - Request a new hint
+// Ask Ollie (Gemini) for a hint
 router.post('/api/mastermind/request-hint', requireLogin, async (req, res) => {
-    const userId = req.session.userId;
-    logger.info(`POST /api/mastermind/request-hint for user ${userId}`);
+  const userId = req.session.userId;
+  logger.info(`POST /api/mastermind/request-hint for user ${userId}`);
 
-    try {
-        // Check if hint service is available
-        if (!Mastermind.isHintServiceAvailable()) {
-            return res.status(503).json({
-                success: false,
-                error: 'Hint service is not configured'
-            });
-        }
-
-        const wordOfTheDay = await Mastermind.getWordOfTheDay();
-
-        // Check if hint already requested today
-        const existingHint = await Mastermind.getHintForToday(userId);
-        if (existingHint) {
-            const monthlyCount = await Mastermind.getMonthlyHintCount(userId);
-            return res.json({
-                success: true,
-                hint: existingHint,
-                hintsRemaining: Math.max(0, Mastermind.MONTHLY_HINT_LIMIT - monthlyCount),
-                alreadyRequested: true
-            });
-        }
-
-        // Check monthly quota
-        const monthlyCount = await Mastermind.getMonthlyHintCount(userId);
-        if (monthlyCount >= Mastermind.MONTHLY_HINT_LIMIT) {
-            return res.status(403).json({
-                success: false,
-                error: 'Je hebt je maandelijkse limiet van hints bereikt',
-                hintsRemaining: 0
-            });
-        }
-
-        // Base the hint on the guesses stored on the server, not on what the
-        // browser sends: otherwise anyone can fake a late-game state (whose
-        // prompt contains the word itself) or slip instructions into the prompt.
-        const gameState = await Mastermind.getUserGameState(userId);
-        const guesses = gameState ? gameState.guesses : [];
-        const feedback = gameState ? gameState.feedback : [];
-
-        // Call Gemini API to get hint
-        const hint = await Mastermind.generateHint(wordOfTheDay, guesses, feedback);
-
-        // Save the hint
-        await Mastermind.saveHint(userId, wordOfTheDay, hint);
-
-        const newMonthlyCount = monthlyCount + 1;
-        res.json({
-            success: true,
-            hint: hint,
-            hintsRemaining: Math.max(0, Mastermind.MONTHLY_HINT_LIMIT - newMonthlyCount)
-        });
-    } catch (error) {
-        logger.error('Error requesting hint:', error);
-        res.status(500).json({
-            success: false,
-            error: 'Er ging iets mis bij het ophalen van de hint'
-        });
+  try {
+    if (!Mastermind.isHintServiceAvailable()) {
+      return res.status(503).json({ success: false, error: 'Hints zijn nu niet beschikbaar.' });
     }
+
+    const existingHint = await Mastermind.getHintForToday(userId);
+    const monthlyCount = await Mastermind.getMonthlyHintCount(userId);
+    if (existingHint) {
+      return res.json({
+        success: true,
+        hint: existingHint,
+        hintsRemaining: Math.max(0, Mastermind.MONTHLY_HINT_LIMIT - monthlyCount),
+        alreadyRequested: true
+      });
+    }
+    if (monthlyCount >= Mastermind.MONTHLY_HINT_LIMIT) {
+      return res.status(403).json({
+        success: false,
+        error: 'Je hebt je hints voor deze maand al gebruikt.',
+        hintsRemaining: 0
+      });
+    }
+
+    // Base the hint on the guesses stored on the server, not on what the
+    // browser sends: otherwise anyone can fake a late-game state (whose
+    // prompt contains the word itself) or slip instructions into the prompt.
+    const gameState = await Mastermind.getUserGameState(userId);
+    if (gameState && gameState.finished) {
+      return res.status(400).json({ success: false, error: 'Je bent al klaar met het woord van vandaag.' });
+    }
+    const wordOfTheDay = await Mastermind.getWordOfTheDay();
+    const hint = await Mastermind.generateHint(wordOfTheDay, gameState ? gameState.guesses : [], gameState ? gameState.feedback : []);
+    await Mastermind.saveHint(userId, wordOfTheDay, hint);
+
+    res.json({
+      success: true,
+      hint,
+      hintsRemaining: Math.max(0, Mastermind.MONTHLY_HINT_LIMIT - (monthlyCount + 1))
+    });
+  } catch (error) {
+    logger.error('Error requesting hint:', error);
+    res.status(500).json({ success: false, error: 'Er ging iets mis bij het ophalen van de hint.' });
+  }
 });
 
 module.exports = router;

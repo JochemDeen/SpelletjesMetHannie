@@ -5,6 +5,7 @@ const fs = require('fs');
 const path = require('path');
 
 const db = require('../db');
+const { todayNL, monthNL } = require('./dates');
 
 const MONTHLY_HINT_LIMIT = 4;
 
@@ -26,12 +27,11 @@ function loadPrompts() {
  * Get the number of hints used by a user this month
  */
 async function getMonthlyHintCount(userId) {
-    const currentMonth = new Date().toISOString().slice(0, 7);
     return new Promise((resolve, reject) => {
         db.get(
             `SELECT COUNT(*) as count FROM mastermind_hints
-             WHERE user_id = ? AND strftime('%Y-%m', used_at) = ?`,
-            [userId, currentMonth],
+             WHERE user_id = ? AND date LIKE ? || '-%'`,
+            [userId, monthNL()],
             (err, row) => {
                 if (err) {
                     logger.error('Error getting monthly hint count:', err);
@@ -44,17 +44,10 @@ async function getMonthlyHintCount(userId) {
 }
 
 /**
- * Today's date as YYYY-MM-DD, matching the key wordsService uses for the word of the day
- */
-function getTodayDateString() {
-    return new Date().toISOString().split('T')[0];
-}
-
-/**
  * Get hint for today if already requested
  */
 async function getHintForToday(userId) {
-    const today = getTodayDateString();
+    const today = todayNL();
     return new Promise((resolve, reject) => {
         db.get(
             `SELECT hint_response FROM mastermind_hints
@@ -75,7 +68,7 @@ async function getHintForToday(userId) {
  * Save a new hint to the database
  */
 async function saveHint(userId, wordOfTheDay, hintResponse) {
-    const today = getTodayDateString();
+    const today = todayNL();
     return new Promise((resolve, reject) => {
         db.run(
             `INSERT INTO mastermind_hints (user_id, word_of_the_day, date, hint_response, used_at)

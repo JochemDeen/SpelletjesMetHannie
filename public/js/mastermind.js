@@ -1,577 +1,441 @@
-const pastelOchre = getComputedStyle(document.documentElement).getPropertyValue('--pastel-ochre').trim();
-const pastelGreen = getComputedStyle(document.documentElement).getPropertyValue('--pastel-green').trim();
-const gray = getComputedStyle(document.documentElement).getPropertyValue('--gray').trim();
+// public/js/mastermind.js: the Woordle game (internally still "Mastermind").
+// The server decides everything about the word; this page only shows the
+// board, sends guesses and colours tiles and keys with the feedback.
 
+const WORD_LENGTH = 5;
+const MAX_GUESSES = 6;
+const FLIP_STEP = 280; // ms between flipping tiles of one row
+const STATE_PRIORITY = { incorrect: 1, misplaced: 2, correct: 3 };
 
-const gameContainer = document.getElementById('game-container');
-const keyboardRows = [
-    document.getElementById('row-1'),
-    document.getElementById('row-2'),
-    document.getElementById('row-3')
-];
+const boardEl = document.getElementById('board');
+const keyboardEl = document.getElementById('keyboard');
+const statusLine = document.getElementById('status-line');
 
-let currentGuess = "";
-let currentRow = 0;
-let gameEnded = false;
-let submittedWords = []; // Track submitted words
-let feedbackHistory = [];
-
-// Hint state variables
-let hintPanelVisible = false;
-let hintRequested = false;
-let currentHint = null;
-let hintsRemaining = 0;
-let hintServiceAvailable = false;
-
-
-// Create the game grid and restore state if available
-(async function loadGameState() {
-    try {
-      const response = await fetch('/api/load-game-state');
-      const data = await response.json();
-    if (data.success && data.state) {
-        currentRow = 0;
-        data.state.guesses.forEach((guess, index) => {
-            currentGuess = guess;
-            submittedWords.push(guess.toLowerCase());
-            updateGrid();
-            feedbackHistory.push(data.state.feedback[index]);
-
-            if (currentRow == data.state.currentRow && data.state.success) {
-                animateReveal(data.state.success, data.state.feedback[index], deltaDelay = 0);
-            } else {
-                animateReveal(false, data.state.feedback[index], deltaDelay = 0);
-            }
-            currentRow++;
-        });
-        currentGuess = "";
-        if (data.state.success || currentRow === 6) {
-            document.getElementById('shareButton').style.display = 'inline';
-            document.getElementById('shareButton').onclick = shareResults;
-            gameEnded = true;
-        }
-    }
-    } catch (error) {
-      console.error('Failed to load game state:', error);
-    }
-  })();
-
-  // mastermind.js
-  function celebrate() {
-    confetti({
-        particleCount: 100,
-        spread: 70,
-        origin: { y: 0.6 }
-    });
-}
-function showCongratulations() {
-  const congratsMessage = document.createElement('div');
-  congratsMessage.id = 'congrats-message';
-  congratsMessage.textContent = 'Gefeliciteerd!';
-  document.body.appendChild(congratsMessage);
-
-  // Remove the message after 3 seconds
-  setTimeout(() => {
-      congratsMessage.remove();
-  }, 3000);
-}
-
-async function validateWord(word) {
-    try {
-        const response = await fetch('/api/validate-word', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ word })
-        });
-        const data = await response.json();
-        if (data.valid) {
-            submitGuess(word);
-        } else {
-            showTemporaryMessage(`${word} zit niet in het woordenboek`);
-            buzzCurrentGuess();
-        }
-    } catch (error) {
-        console.error('Failed to validate word:', error);
-    }
-}
-
-async function submitGuess(word) {
-try {
-    const response = await fetch('/api/submit-guess', {
-    method: 'POST',
-    headers: {
-        'Content-Type': 'application/json'
-    },
-    body: JSON.stringify({ guess: word })
-    });
-    const data = await response.json();
-    if (data.correct) {
-      feedbackHistory.push(data.feedback);
-      await animateReveal(true,data.feedback,deltaDelay = 300);
-      showCongratulations();
-      celebrate();
-      document.getElementById('shareButton').style.display = 'inline';
-      document.getElementById('shareButton').onclick = shareResults;
-      gameEnded = true;
-    } else {
-      feedbackHistory.push(data.feedback);
-      await animateReveal(false, data.feedback,deltaDelay = 300);
-      currentRow++;
-      currentGuess = "";
-      if (currentRow === 6 ) {
-        document.getElementById('shareButton').style.display = 'inline';
-        document.getElementById('shareButton').onclick = shareResults;
-        gameEnded = true;
-      }
-    }
-} catch (error) {
-    console.error('Failed to submit guess:', error);
-}
-}
-
-// Create the game grid
-for (let i = 0; i < 30; i++) {
-  const letterBox = document.createElement('div');
-  letterBox.classList.add('letter-box');
-  letterBox.setAttribute('data-index', i);
-  gameContainer.appendChild(letterBox);
-}
-
-// Create the keyboard layout
-const keysRow1 = "qwertyuiop".split("");
-const keysRow2 = "asdfghjkl".split("");
-const keysRow3 = ["enter", ..."zxcvbnm".split(""), "backspace"];
-
-const createKeyElement = (key) => {
-  const keyElement = document.createElement('div');
-  keyElement.classList.add('key');
-  keyElement.textContent = key;
-  if (key === 'enter') keyElement.classList.add('enter');
-  if (key === 'backspace') {
-    keyElement.classList.add('backspace');
-    keyElement.textContent = '⌫';
-  }
-  keyElement.addEventListener('click', () => handleKeyPress(key));
-  return keyElement;
+const game = {
+    guesses: [],        // submitted words
+    feedback: [],       // per word: ['correct' | 'misplaced' | 'incorrect', ...]
+    current: '',        // the word being typed
+    finished: false,
+    success: false,
+    answer: null,
+    busy: false         // a guess is being sent or revealed: ignore input
 };
 
-keysRow1.forEach(key => keyboardRows[0].appendChild(createKeyElement(key)));
-keysRow2.forEach(key => keyboardRows[1].appendChild(createKeyElement(key)));
-keysRow3.forEach(key => keyboardRows[2].appendChild(createKeyElement(key)));
+const hint = { available: false, remaining: 0, total: 0, text: null };
+const keyState = {};    // letter -> best state seen
 
-function handleKeyPress(key) {
-  if (gameEnded) return;
+// ---------- Board ----------
 
-  if (key === 'enter') {
-    if (currentGuess.length === 5) {
-      if (submittedWords.includes(currentGuess.toLowerCase())) {
-          showTemporaryMessage("Je hebt dit woord al geprobeerd.");
-      } else {
-          submittedWords.push(currentGuess.toLowerCase()); // Add to the submitted list
-          validateWord(currentGuess);
-      }
-    } else {
-      alert('Niet genoeg letters');
+function buildBoard() {
+    for (let r = 0; r < MAX_GUESSES; r++) {
+        const row = document.createElement('div');
+        row.className = 'board-row';
+        row.setAttribute('role', 'row');
+        for (let c = 0; c < WORD_LENGTH; c++) {
+            const tile = document.createElement('div');
+            tile.className = 'tile';
+            tile.setAttribute('role', 'gridcell');
+            row.appendChild(tile);
+        }
+        boardEl.appendChild(row);
     }
-  } else if (key === 'backspace') {
-    if (currentGuess.length > 0) {
-      currentGuess = currentGuess.slice(0, -1);
-      updateGrid();
-    }
-  } else {
-    if (currentGuess.length < 5) {
-      currentGuess += key;
-      updateGrid();
-    }
-  }
 }
 
-function generateSharePattern() {
-  const totalRows = feedbackHistory.length;
-  let shareText = `Mijn resultaat vandaag: ${totalRows}/6\n\n`; // Header with attempt count
-  
-  // For each row with feedback
-  for (let row = 0; row < totalRows; row++) {
-      const rowFeedback = feedbackHistory[row];
-      
-      // For each letter in the row
-      for (let col = 0; col < 5; col++) {
-          const cellFeedback = rowFeedback[col];
-          
-          // Add appropriate square emoji based on the feedback
-          if (cellFeedback === 'correct') {
-              shareText += '🟩'; // Green square for correct position
-          } else if (cellFeedback === 'misplaced') {
-              shareText += '🟨'; // Yellow square for correct letter, wrong position
-          } else {
-              shareText += '⬛'; // Black square for incorrect letter
-          }
-      }
-      shareText += '\n'; // New line after each row
-  }
-  
-  return shareText;
+function rowEl(index) {
+    return boardEl.children[index];
 }
-function shareResults() {
-  const sharePattern = generateSharePattern();
-    
-    // Check if Web Share API is supported
-    if (navigator.share) {
-        navigator.share({
-            title: 'Mijn resultaten vandaag',
-            text: sharePattern
-        })
-        .catch(error => {
-            console.error('Error sharing:', error);
-            // Fallback for when sharing fails
-            fallbackShare(sharePattern);
+
+function renderCurrentRow() {
+    const tiles = rowEl(game.guesses.length).children;
+    for (let i = 0; i < WORD_LENGTH; i++) {
+        const letter = game.current[i] || '';
+        if (tiles[i].textContent !== letter && letter) {
+            tiles[i].classList.remove('pop');
+            void tiles[i].offsetWidth; // restart the animation
+            tiles[i].classList.add('pop');
+        }
+        tiles[i].textContent = letter;
+        tiles[i].classList.toggle('filled', !!letter);
+    }
+}
+
+function paintRow(index, word, feedback) {
+    [...rowEl(index).children].forEach((tile, i) => {
+        tile.textContent = word[i];
+        tile.className = `tile ${feedback[i]}`;
+    });
+}
+
+// Flip the tiles one by one; resolves when the last one has its colour
+function revealRow(index, word, feedback) {
+    const tiles = [...rowEl(index).children];
+    return new Promise((resolve) => {
+        tiles.forEach((tile, i) => {
+            setTimeout(() => {
+                tile.classList.add('flip');
+                // Change colour halfway, when the tile is edge-on
+                setTimeout(() => {
+                    tile.className = `tile flip ${feedback[i]}`;
+                    updateKey(word[i], feedback[i]);
+                }, 250);
+                tile.addEventListener('animationend', () => {
+                    tile.classList.remove('flip');
+                    if (i === tiles.length - 1) resolve();
+                }, { once: true });
+            }, i * FLIP_STEP);
         });
-    } else {
-        // Fallback for browsers that don't support Web Share API
-        fallbackShare(sharePattern);
+    });
+}
+
+function shakeRow(index) {
+    const row = rowEl(index);
+    row.classList.remove('shake');
+    void row.offsetWidth;
+    row.classList.add('shake');
+    row.addEventListener('animationend', () => row.classList.remove('shake'), { once: true });
+}
+
+function bounceRow(index) {
+    [...rowEl(index).children].forEach((tile, i) => {
+        setTimeout(() => tile.classList.add('bounce'), i * 100);
+    });
+}
+
+// ---------- Keyboard ----------
+
+const KEY_ROWS = [
+    'qwertyuiop'.split(''),
+    'asdfghjkl'.split(''),
+    ['enter', ...'zxcvbnm'.split(''), 'backspace']
+];
+
+function buildKeyboard() {
+    KEY_ROWS.forEach((keys, rowIndex) => {
+        const row = document.createElement('div');
+        row.className = 'keyboard-row';
+        if (rowIndex === 1) row.appendChild(Object.assign(document.createElement('span'), { className: 'keyboard-spacer' }));
+        keys.forEach((key) => {
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.className = 'key';
+            button.dataset.key = key;
+            if (key === 'enter') {
+                button.textContent = 'Enter';
+                button.classList.add('wide');
+            } else if (key === 'backspace') {
+                button.textContent = '⌫';
+                button.classList.add('wide');
+                button.setAttribute('aria-label', 'Wissen');
+            } else {
+                button.textContent = key;
+            }
+            row.appendChild(button);
+        });
+        if (rowIndex === 1) row.appendChild(Object.assign(document.createElement('span'), { className: 'keyboard-spacer' }));
+        keyboardEl.appendChild(row);
+    });
+    keyboardEl.addEventListener('click', (event) => {
+        const button = event.target.closest('.key');
+        if (button) {
+            button.blur(); // so a later Enter on a real keyboard doesn't "click" it again
+            handleKey(button.dataset.key);
+        }
+    });
+}
+
+// A key keeps its best colour: green beats yellow beats grey
+function updateKey(letter, state) {
+    if ((STATE_PRIORITY[state] || 0) <= (STATE_PRIORITY[keyState[letter]] || 0)) return;
+    keyState[letter] = state;
+    const button = keyboardEl.querySelector(`[data-key="${letter}"]`);
+    if (button) button.className = `key ${state}`;
+}
+
+function handleKey(key) {
+    if (game.finished || game.busy) return;
+    if (key === 'enter') {
+        submitCurrent();
+    } else if (key === 'backspace') {
+        game.current = game.current.slice(0, -1);
+        renderCurrentRow();
+    } else if (/^[a-z]$/.test(key) && game.current.length < WORD_LENGTH) {
+        game.current += key;
+        renderCurrentRow();
     }
-}
-
-
-// Fallback sharing method (copy to clipboard)
-function fallbackShare(text) {
-  // Create a temporary textarea element
-  const textarea = document.createElement('textarea');
-  textarea.value = text;
-  textarea.setAttribute('readonly', '');
-  textarea.style.position = 'absolute';
-  textarea.style.left = '-9999px';
-  document.body.appendChild(textarea);
-  
-  // Select and copy the text
-  textarea.select();
-  document.execCommand('copy');
-  
-  // Remove the textarea
-  document.body.removeChild(textarea);
-  
-  // Notify the user
-  showTemporaryMessage('Results copied to clipboard!');
-}
-
-function buzzCurrentGuess() {
-  const startIndex = currentRow * 5;
-  for (let i = 0; i < 5; i++) {
-    const letterBox = gameContainer.querySelector(`[data-index='${startIndex + i}']`);
-    // Add the buzz class
-    letterBox.classList.add('buzz');
-
-    // Remove the buzz class after the animation ends
-    // to ensure the effect can be triggered again later
-    letterBox.addEventListener('animationend', () => {
-      letterBox.classList.remove('buzz');
-    }, { once: true });
-  }
-}
-
-function updateGrid() {
-  const startIndex = currentRow * 5;
-  for (let i = 0; i < 5; i++) {
-    const letterBox = gameContainer.querySelector(`[data-index='${startIndex + i}']`);
-    letterBox.textContent = currentGuess[i] || "";
-  }
-}
-
-const keyState = {}; // Dictionary to track the highest state of each key
-
-// Helper function to get the highest state for each key
-function getStateColor(feedback) {
-    if (feedback === 'correct') return pastelGreen;
-    if (feedback === 'misplaced') return pastelOchre;
-    return gray;
-}
-
-// Function to update the keyboard color based on the highest state encountered
-function updateKeyColor(letter, feedback) {
-  const currentColor = keyState[letter] || gray;
-  const newColor = getStateColor(feedback);
-
-  // Update if the new color has a higher priority or if it's the first time setting it
-  if (
-      (newColor === pastelGreen) || 
-      (newColor === pastelOchre && currentColor !== pastelGreen) || 
-      (!keyState[letter] && newColor === gray) // Allow gray if it's the first encounter for this key
-  ) {
-      keyState[letter] = newColor; // Store the highest state encountered
-      const keyElement = Array.from(document.querySelectorAll('.key')).find(k => k.textContent === letter);
-      if (keyElement) {
-          keyElement.style.backgroundColor = keyState[letter];
-          keyElement.style.color = 'white';
-      }
-  }
-}
-
-
-function animateReveal(isCorrect, feedback = [], deltaDelay = 0) {
-  return new Promise((resolve) => {
-      const startIndex = currentRow * 5;
-      let animationsCompleted = 0;
-
-      for (let i = 0; i < 5; i++) {
-          const letterBox = gameContainer.querySelector(`[data-index='${startIndex + i}']`);
-          const letter = currentGuess[i];
-          const delay = i * deltaDelay; // Delay each box by deltaDelay ms
-
-          setTimeout(() => {
-              // Apply the visual updates
-              if (isCorrect) {
-                  letterBox.style.backgroundColor = pastelGreen;
-                  letterBox.style.color = 'white';
-              } else {
-                  if (feedback[i] === 'correct') {
-                      letterBox.style.backgroundColor = pastelGreen;
-                      letterBox.style.color = 'white';
-                  } else if (feedback[i] === 'misplaced') {
-                      letterBox.style.backgroundColor = pastelOchre;
-                      letterBox.style.color = 'white';
-                  } else {
-                      letterBox.style.backgroundColor = gray;
-                      letterBox.style.color = 'white';
-                  }
-
-                  // Update keyboard color
-                  updateKeyColor(letter, feedback[i]);
-              }
-
-              // Remove border if color is set
-              letterBox.style.border = "none";
-
-              // Check if this is the last animation
-              if (i === 4) {
-                  // All letters have been revealed
-                  resolve();
-              }
-          }, delay);
-      }
-  });
-}
-// Function to display a brief on-screen message
-function showTemporaryMessage(message) {
-  const messageElement = document.createElement('div');
-  messageElement.textContent = message;
-  messageElement.style.position = 'fixed';
-  messageElement.style.bottom = '20px';
-  messageElement.style.left = '50%';
-  messageElement.style.transform = 'translateX(-50%)';
-  messageElement.style.backgroundColor = 'rgba(0, 0, 0, 0.7)';
-  messageElement.style.color = 'white';
-  messageElement.style.padding = '10px 20px';
-  messageElement.style.borderRadius = '5px';
-  messageElement.style.fontSize = '16px';
-  messageElement.style.zIndex = '1000';
-  document.body.appendChild(messageElement);
-
-  setTimeout(() => {
-      messageElement.remove();
-  }, 2000); // Remove after 2 seconds
 }
 
 document.addEventListener('keydown', (event) => {
-  if (gameEnded) return; // If the game is over, ignore further key presses
-  if (hintPanelVisible) return; // Ignore keyboard input when hint panel is open
-
-  const key = event.key.toLowerCase();
-
-  if (key === 'enter') {
-    // If Enter is pressed
-    handleKeyPress('enter');
-  } else if (key === 'backspace' || key === 'delete') {
-    // If Backspace or Delete is pressed
-    handleKeyPress('backspace');
-  } else if (/^[a-z]$/.test(key)) {
-    // If the key is a single alphabetic character (a–z)
-    handleKeyPress(key);
-  }
+    if (event.ctrlKey || event.metaKey || event.altKey) return; // leave shortcuts like Cmd+R alone
+    if (document.querySelector('.modal-backdrop:not(.hidden)')) return;
+    const key = event.key.toLowerCase();
+    if (key === 'enter') {
+        event.preventDefault();
+        handleKey('enter');
+    } else if (key === 'backspace' || key === 'delete') {
+        handleKey('backspace');
+    } else if (/^[a-z]$/.test(key)) {
+        handleKey(key);
+    }
 });
 
-// =====================
-// Hint Panel Functions
-// =====================
+// ---------- Guessing ----------
 
-// Toggle between keyboard and hint panel
-function toggleHintPanel(show) {
-    const keyboard = document.getElementById('keyboard');
-    const hintPanel = document.getElementById('hint-panel');
-    const hintToggle = document.getElementById('hint-toggle');
+async function submitCurrent() {
+    const word = game.current;
+    const rowIndex = game.guesses.length;
+    if (word.length < WORD_LENGTH) {
+        toast('Niet genoeg letters');
+        shakeRow(rowIndex);
+        return;
+    }
+    if (game.guesses.includes(word)) {
+        toast('Dit woord heb je al geprobeerd');
+        shakeRow(rowIndex);
+        return;
+    }
 
-    if (show) {
-        keyboard.style.display = 'none';
-        hintPanel.style.display = 'flex';
-        hintToggle.textContent = 'Terug';
-        hintPanelVisible = true;
-        // Update button state when opening panel
-        updateHintButtonState();
+    game.busy = true;
+    let data;
+    try {
+        data = await api('/api/submit-guess', { method: 'POST', body: { guess: word } });
+    } catch (error) {
+        // Nothing was stored: the row stays as it is so the player can try again
+        toast(error.status === 400 ? error.message : 'Je poging kon niet worden verstuurd. Probeer het nog eens.',
+            { type: 'error' });
+        shakeRow(rowIndex);
+        game.busy = false;
+        return;
+    }
+
+    game.guesses.push(word);
+    game.feedback.push(data.feedback);
+    game.current = '';
+    await revealRow(rowIndex, word, data.feedback);
+    statusLine.textContent = describeRow(word, data.feedback);
+
+    if (data.finished) {
+        game.finished = true;
+        game.success = data.correct;
+        game.answer = data.answer || null;
+        onFinished(true);
+    }
+    game.busy = false;
+    updateHintButton();
+}
+
+function describeRow(word, feedback) {
+    const names = { correct: 'goed', misplaced: 'verkeerde plek', incorrect: 'niet in het woord' };
+    return [...word].map((letter, i) => `${letter.toUpperCase()} ${names[feedback[i]]}`).join(', ');
+}
+
+function onFinished(justNow) {
+    document.getElementById('result-button').classList.remove('hidden');
+    document.getElementById('hint-toggle').classList.add('hidden');
+    if (!justNow) return;
+    const lastRow = game.guesses.length - 1;
+    if (game.success) {
+        const praise = ['Geniaal!', 'Fantastisch!', 'Geweldig!', 'Knap gedaan!', 'Goed zo!', 'Pfoe, op het nippertje!'];
+        toast(praise[lastRow] || 'Gefeliciteerd!', { type: 'success' });
+        bounceRow(lastRow);
+        if (typeof confetti === 'function') confetti({ particleCount: 120, spread: 70, origin: { y: 0.6 } });
     } else {
-        keyboard.style.display = 'flex';
-        hintPanel.style.display = 'none';
-        hintToggle.textContent = 'Vraag Ollie';
-        hintPanelVisible = false;
+        toast(`Helaas! Het woord was ${(game.answer || '?').toUpperCase()}`, { duration: 4000 });
+    }
+    setTimeout(openEndModal, game.success ? 1800 : 2200);
+}
+
+// ---------- Modals ----------
+
+function openModal(id) {
+    const modal = document.getElementById(id);
+    modal.classList.remove('hidden');
+    modal.querySelector('.modal-close').focus();
+}
+
+function closeModal(modal) {
+    modal.classList.add('hidden');
+}
+
+document.querySelectorAll('.modal-backdrop').forEach((modal) => {
+    modal.addEventListener('click', (event) => {
+        if (event.target === modal || event.target.closest('[data-close]')) closeModal(modal);
+    });
+});
+document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape') document.querySelectorAll('.modal-backdrop:not(.hidden)').forEach(closeModal);
+});
+
+let countdownTimer = null;
+
+// Seconds until midnight in the Netherlands, when the next word starts
+function secondsUntilNextWord() {
+    const parts = new Intl.DateTimeFormat('en-GB', {
+        timeZone: 'Europe/Amsterdam', hour: '2-digit', minute: '2-digit', second: '2-digit', hourCycle: 'h23'
+    }).formatToParts(new Date());
+    const get = (type) => Number(parts.find(p => p.type === type).value);
+    return 24 * 3600 - (get('hour') * 3600 + get('minute') * 60 + get('second'));
+}
+
+function startCountdown() {
+    const el = document.getElementById('countdown');
+    const tick = () => {
+        const left = secondsUntilNextWord();
+        const h = Math.floor(left / 3600);
+        const m = Math.floor((left % 3600) / 60);
+        const s = left % 60;
+        el.textContent = `${h}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`;
+    };
+    tick();
+    clearInterval(countdownTimer);
+    countdownTimer = setInterval(tick, 1000);
+}
+
+async function openEndModal() {
+    document.getElementById('end-title').textContent = game.success ? 'Gefeliciteerd! 🎉' : 'Helaas…';
+    document.getElementById('end-answer').innerHTML = game.answer
+        ? `Het woord was <strong>${escapeHtml(game.answer)}</strong>${game.success ? ` · ${game.guesses.length}/6` : ''}`
+        : '';
+    openModal('end-modal');
+    startCountdown();
+    try {
+        const { stats } = await api('/api/get-stats');
+        renderStatTiles(document.getElementById('end-stats'), stats);
+        renderDistribution(document.getElementById('end-distribution'), stats.guessDistribution,
+            game.success ? game.guesses.length : null);
+    } catch (error) {
+        console.error('Failed to load stats:', error);
     }
 }
 
-// Update hint button state based on current game state
-function updateHintButtonState() {
-    const requestBtn = document.getElementById('request-hint-btn');
-    const responseElement = document.getElementById('hint-response');
+// ---------- Sharing ----------
 
-    // If hint already requested or no hints remaining, don't change
-    if (hintRequested || hintsRemaining === 0) return;
+function shareText() {
+    const date = new Date().toLocaleDateString('nl-NL', { day: 'numeric', month: 'long' });
+    const score = game.success ? `${game.guesses.length}/6` : 'X/6';
+    const grid = game.feedback
+        .map(row => row.map(state => ({ correct: '🟩', misplaced: '🟨' }[state] || '⬜')).join(''))
+        .join('\n');
+    return `Woordle ${date} ${score}\n\n${grid}\n\n${location.origin}/woordle`;
+}
 
-    // Check if user has made any guesses
-    if (submittedWords.length === 0) {
-        requestBtn.textContent = 'Doe eerst een poging';
-        requestBtn.disabled = true;
-        requestBtn.classList.add('disabled');
-        responseElement.style.display = 'none';
-    } else {
-        requestBtn.textContent = 'Vraag een hint';
-        requestBtn.disabled = false;
-        requestBtn.classList.remove('disabled');
+async function shareResults() {
+    const text = shareText();
+    if (navigator.share) {
+        try {
+            await navigator.share({ text });
+            return;
+        } catch (error) {
+            if (error.name === 'AbortError') return;
+        }
+    }
+    try {
+        await navigator.clipboard.writeText(text);
+        toast('Resultaat gekopieerd! Plak het in een berichtje.', { type: 'success' });
+    } catch (error) {
+        toast('Delen is niet gelukt.', { type: 'error' });
     }
 }
 
-// Load hint status on page load
+// ---------- Hints from Ollie ----------
+
+function updateHintButton() {
+    const toggle = document.getElementById('hint-toggle');
+    toggle.classList.toggle('hidden', !hint.available || game.finished);
+
+    const button = document.getElementById('request-hint-btn');
+    const response = document.getElementById('hint-response');
+    document.getElementById('hint-quota').textContent =
+        `${hint.total - hint.remaining} van ${hint.total} hints gebruikt deze maand`;
+
+    response.classList.toggle('hidden', !hint.text);
+    // Ollie sometimes marks letters as **T**: show those in bold
+    response.innerHTML = escapeHtml(hint.text || '').replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+    if (hint.text) {
+        button.textContent = 'Je hebt vandaag al een hint gekregen';
+        button.disabled = true;
+    } else if (hint.remaining === 0) {
+        button.textContent = 'Geen hints meer deze maand';
+        button.disabled = true;
+    } else if (game.guesses.length === 0) {
+        button.textContent = 'Doe eerst een poging';
+        button.disabled = true;
+    } else {
+        button.textContent = 'Vraag een hint';
+        button.disabled = false;
+    }
+}
+
 async function loadHintStatus() {
     try {
-        const response = await fetch('/api/mastermind/hint-status');
-        const data = await response.json();
-
-        hintServiceAvailable = data.available;
-        hintsRemaining = data.hintsRemaining;
-
-        const hintToggleContainer = document.getElementById('hint-toggle-container');
-
-        if (!hintServiceAvailable) {
-            // Hide hint toggle if service not available
-            hintToggleContainer.style.display = 'none';
-            return;
-        }
-
-        updateHintUI(data.hintsRemaining, data.totalHints, data.todayHint);
-
-        // If there's an existing hint for today, store it
-        if (data.todayHint) {
-            currentHint = data.todayHint;
-            hintRequested = true;
-        }
+        const data = await api('/api/mastermind/hint-status');
+        hint.available = data.available;
+        hint.remaining = data.hintsRemaining;
+        hint.total = data.totalHints;
+        hint.text = data.todayHint;
     } catch (error) {
-        console.error('Failed to load hint status:', error);
-        document.getElementById('hint-toggle-container').style.display = 'none';
+        hint.available = false;
     }
+    updateHintButton();
 }
 
-// Update hint UI elements
-function updateHintUI(remaining, total, todayHint) {
-    const quotaElement = document.getElementById('hint-quota');
-    const requestBtn = document.getElementById('request-hint-btn');
-    const responseElement = document.getElementById('hint-response');
-
-    // Update quota display
-    const used = total - remaining;
-    quotaElement.textContent = `${used}/${total} hints gebruikt deze maand`;
-
-    // Show existing hint if available
-    if (todayHint) {
-        responseElement.textContent = todayHint;
-        responseElement.style.display = 'block';
-        requestBtn.textContent = 'Hint al gevraagd vandaag';
-        requestBtn.disabled = true;
-        requestBtn.classList.add('disabled');
-    } else if (remaining === 0) {
-        requestBtn.textContent = 'Geen hints meer over';
-        requestBtn.disabled = true;
-        requestBtn.classList.add('disabled');
-        responseElement.style.display = 'none';
-    } else if (submittedWords.length === 0) {
-        requestBtn.textContent = 'Doe eerst een poging';
-        requestBtn.disabled = true;
-        requestBtn.classList.add('disabled');
-        responseElement.style.display = 'none';
-    } else {
-        requestBtn.textContent = 'Vraag een hint';
-        requestBtn.disabled = false;
-        requestBtn.classList.remove('disabled');
-        responseElement.style.display = 'none';
-    }
-}
-
-// Request a hint from the server
 async function requestHint() {
-    const requestBtn = document.getElementById('request-hint-btn');
-    const loadingElement = document.getElementById('hint-loading');
-    const responseElement = document.getElementById('hint-response');
-
-    // Show loading state
-    requestBtn.style.display = 'none';
-    loadingElement.style.display = 'flex';
-    responseElement.style.display = 'none';
-
+    const button = document.getElementById('request-hint-btn');
+    const loading = document.getElementById('hint-loading');
+    button.classList.add('hidden');
+    loading.classList.remove('hidden');
     try {
-        const response = await fetch('/api/mastermind/request-hint', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                guesses: submittedWords,
-                feedback: feedbackHistory
-            })
-        });
+        const data = await api('/api/mastermind/request-hint', { method: 'POST' });
+        hint.text = data.hint;
+        hint.remaining = data.hintsRemaining;
+    } catch (error) {
+        toast(error.message, { type: 'error' });
+    }
+    loading.classList.add('hidden');
+    button.classList.remove('hidden');
+    updateHintButton();
+}
 
-        const data = await response.json();
+// ---------- Start ----------
 
-        // Hide loading
-        loadingElement.style.display = 'none';
-        requestBtn.style.display = 'block';
-
+async function loadGame() {
+    try {
+        const data = await api('/api/load-game-state');
         if (data.success) {
-            currentHint = data.hint;
-            hintRequested = true;
-            hintsRemaining = data.hintsRemaining;
-
-            // Update UI
-            responseElement.textContent = data.hint;
-            responseElement.style.display = 'block';
-            requestBtn.textContent = 'Hint al gevraagd vandaag';
-            requestBtn.disabled = true;
-            requestBtn.classList.add('disabled');
-
-            // Update quota
-            const quotaElement = document.getElementById('hint-quota');
-            const used = 3 - data.hintsRemaining;
-            quotaElement.textContent = `${used}/3 hints gebruikt deze maand`;
-        } else {
-            showTemporaryMessage(data.error || 'Er ging iets mis');
+            const state = data.state;
+            state.guesses.forEach((word, i) => {
+                game.guesses.push(word.toLowerCase());
+                game.feedback.push(state.feedback[i]);
+                paintRow(i, word.toLowerCase(), state.feedback[i]);
+                [...word.toLowerCase()].forEach((letter, j) => updateKey(letter, state.feedback[i][j]));
+            });
+            if (state.finished) {
+                game.finished = true;
+                game.success = state.success;
+                game.answer = state.answer || null;
+                onFinished(false);
+            }
         }
     } catch (error) {
-        console.error('Failed to request hint:', error);
-        loadingElement.style.display = 'none';
-        requestBtn.style.display = 'block';
-        showTemporaryMessage('Er ging iets mis bij het ophalen van de hint');
+        toast(error.message, { type: 'error' });
     }
+    updateHintButton();
 }
 
-// Initialize hint panel event listeners
-function initHintPanel() {
-    const hintToggle = document.getElementById('hint-toggle');
-    const requestBtn = document.getElementById('request-hint-btn');
+buildBoard();
+buildKeyboard();
+document.getElementById('help-button').addEventListener('click', () => openModal('help-modal'));
+document.getElementById('hint-toggle').addEventListener('click', () => openModal('hint-modal'));
+document.getElementById('request-hint-btn').addEventListener('click', requestHint);
+document.getElementById('result-button').addEventListener('click', openEndModal);
+document.getElementById('share-button').addEventListener('click', shareResults);
+loadGame().then(loadHintStatus);
 
-    hintToggle.addEventListener('click', () => {
-        toggleHintPanel(!hintPanelVisible);
-    });
-
-    requestBtn.addEventListener('click', requestHint);
-
-    // Load initial hint status
-    loadHintStatus();
+// First visit: explain the game once
+try {
+    if (!localStorage.getItem('woordleHelpSeen')) {
+        openModal('help-modal');
+        localStorage.setItem('woordleHelpSeen', '1');
+    }
+} catch (e) {
+    // Storage unavailable: skip
 }
-
-// Initialize hint panel when DOM is ready
-initHintPanel();

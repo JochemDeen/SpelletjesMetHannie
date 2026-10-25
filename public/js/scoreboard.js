@@ -1,9 +1,11 @@
 document.addEventListener('DOMContentLoaded', async () => {
+    let currentMonth = new Date().toISOString().slice(0, 7); // replaced by the server's (Dutch) month
     try {
       // Fetch monthly scores
       const response = await fetch('/api/get-monthly-scores');
       const data = await response.json();
-      if (data.success && data.scores) {
+      currentMonth = data.month;
+      if (data.success && data.scores && data.scores.length) {
         renderMonthlyScores(data.scores);
       } else {
         // Handle case when there are no scores
@@ -36,7 +38,6 @@ document.addEventListener('DOMContentLoaded', async () => {
       const orderedList = document.querySelector(`[data-month-section] ol[data-month-list]`);
     
       if (monthHeader && orderedList) {
-        const currentMonth = new Date().toISOString().slice(0, 7); // 'YYYY-MM'
         monthHeader.textContent = `Scores voor ${getMonthName(currentMonth)}`;
     
         // Sort descending by score; if scores are equal, return 0 (keeps order)
@@ -85,42 +86,20 @@ document.addEventListener('DOMContentLoaded', async () => {
       const monthHeader = document.querySelector(`[data-month-section] h2[data-month]`);
       const orderedList = document.querySelector(`[data-month-section] ol[data-month-list]`);
       if (monthHeader && orderedList) {
-        const currentMonth = new Date().toISOString().slice(0, 7); // 'YYYY-MM'
         monthHeader.textContent = `Er zijn nog geen scores voor ${getMonthName(currentMonth)}.`;
         orderedList.innerHTML = '';
       }
     }
 
-    // Render the previous month winner
+    // Last month's winner(s), as decided by the server (nobody wins a month without points)
     async function renderPreviousMonthWinner() {
-      const previousMonth = getPreviousMonth();
       try {
-        const response = await fetch(`/api/get-monthly-scores?month=${previousMonth}`);
-        const data = await response.json();
-        if (data.success && data.scores && data.scores.length > 0) {
-          const scores = data.scores;
-          // Sort descending by score (no secondary sort by name)
-          scores.sort((a, b) => {
-              const diff = b.score - a.score; 
-              if (diff !== 0) return diff; 
-              return Math.random() - 0.5; // Randomize order for equal scores
-          });
-          // The highest score is in the first entry
-          const highestScore = scores[0].score;
-          // In case of ties, collect all winners
-          const winners = scores.filter(item => item.score === highestScore).map(item => item.username);
-          const winnerNames = formatWinnerNames(winners);
-          //const winnerNames = winners.map(item => item.username).join(', ');
-          // Set the section text
-          const monthName = getMonthName(previousMonth);
-          document.getElementById('previous-month-winner-title').textContent = `Winnaar van ${monthName}:`;
-          document.getElementById('previous-month-winner-info').textContent = `${winnerNames} met ${highestScore} punten!`;
-        } else {
-          // No scores for previous month
-          const monthName = getMonthName(previousMonth);
-          document.getElementById('previous-month-winner-title').textContent = `Winnaar van ${monthName}:`;
-          document.getElementById('previous-month-winner-info').textContent = `Geen winnaar.`;
-        }
+        const data = await api('/api/get-previous-month-winner');
+        const monthName = getMonthName(data.month);
+        document.getElementById('previous-month-winner-title').textContent = `Winnaar van ${monthName}:`;
+        document.getElementById('previous-month-winner-info').textContent = data.winners.length
+          ? `${formatWinnerNames(data.winners)} met ${data.score} punten!`
+          : 'Geen winnaar.';
       } catch (error) {
         console.error('Failed to load previous month winner:', error);
       }
@@ -207,13 +186,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         orderedList.appendChild(listItem);
       });
     }
-
-    function getPreviousMonth() {
-      const date = new Date();
-      date.setDate(0); // Set to the last day of the previous month
-      return date.toISOString().slice(0, 7);
-    }
-    
 
     function getMonthName(month) {
         const [year, monthNumber] = month.split('-');
