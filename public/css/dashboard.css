@@ -82,6 +82,7 @@
 .game-card img {
     display: block;
     width: 100%;
+    height: auto;
     aspect-ratio: 1 / 1;
     object-fit: cover;
     background-color: var(--surface-2);
