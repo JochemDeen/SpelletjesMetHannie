@@ -8,8 +8,6 @@ const Users = require('../models/user');
 
 const wordsService = require('../models/wordsService');
 const Pictionary = require('../models/pictionary');
-const { log } = require('console');
-const { stat } = require('fs');
 
 // games.guessers is stored as a JSON string like "[2,3]": parse it instead of
 // searching the string, so user 1 doesn't count as a guesser in "[10,12]".
@@ -32,12 +30,6 @@ router.get('/pictionary', requireLogin, (req, res) => {
 router.get('/pictionary/scoreboard', requireLogin, (req, res) => {
     logger.info(`GET /pictionary/scoreboard for user: ${req.session.userId}`);
     res.sendFile('pictionary-scoreboard.html', { root: path.join(__dirname, '../public/pictionary') });
-  });
-
-// past games Page
-router.get('/pictionary/past-games', requireLogin, (req, res) => {
-    logger.info(`GET /pictionary/past-games for user: ${req.session.userId}`);
-    res.sendFile('pictionary-past-games.html', { root: path.join(__dirname, '../public/pictionary') });
   });
 
 // ----------------------
@@ -82,7 +74,7 @@ router.get('/api/pictionary/get-game', requireLogin, async (req, res) => {
           next_game_id: nextGame
       });
   } catch (error) {
-      console.error("Error fetching past game:", error);
+      logger.error("Error fetching past game:", error);
       res.status(500).json({ error: "Failed to fetch past game" });
   }
 });
@@ -156,7 +148,7 @@ router.get('/api/pictionary/state', requireLogin, async (req, res) => {
   logger.info(`GET /api/pictionary/state for user: ${req.session.userId}`);
   try {
     let gameState = await Pictionary.getActiveGame();
-    logger.info(`Active game found: ${JSON.stringify(gameState)}`);
+    logger.debug(`Active game found: ${JSON.stringify(gameState)}`);
     if (!gameState || gameState.state === 'scoring') {
       logger.info('No active game found.');
       if (gameState?.state === 'scoring') {
@@ -210,8 +202,8 @@ router.get('/api/pictionary/state', requireLogin, async (req, res) => {
     
     //check End of Round
     if (gameState.state === 'guessing') {
-      end_of_round = await Pictionary.checkForEndOfGuessing(gameId);
-      logger.info(`End of Round: ${end_of_round}`);
+      const endOfRound = await Pictionary.checkForEndOfGuessing(gameId);
+      logger.debug(`End of Round: ${endOfRound}`);
     }
 
     // If game state is "guessing" and current user is NOT in the guessers list, change state to "guessing-watching"
@@ -336,8 +328,7 @@ router.get('/api/pictionary/get-image', requireLogin, async (req, res) => {
       return res.status(400).json({ error: 'Game is not in a state for viewing the image.' });
     }
     // Retrieve the drawer's username using the Users function
-    const { getUsernameById } = require('../models/user');
-    const drawerName = await getUsernameById(gameState.drawer_user_id);
+    const drawerName = await Users.getUsernameById(gameState.drawer_user_id);
     
     // image_path should contain the relative path to the saved drawing
     const imageSrc = gameState.image_path;
@@ -443,25 +434,7 @@ router.post('/api/pictionary/submit-guess', requireLogin, async (req, res) => {
     res.json({ status: 'success', message: 'Guess submitted successfully' });
   } catch (error) {
     logger.error('Error submitting guess:', error);
-    res.status(400).json({ error: 'Je gok kon niet worden opgeslagen.' });
-  }
-});
-
-// Fetch Guess Status
-router.get('/api/pictionary/get-guess-status', requireLogin, async (req, res) => {
-  const userId = req.session.userId;
-  logger.info(`GET /api/pictionary/get-guess-status for user: ${userId}`);
-  
-  try {
-      const userList = await Pictionary.getActiveUsers(); // Get the list of active users
-      const gameId = await Pictionary.getCurrentGame(userList); // Fetch the current game ID
-      
-      // Fetch guess submission status for all guessers in the game
-      const guessStatus = await Pictionary.getGuessStatus(gameId);
-      res.json({ guessStatus });
-  } catch (error) {
-      logger.error('Error fetching guess status:', error);
-      res.status(500).json({ error: 'Failed to fetch guess status' });
+    res.status(500).json({ error: 'Je gok kon niet worden opgeslagen.' });
   }
 });
 
@@ -605,7 +578,6 @@ router.post('/api/pictionary/start-drawing', requireLogin, async (req, res) => {
     if (!gameState) {
       return res.status(400).json({ error: 'No active game found.' });
     }
-    logger.info(`Active game found: ${JSON.stringify(gameState)}`);
     // Check if the current user is the drawer
     if (gameState.drawer_user_id !== userId) {
       return res.status(403).json({ error: 'Not authorized: Only the drawer can start the drawing session.' });
@@ -685,7 +657,6 @@ router.post('/api/pictionary/enter-modify-state', requireLogin, async (req, res)
 
     // Log the current game state
     logger.info(`Current game state: ${gameState.state}`);
-    logger.info(`Game state details: ${JSON.stringify(gameState)}`);
 
     // Check if game is in feedback state
     if (gameState.state !== 'feedback' && gameState.state !== 'modify') {

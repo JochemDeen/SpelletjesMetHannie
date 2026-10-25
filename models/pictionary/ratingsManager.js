@@ -117,20 +117,6 @@ async function getWordInfoFromLists(word) {
   });
 }
 
-// Check if a word already exists anywhere (word lists or suggestions)
-async function checkWordExists(word) {
-  try {
-    // First check in suggestions
-    const suggestion = await getSuggestionByWord(word);
-    if (suggestion) return true;
-    
-    // Then check in word lists
-    return await checkWordExistsInWordLists(word);
-  } catch (error) {
-    logger.error('Error checking if word exists:', error);
-    throw error;
-  }
-}
 
 // Get a user's rating for a specific word
 async function getUserWordRating(userId, word) {
@@ -635,7 +621,6 @@ async function getWordWithDifferingOpinion(userId) {
 }
 
 module.exports = { 
-  checkWordExists,
   checkWordExistsInWordLists,
   getWordInfoFromLists,
   getSuggestionByWord,

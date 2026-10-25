@@ -17,6 +17,7 @@ const logger = require('./logger');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+app.set('trust proxy', 1); // Behind the Lightsail/Bitnami proxy
 
 // Express 4 does not catch errors thrown inside async route handlers. Without
 // this handler Node exits on such an error and the whole site goes down; now
@@ -47,69 +48,66 @@ app.use(express.urlencoded({ extended: true, limit: '5mb' }));
 const serveStatic = express.static(path.join(__dirname, 'public'));
 app.use((req, res, next) => (req.path.endsWith('.html') ? next() : serveStatic(req, res, next)));
 
-app.set('trust proxy', 1); // Trust first proxy
-
 if (!process.env.SESSION_SECRET) {
   logger.warn('SESSION_SECRET is not set in .env: sessions are signed with the default secret from the (public) source code.');
 }
 
 // Add session management
 app.use(session({
-    store: new SQLiteStore({ db: 'sessions.sqlite' }),
-    secret: process.env.SESSION_SECRET || 'secret',
-    resave: false,
-    saveUninitialized: false,
-    rolling: true, // Refresh the cookie expiry on every request, so active users stay logged in
-    cookie: {
-      secure: process.env.COOKIE_SECURE === 'true',
-      sameSite: 'lax', // Not sent along on POSTs coming from other sites (CSRF protection)
-      maxAge: 90 * 24 * 60 * 60 * 1000 // Expire after 90 days of inactivity
-    }
-  }));
+  store: new SQLiteStore({ db: 'sessions.sqlite', dir: __dirname }),
+  secret: process.env.SESSION_SECRET || 'secret',
+  resave: false,
+  saveUninitialized: false,
+  rolling: true, // Refresh the cookie expiry on every request, so active users stay logged in
+  cookie: {
+    secure: process.env.COOKIE_SECURE === 'true',
+    sameSite: 'lax', // Not sent along on POSTs coming from other sites (CSRF protection)
+    maxAge: 90 * 24 * 60 * 60 * 1000 // Expire after 90 days of inactivity
+  }
+}));
 
-  // Static .html pages are only served to logged-in users
-  app.use((req, res, next) => {
-    if (!req.path.endsWith('.html')) return next();
-    requireLogin(req, res, () => serveStatic(req, res, next));
-  });
+// Static .html pages are only served to logged-in users
+app.use((req, res, next) => {
+  if (!req.path.endsWith('.html')) return next();
+  requireLogin(req, res, () => serveStatic(req, res, next));
+});
 
-  // Use authentication routes
-  app.use('/', authRoutes);
+// Use authentication routes
+app.use('/', authRoutes);
 
-  // Use game routes
-  app.use('/', gameRoutes);
+// Use game routes
+app.use('/', gameRoutes);
 
-  // Use pictionary routes
-  app.use('/', pictionaryRoutes);
+// Use pictionary routes
+app.use('/', pictionaryRoutes);
 
-  // Use wie ben ik routes
-  app.use('/', wieBenIkRoutes);
+// Use wie ben ik routes
+app.use('/', wieBenIkRoutes);
 
-  // Use rating routes
-  app.use('/', rateRoutes);
+// Use rating routes
+app.use('/', rateRoutes);
 
-  // Use settings routes
-  app.use('/settings', settingsRoutes);
+// Use settings routes
+app.use('/settings', settingsRoutes);
 
-  // Catch-all route to handle all other requests
-  app.get('*', (req, res) => {
-    if (req.session.userId) {
-      res.redirect('/dashboard');
-    } else {
-      res.redirect('/login');
-    }
-  });
+// Catch-all route to handle all other requests
+app.get('*', (req, res) => {
+  if (req.session.userId) {
+    res.redirect('/dashboard');
+  } else {
+    res.redirect('/login');
+  }
+});
 
-  // Errors that reach Express (e.g. a malformed JSON body) are logged here,
-  // instead of sending a stack trace with server paths to the browser.
-  app.use((err, req, res, next) => {
-    logger.error(`Error in ${req.method} ${req.path}: ${err.stack || err.message}`);
-    if (res.headersSent) return next(err);
-    res.status(err.status || 500).send('Er is iets misgegaan.');
-  });
+// Errors that reach Express (e.g. a malformed JSON body) are logged here,
+// instead of sending a stack trace with server paths to the browser.
+app.use((err, req, res, next) => {
+  logger.error(`Error in ${req.method} ${req.path}: ${err.stack || err.message}`);
+  if (res.headersSent) return next(err);
+  res.status(err.status || 500).send('Er is iets misgegaan.');
+});
 
-  // Start the server
-  app.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
-  });
-  
+// Start the server
+app.listen(PORT, () => {
+  logger.info(`Server is running on port ${PORT}`);
+});

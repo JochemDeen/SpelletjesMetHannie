@@ -4,8 +4,6 @@ const router = express.Router();
 const path = require('path');
 const { requireLogin } = require('../middleware/authMiddleware');
 const logger = require('../logger');
-const Users = require('../models/user');
-const wordsService = require('../models/wordsService');
 const RatingsManager = require('../models/pictionary/ratingsManager');
 
 // Pictionary rate words page

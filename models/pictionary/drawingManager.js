@@ -1,7 +1,6 @@
 //models/pictionary/drawingManager.js
 const fs = require('fs');
 const path = require('path');
-const sqlite3 = require('sqlite3').verbose();
 const logger = require('../../logger');
 const db = require('../db'); 
 

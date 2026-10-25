@@ -1,10 +1,9 @@
 //models/wordsService.js
 const fs = require('fs');
 const path = require('path');
-const sqlite3 = require('sqlite3').verbose();
 const logger = require('../logger');  
 
-const db = new sqlite3.Database('database.sqlite');
+const db = require('./db');
 
 db.serialize(() => {
   db.run(`
@@ -143,8 +142,6 @@ async function getWordOfTheDay() {
 async function validateWord(word) {
   logger.info(`Validating word: ${word}`);
   return validationWordsList.includes(word.toLowerCase());
-  logger.info(`Validation result for word "${word}": ${isValid}`);
-
 }
 
 // Export the file paths for other modules to use

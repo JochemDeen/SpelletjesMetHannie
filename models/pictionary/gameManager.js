@@ -1,11 +1,6 @@
 //models/pictionary/gameManager.js
-const sqlite3 = require('sqlite3').verbose();
-const { log } = require('winston');
 const logger = require('../../logger');
 const db = require('../db'); 
-const fs = require('fs');
-const path = require('path');
-const drawingManager = require('./drawingManager');
 
 // Returns the current global active game (if any), ignoring the current user.
 async function getActiveGame() {
@@ -198,30 +193,6 @@ async function getActiveGame() {
     });
 }
 
-// Retrieves the game state for a given user.
-async function getGameState(userId) {
-  return new Promise((resolve, reject) => {
-    const sql = `
-      SELECT g.*, u.username AS drawer_name
-      FROM games g
-      JOIN users u ON g.drawer_user_id = u.id
-      WHERE g.status = 'ongoing' AND (g.drawer_user_id = ? OR g.guessers LIKE ?)
-    `;
-    const guesserSearch = `%${userId}%`;
-    logger.info(`Fetching game state for user ${userId} with guesserSearch: ${guesserSearch}`);
-    db.get(sql, [userId, guesserSearch], (err, row) => {
-      if (err) {
-        logger.error('Failed to fetch game state:', err.message);
-        return reject(err);
-      }
-      if (!row) {
-        logger.info(`No active game found for user ${userId}`);
-        return resolve(null);
-      }
-      resolve(row);
-    });
-  });
-}
 
 async function checkForEndOfGuessing(gameId) {
     return new Promise((resolve, reject) => {
@@ -475,7 +446,6 @@ module.exports = {
     getActiveGame,
     createNewGame,
     getGameById,
-    getGameState,
     checkForEndOfGuessing,
     checkForEndOfFeedback,
     setGameState,

@@ -1,5 +1,4 @@
 //models/pictionary/scoringManager.js
-const sqlite3 = require('sqlite3').verbose();
 const logger = require('../../logger');
 const db = require('../db'); 
 

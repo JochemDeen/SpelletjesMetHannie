@@ -1,8 +1,7 @@
 // models/gameResults.js
-const sqlite3 = require('sqlite3').verbose();
 const logger = require('../logger');  
 
-const db = new sqlite3.Database('database.sqlite');
+const db = require('./db');
 
 db.serialize(() => {
     db.run(`

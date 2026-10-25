@@ -1,11 +1,10 @@
 // utils/wordAdmin.js
 const fs = require('fs');
 const path = require('path');
-const sqlite3 = require('sqlite3').verbose();
 const logger = require('../logger');
 
 // Initialize database connection
-const db = new sqlite3.Database('database.sqlite');
+const db = require('../models/db');
 
 // Get path to word files
 const fileMap = {

@@ -13,10 +13,6 @@ function loadPrompt() {
   return JSON.parse(data).judge_guess.prompt;
 }
 
-function isJudgeAvailable() {
-  return !!process.env.GEMINI_API_KEY;
-}
-
 // Returns 'ja', 'nee', or null when unavailable/unclear. Never throws:
 // the game must continue without a suggestion if the LLM fails.
 async function judgeGuess(characterName, characterDescription, guessText) {
@@ -92,5 +88,4 @@ async function judgeGuess(characterName, characterDescription, guessText) {
 
 module.exports = {
   judgeGuess,
-  isJudgeAvailable
 };
