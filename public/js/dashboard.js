@@ -1,173 +1,129 @@
-async function updatePictionaryStatus() {
-    const statusElement = document.querySelector(".game-card a[href='/pictionary'] .status-temp");
+// public/js/dashboard.js: greeting, status badges on the game cards,
+// the dismissable announcement and the footer.
 
-    if (!statusElement) return; // Safety check if element is missing
+// Bump this to show the announcement again to everyone who closed it
+const UPDATE_VERSION = 'v3';
 
-    try {
-        const response = await fetch("/api/pictionary/state");
-        if (!response.ok) throw new Error("Failed to fetch game state");
-
-        const data = await response.json();
-        const state = data.state || "idle";
-
-        let text = "Wachten";
-        let statusClass = "status-yellow";
-        console.log('STATE', state);
-
-        switch (state) {
-            case "choose":
-            case "drawing":
-                text = "Tekenen";
-                statusClass = "status-green";
-                break;
-            case "modify":
-                text = "Aanpassingen";
-                statusClass = "status-green";
-                break;
-            case "guessing":
-                text = "Raden";
-                statusClass = "status-green";
-                break;
-            case "feedback":
-                text = "Beoordelen";
-                statusClass = "status-green";
-                break;
-            case "guessing-watching":
-                text = "Wachten";
-                statusClass = "status-yellow";
-                break;
-            case "Off":
-                text = "Uit";
-                statusClass = "status-gray";
-                break;
-            case "scoring":
-                text = "Afgelopen!";
-                statusClass = "status-blue";
-                break;
-            default:
-                text = "Wachten";
-                statusClass = "status-yellow";
-                break;
-        }
-
-        // Update the status display
-        statusElement.textContent = text;
-        statusElement.className = `status-temp ${statusClass}`;
-        
-    } catch (error) {
-        console.error("Error fetching Pictionary status:", error);
-        statusElement.textContent = "Error";
-        statusElement.className = "status-temp status-red";
-    }
+function setStatus(id, text, colour) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.textContent = text;
+    el.className = `status status-${colour}`;
 }
-async function updateWieBenIkStatus() {
-    const statusElement = document.getElementById("wie-ben-ik-status");
 
-    if (!statusElement) return; // Safety check if element is missing
-
+async function updateMastermindStatus() {
     try {
-        const response = await fetch("/api/wie-ben-ik/state");
-        if (!response.ok) throw new Error("Failed to fetch game state");
-
-        const data = await response.json();
-        const state = data.state || "idle";
-
-        let text = "Wachten";
-        let statusClass = "status-yellow";
-
-        switch (state) {
-            case "theme-vote":
-                text = "Kies thema";
-                statusClass = "status-green";
-                break;
-            case "question":
-                text = "Stel je vraag";
-                statusClass = "status-green";
-                break;
-            case "voting":
-                text = "Stemmen";
-                statusClass = "status-green";
-                break;
-            case "theme-vote-waiting":
-            case "question-waiting":
-            case "voting-waiting":
-                text = "Wachten";
-                statusClass = "status-yellow";
-                break;
-            case "Off":
-                text = "Uit";
-                statusClass = "status-gray";
-                break;
-            case "scoring":
-                text = "Afgelopen!";
-                statusClass = "status-blue";
-                break;
-            default:
-                text = "Wachten";
-                statusClass = "status-yellow";
-                break;
+        const data = await api('/api/load-game-state');
+        if (!data.success) {
+            setStatus('mastermind-status', 'Nieuw woord', 'green');
+        } else if (data.state.finished) {
+            setStatus('mastermind-status', data.state.success ? 'Geraden ✓' : 'Klaar', 'blue');
+        } else {
+            setStatus('mastermind-status', 'Bezig', 'yellow');
         }
-
-        statusElement.textContent = text;
-        statusElement.className = `status-temp ${statusClass}`;
-
     } catch (error) {
-        console.error("Error fetching Wie ben ik status:", error);
-        statusElement.textContent = "Error";
-        statusElement.className = "status-temp status-red";
+        console.error('Error fetching Woordle status:', error);
     }
 }
 
-function setupUpdateNotification() {
+const PICTIONARY_STATUS = {
+    choose: ['Tekenen', 'green'],
+    thinking: ['Tekenen', 'green'],
+    drawing: ['Tekenen', 'green'],
+    modify: ['Aanpassen', 'green'],
+    guessing: ['Raden', 'green'],
+    feedback: ['Beoordelen', 'green'],
+    'guessing-watching': ['Wachten', 'yellow'],
+    idle: ['Wachten', 'yellow'],
+    Off: ['Uit', 'gray'],
+    scoring: ['Afgelopen!', 'blue']
+};
+
+const WIE_BEN_IK_STATUS = {
+    'theme-vote': ['Kies thema', 'green'],
+    question: ['Stel je vraag', 'green'],
+    voting: ['Stemmen', 'green'],
+    'theme-vote-waiting': ['Wachten', 'yellow'],
+    'question-waiting': ['Wachten', 'yellow'],
+    'voting-waiting': ['Wachten', 'yellow'],
+    'spectate-theme-vote': ['Kijken', 'gray'],
+    'spectate-question': ['Kijken', 'gray'],
+    'spectate-voting': ['Kijken', 'gray'],
+    Off: ['Uit', 'gray'],
+    scoring: ['Afgelopen!', 'blue']
+};
+
+async function updateGameStatus(url, id, table) {
+    try {
+        const data = await api(url);
+        const [text, colour] = table[data.state] || ['Wachten', 'yellow'];
+        setStatus(id, text, colour);
+    } catch (error) {
+        // e.g. Pictionary answers 400 when nobody has it switched on
+        setStatus(id, 'Uit', 'gray');
+    }
+}
+
+function updateStatuses() {
+    updateMastermindStatus();
+    updateGameStatus('/api/pictionary/state', 'pictionary-status', PICTIONARY_STATUS);
+    updateGameStatus('/api/wie-ben-ik/state', 'wie-ben-ik-status', WIE_BEN_IK_STATUS);
+}
+
+async function loadGreeting() {
+    try {
+        const { username } = await api('/api/me');
+        if (!username) return;
+        const hour = new Date().getHours();
+        const part = hour < 6 ? 'Goedenacht' : hour < 12 ? 'Goedemorgen' : hour < 18 ? 'Goedemiddag' : 'Goedenavond';
+        document.getElementById('greeting').textContent = `${part}, ${username}!`;
+    } catch (error) {
+        console.error('Error fetching user:', error);
+    }
+}
+
+function setupAnnouncement() {
+    const container = document.getElementById('updateContainer');
     const closeButton = document.getElementById('closeUpdate');
-    const updateContainer = document.getElementById('updateContainer');
-    
-    // Bepaal de versie van de huidige update. 
-    // Bij een volgende update verander je dit naar 'v3', 'v4', etc.
-    const updateVersion = 'v2'; 
-    const storageKey = `updateDismissed_${updateVersion}`;
-    
-    if (closeButton && updateContainer) {
-        closeButton.addEventListener('click', () => {
-            updateContainer.style.display = 'none';
-            
-            // Sla op dat deze specifieke update-versie is weggeklikt
-            localStorage.setItem(storageKey, 'true');
-        });
-        
-        // Controleer of de gebruiker DEZE specifieke update al heeft weggeklikt
+    if (!container || !closeButton) return;
+    const storageKey = `updateDismissed_${UPDATE_VERSION}`;
+
+    try {
         if (localStorage.getItem(storageKey) === 'true') {
-            updateContainer.style.display = 'none';
+            container.classList.add('hidden');
         }
+    } catch (e) {
+        // Storage unavailable (private mode): just keep showing it
     }
+    closeButton.addEventListener('click', () => {
+        container.classList.add('hidden');
+        try {
+            localStorage.setItem(storageKey, 'true');
+        } catch (e) {
+            // ignore
+        }
+    });
 }
+
 async function loadSiteFooter() {
     const footer = document.getElementById('siteFooter');
     if (!footer) return;
-
     try {
-        const response = await fetch('/api/site-info');
-        if (!response.ok) throw new Error('Failed to fetch site info');
-
-        const info = await response.json();
+        const info = await api('/api/site-info');
         if (!info.lastUpdate) return; // No info available, keep the footer hidden
-
         const date = new Date(info.lastUpdate).toLocaleDateString('nl-NL', {
             day: 'numeric', month: 'long', year: 'numeric'
         });
         footer.textContent = `Laatste update: ${date}` + (info.commit ? ` · versie ${info.commit}` : '');
         footer.hidden = false;
     } catch (error) {
-        console.error("Error fetching site info:", error);
+        console.error('Error fetching site info:', error);
     }
 }
 
-// Run function once and refresh every 15 seconds
-document.addEventListener("DOMContentLoaded", () => {
-    updatePictionaryStatus();
-    updateWieBenIkStatus();
-    setupUpdateNotification();
+document.addEventListener('DOMContentLoaded', () => {
+    loadGreeting();
+    setupAnnouncement();
     loadSiteFooter();
-    setInterval(updatePictionaryStatus, 15000);
-    setInterval(updateWieBenIkStatus, 15000);
+    poll(updateStatuses, 15000);
 });

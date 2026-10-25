@@ -98,14 +98,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     function renderPreviousMonthWinner(data) {
         const title = document.getElementById('previous-month-winner-title');
         const info = document.getElementById('previous-month-winner-info');
-        const section = document.querySelector('.previous-month-winner');
+        const section = document.querySelector('.winner-card');
 
         if (data.success && data.winner) {
             title.textContent = `Winnaar van ${getMonthName(getPreviousMonth())}:`;
             info.textContent = `${data.winner} met ${data.wins} keer goed geraden!`;
-            section.style.display = 'block';
+            section.classList.remove('hidden');
         } else {
-            section.style.display = 'none';
+            section.classList.add('hidden');
         }
     }
 

@@ -1,144 +1,124 @@
-const pastelOchre = getComputedStyle(document.documentElement).getPropertyValue('--pastel-ochre').trim();
-const pastelGreen = getComputedStyle(document.documentElement).getPropertyValue('--pastel-green').trim();
-const gray = getComputedStyle(document.documentElement).getPropertyValue('--gray').trim();
+// public/js/compare.js: everyone's Woordle results for one day ("Samenvatting").
+// Results of a day are only visible once you've finished that day yourself.
 
 document.addEventListener('DOMContentLoaded', async () => {
     const compareContainer = document.getElementById('compare-container');
     const currentDateElem = document.getElementById('currentDate');
     const prevDateButton = document.getElementById('prevDateButton');
     const nextDateButton = document.getElementById('nextDateButton');
-    let selectedDate = new Date();
-    let earliestDate;
 
-    // Fetch the earliest date from the backend
-    const fetchEarliestDate = async () => {
-        try {
-            const response = await fetch('/api/get-earliest-date');
-            const data = await response.json();
-            if (data.success) {
-                return new Date(data.earliestDate); // Format from backend: YYYY-MM-DD
-            } else {
-                console.error('Failed to fetch earliest date:', data.message);
-                return new Date(); // Fallback to today
-            }
-        } catch (error) {
-            console.error('Error fetching earliest date:', error);
-            return new Date(); // Fallback to today
-        }
+    // Dates are handled as 'YYYY-MM-DD' strings; noon avoids DST edge cases
+    const toKey = (date) => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
+    const fromKey = (key) => new Date(`${key}T12:00:00`);
+    const todayKey = toKey(new Date());
+    let selectedKey = todayKey;
+    let earliestKey = todayKey;
+
+    try {
+        const data = await api('/api/get-earliest-date');
+        earliestKey = data.earliestDate;
+    } catch (error) {
+        // No results at all yet: only today is available
+    }
+
+    const shiftDay = (key, days) => {
+        const date = fromKey(key);
+        date.setDate(date.getDate() + days);
+        return toKey(date);
     };
 
-    earliestDate = await fetchEarliestDate();
-
-
-    // Format date as YYYY-MM-DD
-    const formatDate = (date) => {
-        const year = date.getFullYear();
-        const month = String(date.getMonth() + 1).padStart(2, '0');
-        const day = String(date.getDate()).padStart(2, '0');
-        return `${year}-${month}-${day}`;
+    const formatDay = (key) => {
+        if (key === todayKey) return 'Vandaag';
+        if (key === shiftDay(todayKey, -1)) return 'Gisteren';
+        return fromKey(key).toLocaleDateString('nl-NL', { weekday: 'long', day: 'numeric', month: 'long' });
     };
 
-    // Update button states based on the selected date
-    const updateButtonVisibility = () => {
-        const normalizeDate = (date) => new Date(date.getFullYear(), date.getMonth(), date.getDate());
-        const normalizedSelectedDate = normalizeDate(selectedDate);
-        const normalizedToday = normalizeDate(new Date());
-        const normalizedEarliestDate = normalizeDate(earliestDate);
-    
-        prevDateButton.style.display = normalizedSelectedDate <= normalizedEarliestDate ? 'none' : 'inline-block';
-        nextDateButton.style.display = normalizedSelectedDate >= normalizedToday ? 'none' : 'inline-block';
-    };
-        // Update the displayed date and fetch results
-    const updateDateDisplay = async () => {
-        currentDateElem.textContent = formatDate(selectedDate);
-        await fetchAndRenderResults(formatDate(selectedDate));
-        updateButtonVisibility(); // Ensure buttons are correctly shown or hidden
+    const showMessage = (html) => {
+        compareContainer.innerHTML = `<div class="card compare-message">${html}</div>`;
     };
 
-
-    // Fetch results for the selected date
-    const fetchAndRenderResults = async (date) => {
-        try {
-            const response = await fetch(`/api/get-results?date=${date}`);
-            const data = await response.json();
-            compareContainer.innerHTML = ""; // Clear existing results
-
-            if (data.success && data.results) {
-                renderResults(data.results);
-            } else {
-                compareContainer.innerHTML = `<p>No results available for this date.</p>`;
-            }
-        } catch (error) {
-            console.error('Failed to load results:', error);
-            compareContainer.innerHTML = `<p>Error fetching results. Please try again later.</p>`;
-        }
-    };
-
-    // Render results
     const renderResults = (results) => {
-        results.sort((a, b) => new Date(a.solveTime) - new Date(b.solveTime));
+        compareContainer.innerHTML = '';
+        // Solved first (earliest first), then the ones that didn't make it
+        results.sort((a, b) => (b.success - a.success) || (new Date(a.solveTime) - new Date(b.solveTime)));
 
-        results.forEach(result => {
-            const userContainer = document.createElement('div');
-            userContainer.classList.add('user-container');
+        results.forEach((result) => {
+            const card = document.createElement('div');
+            card.className = 'card result-card';
 
             const header = document.createElement('div');
-            header.classList.add('user-header');
-
-            const solveTime = new Date(result.solveTime);
-            const statusSymbol = result.success ? '✓' : '✗';
+            header.className = 'result-header';
+            const solveTime = result.solveTime
+                ? new Date(result.solveTime).toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit' })
+                : null;
             header.innerHTML = `
-                <span class="username">${statusSymbol} ${result.username}</span>
-                <span class="score">⭐ Score: ${result.score}</span>
-                <span class="solve-time">${result.success ? `⏰ ${solveTime.getHours().toString().padStart(2, '0')}:${solveTime.getMinutes().toString().padStart(2, '0')}` : "❌ Niet opgelost"}</span>
+                <span class="result-name">${escapeHtml(result.username)}</span>
+                <span class="result-meta">${result.success ? `${result.guesses.length}/6 · ${solveTime}` : 'Niet geraden'}</span>
+                <span class="result-score">${result.score} pt</span>
             `;
+            card.appendChild(header);
 
-            userContainer.appendChild(header);
-
-            const gridContainer = document.createElement('div');
-            gridContainer.classList.add('game-grid');
-            gridContainer.style.gridTemplateColumns = 'repeat(5, 50px)';
-            gridContainer.style.gridTemplateRows = `repeat(${result.guesses.length}, 50px)`;
-
+            const grid = document.createElement('div');
+            grid.className = 'mini-grid';
             result.guesses.forEach((guess, rowIndex) => {
-                for (let colIndex = 0; colIndex < guess.length; colIndex++) {
-                    const letterBox = document.createElement('div');
-                    letterBox.classList.add('letter-box');
-                    letterBox.textContent = guess[colIndex];
-
-                    const feedback = result.feedback[rowIndex][colIndex];
-                    if (feedback === 'correct') {
-                        letterBox.style.backgroundColor = pastelGreen;
-                        letterBox.style.color = 'white';
-                    } else if (feedback === 'misplaced') {
-                        letterBox.style.backgroundColor = pastelOchre;
-                        letterBox.style.color = 'white';
-                    } else if (feedback === 'incorrect') {
-                        letterBox.style.backgroundColor = gray;
-                        letterBox.style.color = 'white';
-                    }
-
-                    gridContainer.appendChild(letterBox);
-                }
+                [...guess].forEach((letter, colIndex) => {
+                    const box = document.createElement('div');
+                    box.className = `mini-tile ${result.feedback[rowIndex][colIndex]}`;
+                    box.textContent = letter;
+                    grid.appendChild(box);
+                });
             });
-
-            userContainer.appendChild(gridContainer);
-            compareContainer.appendChild(userContainer);
+            card.appendChild(grid);
+            compareContainer.appendChild(card);
         });
     };
 
+    const load = async () => {
+        currentDateElem.textContent = formatDay(selectedKey);
+        prevDateButton.disabled = selectedKey <= earliestKey;
+        nextDateButton.disabled = selectedKey >= todayKey;
+        try {
+            const data = await api(`/api/get-results?date=${selectedKey}`);
+            if (data.results && data.results.length) {
+                renderResults(data.results);
+            } else {
+                showMessage('Er zijn voor deze dag geen resultaten.');
+            }
+        } catch (error) {
+            if (error.status === 403) {
+                showMessage(selectedKey === todayKey
+                    ? 'Speel eerst het woord van vandaag, dan zie je hoe de anderen het deden. <br><a class="btn btn-primary" href="/mastermind">Naar Woordle</a>'
+                    : 'Je hebt deze dag niet (helemaal) gespeeld, dus de resultaten blijven geheim.');
+            } else {
+                showMessage(escapeHtml(error.message));
+            }
+        }
+    };
+
     prevDateButton.addEventListener('click', () => {
-        selectedDate.setDate(selectedDate.getDate() - 1);
-        updateDateDisplay();
+        selectedKey = shiftDay(selectedKey, -1);
+        load();
     });
-
     nextDateButton.addEventListener('click', () => {
-        selectedDate.setDate(selectedDate.getDate() + 1);
-        updateDateDisplay();
+        selectedKey = shiftDay(selectedKey, 1);
+        load();
     });
 
-    
+    // Share a picture of the results (html2canvas); falls back to a message
+    document.getElementById('shareButton').addEventListener('click', async () => {
+        try {
+            const canvas = await html2canvas(document.getElementById('captureSection'), { backgroundColor: '#f7f2e7' });
+            const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
+            const file = new File([blob], `woordle-${selectedKey}.png`, { type: 'image/png' });
+            if (navigator.canShare && navigator.canShare({ files: [file] })) {
+                await navigator.share({ files: [file] });
+            } else {
+                toast('Delen kan niet in deze browser. Probeer het op je telefoon.');
+            }
+        } catch (error) {
+            if (error.name !== 'AbortError') toast('Delen is niet gelukt.', { type: 'error' });
+        }
+    });
 
-    // Initialize
-    updateDateDisplay();
+    load();
 });

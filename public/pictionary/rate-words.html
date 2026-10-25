@@ -2,30 +2,34 @@
 <html lang="nl">
 <head>
   <meta charset="UTF-8">
-  <title>Beoordeel Pictionary Woorden</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" integrity="sha512-Fo3rlrZj/k7ujTnHg4CGR2D7kSs0v4LLanw2qksYuRlEzO+tcaEPQogQ0KaoGN26/zrn20ImR1DfuLWnOo7aBA==" crossorigin="anonymous">
-  <link rel="stylesheet" href="/css/stylesdb.css">
+  <meta name="theme-color" content="#f7f2e7">
+  <title>Woorden beoordelen · Pictionary</title>
+  <link rel="icon" type="image/png" href="/favicon-96x96.png" sizes="96x96">
+  <link rel="shortcut icon" href="/favicon.ico">
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png">
+  <link rel="manifest" href="/site.webmanifest">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap">
+  <link rel="stylesheet" href="/css/base.css">
   <link rel="stylesheet" href="/pictionary/css/rate-words.css">
-  <link rel="icon" type="image/png" href="/favicon-96x96.png" sizes="96x96" />
-  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-  <link rel="shortcut icon" href="/favicon.ico" />
-  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
-  <link rel="manifest" href="/site.webmanifest" />
 </head>
 <body>
-  <header>
-    <a href="/" class="back-icon">
-      <i class="fas fa-arrow-left"></i> Terug
+  <header class="site-header">
+    <a href="/dashboard" class="home-link" aria-label="Naar het overzicht" title="Naar het overzicht">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
     </a>
-    <h1>Beoordeel Pictionary Woorden</h1>
+    <h1 class="site-title">Woorden beoordelen</h1>
+    <nav class="site-nav" aria-label="Pictionary">
+      <a href="/pictionary">Spelen</a>
+      <a href="/pictionary/scoreboard">Scorebord</a>
+    </nav>
   </header>
 
-  <div class="content-container">
+  <main class="page" style="max-width: 600px;">
     <div class="info-box">
       <p>
-        <i class="fas fa-info-circle"></i>
         Beoordeel de moeilijkheidsgraad van deze woorden voor Pictionary. Je kunt ook nieuwe woorden voorstellen!
       </p>
     </div>
@@ -42,7 +46,7 @@
         </div>
         <div class="rating-controls">
           <button id="skipBtn" class="text-btn">
-            <i class="fas fa-forward"></i> Overslaan
+            Overslaan ⏭
           </button>
         </div>
       </div>
@@ -66,7 +70,7 @@
         <div class="suggestion-form">
           <div class="form-group">
             <label for="suggestedWord">Woord</label>
-            <input type="text" id="suggestedWord" placeholder="Voer een woord in">
+            <input class="input" type="text" id="suggestedWord" placeholder="Voer een woord in">
           </div>
           <div class="form-group">
             <label>Geschatte moeilijkheidsgraad</label>
@@ -85,12 +89,14 @@
               </label>
             </div>
           </div>
-          <button id="suggestBtn" class="suggest-btn">Woord voorstellen</button>
+          <button id="suggestBtn" class="btn btn-primary">Woord voorstellen</button>
         </div>
         <div id="suggestionMessage" class="suggestion-message"></div>
       </div>
     </div>
-  </div>
+  </main>
+
+  <script src="/js/common.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.js" integrity="sha384-qmDHVszK26iWDlfhGzXz71t2qRopa/FvIuOkCTJJT4QRkIZf9h+OiJZzco9XtgPX" crossorigin="anonymous"></script>
 
   <script src="/pictionary/js/rate-words.js"></script>

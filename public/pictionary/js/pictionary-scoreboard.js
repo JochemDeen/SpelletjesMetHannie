@@ -31,7 +31,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     
         if (data.success && Array.isArray(data.score) && data.score.length > 0) {
             lastGameHeader.textContent = `Laatste Spel: `;
-            wordTitleEl.innerHTML = `Teken een <span class="highlight-word">${escapeHtml(data.word)}</span> door ${data.drawer}`;
+            wordTitleEl.innerHTML = `Teken een <span class="highlight-word">${escapeHtml(data.word)}</span> door ${escapeHtml(data.drawer)}`;
     
             lastGameList.innerHTML = '';
     
@@ -112,14 +112,14 @@ document.addEventListener('DOMContentLoaded', async () => {
     function renderPreviousMonthWinner(data) {
         const title = document.getElementById('previous-month-winner-title');
         const info = document.getElementById('previous-month-winner-info');
-        const section = document.querySelector('.previous-month-winner');
+        const section = document.querySelector('.winner-card');
 
         if (data.success && data.winner) {
             title.textContent = `Winnaar van ${getMonthName(getPreviousMonth())}:`;
             info.textContent = `${data.winner} met ${data.score} punten!`;
-            section.style.display = 'block'; // Show section
+            section.classList.remove('hidden'); // Show section
         } else {
-            section.style.display = 'none'; // Hide section if no winner
+            section.classList.add('hidden'); // Hide section if no winner
         }
     }
 

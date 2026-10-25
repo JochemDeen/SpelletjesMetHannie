@@ -51,36 +51,16 @@ document.addEventListener('DOMContentLoaded', () => {
           messageDiv.id = 'rating-message';
           messageDiv.className = 'info-message';
           
-          // Style the message
-          messageDiv.style.marginTop = '10px';
-          messageDiv.style.padding = '8px 12px';
-          messageDiv.style.borderRadius = '4px';
-          messageDiv.style.fontSize = '14px';
-          messageDiv.style.textAlign = 'center';
-          
           if (data.differsFromMajority) {
-            // This is a word where the user's opinion differs from the majority
-            // but we don't show the actual ratings to avoid bias
-            messageDiv.style.backgroundColor = '#d1ecf1';
-            messageDiv.style.border = '1px solid #bee5eb';
-            messageDiv.style.color = '#0c5460';
-            
-            messageDiv.innerHTML = `
-              <i class="fas fa-sync-alt"></i>
-              Je hebt alle woorden al beoordeeld! We laten je nu woorden zien die je eerder hebt beoordeeld.
-            `;
+            // A word where the user's opinion differs from the majority (the
+            // actual ratings are not shown, to avoid bias)
+            messageDiv.classList.add('info-message-info');
+            messageDiv.textContent = '🔄 Je hebt alle woorden al beoordeeld! We laten je nu woorden zien die je eerder hebt beoordeeld.';
           } else {
-            // All words rated message for random words
-            messageDiv.style.backgroundColor = '#d4edda';
-            messageDiv.style.border = '1px solid #c3e6cb';
-            messageDiv.style.color = '#155724';
-            
-            messageDiv.innerHTML = `
-              <i class="fas fa-check-circle"></i>
-              Je hebt alle woorden beoordeeld! Je kunt ze opnieuw beoordelen of nieuwe woorden voorstellen.
-            `;
+            messageDiv.classList.add('info-message-success');
+            messageDiv.textContent = '✅ Je hebt alle woorden beoordeeld! Je kunt ze opnieuw beoordelen of nieuwe woorden voorstellen.';
           }
-          
+
           // Add the message below the word card
           const wordCard = document.querySelector('.word-card');
           wordCard.parentNode.insertBefore(messageDiv, wordCard.nextSibling);
@@ -278,111 +258,29 @@ document.addEventListener('DOMContentLoaded', () => {
   
   // Function to show a thank you message
   function showThankYouMessage(message = 'Bedankt voor je beoordeling!') {
-    const thankYouMessage = document.createElement('div');
-    thankYouMessage.id = 'thank-you-message';
-    thankYouMessage.textContent = message;
-    thankYouMessage.style.position = 'fixed';
-    thankYouMessage.style.top = '50%';
-    thankYouMessage.style.left = '50%';
-    thankYouMessage.style.transform = 'translate(-50%, -50%)';
-    thankYouMessage.style.padding = '15px 25px';
-    thankYouMessage.style.backgroundColor = '#4CAF50';
-    thankYouMessage.style.color = 'white';
-    thankYouMessage.style.borderRadius = '5px';
-    thankYouMessage.style.fontSize = '18px';
-    thankYouMessage.style.fontWeight = 'bold';
-    thankYouMessage.style.zIndex = '1000';
-    thankYouMessage.style.opacity = '0';
-    thankYouMessage.style.transition = 'opacity 0.3s ease-in-out';
-    
-    document.body.appendChild(thankYouMessage);
-    
-    // Fade in
-    setTimeout(() => {
-      thankYouMessage.style.opacity = '1';
-    }, 10);
-    
-    // Remove after 2 seconds with fade out
-    setTimeout(() => {
-      thankYouMessage.style.opacity = '0';
-      setTimeout(() => {
-        thankYouMessage.remove();
-      }, 300);
-    }, 2000);
+    toast(message, { type: 'success' });
   }
   
   // Function to show a confirmation dialog
   function showConfirmationDialog(message, onConfirm) {
-    // Create the dialog overlay
     const overlay = document.createElement('div');
-    overlay.style.position = 'fixed';
-    overlay.style.top = '0';
-    overlay.style.left = '0';
-    overlay.style.width = '100%';
-    overlay.style.height = '100%';
-    overlay.style.backgroundColor = 'rgba(0, 0, 0, 0.5)';
-    overlay.style.display = 'flex';
-    overlay.style.justifyContent = 'center';
-    overlay.style.alignItems = 'center';
-    overlay.style.zIndex = '2000';
-    
-    // Create the dialog box
-    const dialog = document.createElement('div');
-    dialog.style.width = '300px';
-    dialog.style.backgroundColor = 'white';
-    dialog.style.borderRadius = '5px';
-    dialog.style.boxShadow = '0 2px 10px rgba(0, 0, 0, 0.2)';
-    dialog.style.padding = '20px';
-    
-    // Create the message
-    const messageElement = document.createElement('p');
-    messageElement.textContent = message;
-    messageElement.style.marginTop = '0';
-    messageElement.style.marginBottom = '20px';
-    messageElement.style.textAlign = 'center';
-    
-    // Create the buttons
-    const buttonContainer = document.createElement('div');
-    buttonContainer.style.display = 'flex';
-    buttonContainer.style.justifyContent = 'space-around';
-    
-    const cancelButton = document.createElement('button');
-    cancelButton.textContent = 'Annuleren';
-    cancelButton.style.padding = '8px 15px';
-    cancelButton.style.backgroundColor = '#f44336';
-    cancelButton.style.color = 'white';
-    cancelButton.style.border = 'none';
-    cancelButton.style.borderRadius = '4px';
-    cancelButton.style.cursor = 'pointer';
-    
-    const confirmButton = document.createElement('button');
-    confirmButton.textContent = 'Ja, verwijderen';
-    confirmButton.style.padding = '8px 15px';
-    confirmButton.style.backgroundColor = '#4CAF50';
-    confirmButton.style.color = 'white';
-    confirmButton.style.border = 'none';
-    confirmButton.style.borderRadius = '4px';
-    confirmButton.style.cursor = 'pointer';
-    
-    // Add event listeners to buttons
-    cancelButton.addEventListener('click', () => {
-      document.body.removeChild(overlay);
+    overlay.className = 'modal-backdrop';
+    overlay.innerHTML = `
+      <div class="modal" role="dialog" aria-modal="true">
+        <p class="confirm-text"></p>
+        <div class="confirm-buttons">
+          <button class="btn btn-secondary" data-action="cancel">Annuleren</button>
+          <button class="btn btn-danger" data-action="confirm">Ja, verwijderen</button>
+        </div>
+      </div>`;
+    overlay.querySelector('.confirm-text').textContent = message;
+    overlay.addEventListener('click', (event) => {
+      const action = event.target.dataset.action;
+      if (action || event.target === overlay) overlay.remove();
+      if (action === 'confirm') onConfirm();
     });
-    
-    confirmButton.addEventListener('click', () => {
-      document.body.removeChild(overlay);
-      onConfirm();
-    });
-    
-    // Assemble the dialog
-    buttonContainer.appendChild(cancelButton);
-    buttonContainer.appendChild(confirmButton);
-    dialog.appendChild(messageElement);
-    dialog.appendChild(buttonContainer);
-    overlay.appendChild(dialog);
-    
-    // Add the dialog to the document
     document.body.appendChild(overlay);
+    overlay.querySelector('[data-action="confirm"]').focus();
   }
   
   // Initialize with a random word

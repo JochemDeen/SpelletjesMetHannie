@@ -1,0 +1,192 @@
+/* public/css/woordle.css: Woordle (Mastermind) game, statistics and summary pages */
+
+.woordle-page h2 {
+    margin: 0 0 12px;
+    font-size: 1.15rem;
+}
+
+/* ---------- Stat tiles + guess distribution (stats page and end-of-game popup) ---------- */
+
+.stat-tiles {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(70px, 1fr));
+    gap: 10px;
+}
+
+.stat-tile {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 10px 6px;
+    border-radius: var(--radius-sm);
+    background-color: var(--surface-2);
+    text-align: center;
+}
+
+.stat-number {
+    font-size: 1.8rem;
+    font-weight: 800;
+    line-height: 1.1;
+    color: var(--ink);
+}
+
+.stat-label {
+    font-size: 0.85rem;
+    color: var(--ink-soft);
+}
+
+.distribution {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.dist-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.dist-label {
+    width: 1.2em;
+    font-weight: 800;
+    text-align: right;
+}
+
+.dist-track {
+    flex: 1;
+}
+
+.dist-bar {
+    padding: 3px 8px;
+    border-radius: 6px;
+    background-color: var(--gray);
+    color: #fff;
+    font-weight: 800;
+    text-align: right;
+    transition: width 0.4s ease-out;
+}
+
+.dist-bar-highlight {
+    background-color: var(--green);
+}
+
+.latest-guess {
+    margin: 12px 0 0;
+    text-align: center;
+}
+
+/* ---------- Summary page ---------- */
+
+.date-navigation {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.results-date-header {
+    margin: 0;
+    font-size: 1.3rem;
+    text-align: center;
+    text-transform: capitalize;
+}
+
+.nav-arrow {
+    width: var(--tap);
+    padding: 0;
+    font-size: 1.6rem;
+}
+
+.nav-arrow:disabled {
+    visibility: hidden;
+}
+
+#compare-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+    gap: 14px;
+}
+
+.compare-message {
+    grid-column: 1 / -1;
+    text-align: center;
+}
+
+.compare-message .btn {
+    margin-top: 12px;
+}
+
+.result-card {
+    padding: 14px;
+}
+
+.result-header {
+    display: flex;
+    align-items: baseline;
+    flex-wrap: wrap;
+    gap: 4px 10px;
+    margin-bottom: 10px;
+}
+
+.result-name {
+    font-weight: 800;
+    font-size: 1.1rem;
+}
+
+.result-meta {
+    flex: 1;
+    color: var(--ink-soft);
+    font-size: 0.9rem;
+}
+
+.result-score {
+    font-weight: 800;
+    color: var(--primary);
+}
+
+.mini-grid {
+    display: grid;
+    grid-template-columns: repeat(5, 34px);
+    gap: 4px;
+    justify-content: center;
+}
+
+.mini-tile {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 34px;
+    border-radius: 6px;
+    color: #fff;
+    font-weight: 800;
+    text-transform: uppercase;
+}
+
+.mini-tile.correct,
+.tile.correct {
+    background-color: var(--green);
+}
+
+.mini-tile.misplaced,
+.tile.misplaced {
+    background-color: var(--ochre);
+}
+
+.mini-tile.incorrect,
+.tile.incorrect {
+    background-color: var(--gray);
+}
+
+.share-row {
+    margin-top: 20px;
+    text-align: center;
+}
+
+.share-row svg,
+.btn svg {
+    width: 20px;
+    height: 20px;
+    fill: currentColor;
+}

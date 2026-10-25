@@ -12,28 +12,10 @@
     --wbi-red: #c76a6a;
 }
 
-body {
-    font-family: 'Arial', sans-serif;
-    background-color: var(--wbi-bg);
-    color: var(--wbi-text);
-    margin: 0;
-    padding: 0;
-}
-
-h1 {
-    text-align: center;
-    font-family: Georgia, 'Times New Roman', serif;
-    font-size: 2.4em;
-    letter-spacing: 1px;
-    color: var(--wbi-gold);
-    margin: 20px 0 5px 0;
-    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
-}
-
 h3 {
     margin: 0 0 4px 0;
     text-align: center;
-    font-family: Georgia, 'Times New Roman', serif;
+    font-family: var(--font-heading);
     color: var(--wbi-text);
     letter-spacing: 0.5px;
 }
@@ -52,52 +34,11 @@ h3 {
     margin-bottom: 5px;
 }
 
-#nav-links {
-    text-align: center;
-    margin-bottom: 15px;
-}
-
-#nav-links a {
-    color: var(--wbi-purple);
-    text-decoration: none;
-    font-weight: 500;
-}
-
-#nav-links a:hover {
-    color: var(--wbi-gold);
-    text-decoration: underline;
-}
-
-.hidden {
-    display: none !important;
-}
-
-/* Home Button (light chip so the icon stays visible on the dark page) */
-.home-button {
-    position: absolute;
-    top: 10px;
-    left: 10px;
-    background-color: rgba(255, 255, 255, 0.9);
-    border-radius: 8px;
-    padding: 4px 6px 2px 6px;
-}
-
-.home-button img {
-    width: 30px;
-    height: 28px;
-    transition: transform 0.2s ease-in-out;
-}
-
-.home-button img:hover {
-    transform: scale(1.1);
-}
-
 /* Waiting / off */
 #waiting-container, #off-container {
     margin: 30px auto;
     padding: 30px 20px;
-    width: 80%;
-    max-width: 500px;
+    width: 100%;
     background-color: var(--wbi-surface);
     border: 1px solid var(--wbi-border);
     border-radius: 12px;
@@ -116,8 +57,7 @@ h3 {
 #theme-vote-container {
     margin: 20px auto;
     padding: 20px;
-    width: 90%;
-    max-width: 700px;
+    width: 100%;
     background-color: var(--wbi-surface);
     border: 1px solid var(--wbi-border);
     border-radius: 12px;
@@ -126,7 +66,7 @@ h3 {
 
 #theme-options {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(min(260px, 100%), 1fr));
     gap: 10px;
     margin-top: 15px;
 }
@@ -187,8 +127,7 @@ h3 {
 /* Players */
 #players-container {
     margin: 20px auto;
-    width: 90%;
-    max-width: 700px;
+    width: 100%;
 }
 
 #players-list {
@@ -218,7 +157,7 @@ h3 {
 }
 
 .character-name {
-    font-family: Georgia, 'Times New Roman', serif;
+    font-family: var(--font-heading);
     font-weight: bold;
     font-size: 1.1em;
     color: var(--wbi-gold);
@@ -243,8 +182,7 @@ h3 {
 #question-container {
     margin: 20px auto;
     padding: 20px;
-    width: 90%;
-    max-width: 600px;
+    width: 100%;
     background-color: var(--wbi-surface);
     border: 1px solid var(--wbi-border);
     border-radius: 12px;
@@ -253,7 +191,7 @@ h3 {
 }
 
 #question-input {
-    width: 90%;
+    width: 100%;
     padding: 12px;
     font-size: 1em;
     background-color: var(--wbi-bg);
@@ -312,8 +250,7 @@ h3 {
 /* Voting */
 #voting-container {
     margin: 20px auto;
-    width: 90%;
-    max-width: 600px;
+    width: 100%;
 }
 
 .vote-card {
@@ -353,7 +290,7 @@ h3 {
 }
 
 .vote-character {
-    font-family: Georgia, 'Times New Roman', serif;
+    font-family: var(--font-heading);
     font-weight: bold;
     color: var(--wbi-gold);
 }
@@ -427,8 +364,7 @@ h3 {
 /* History table */
 #history-container {
     margin: 20px auto;
-    width: 90%;
-    max-width: 700px;
+    width: 100%;
     border-radius: 8px;
     background-color: var(--wbi-surface);
     overflow: hidden;
@@ -456,7 +392,6 @@ h3 {
 }
 
 #history-container td {
-    font-size: medium;
     padding: 8px 10px;
     text-align: center;
     color: var(--wbi-text);
@@ -491,7 +426,7 @@ h3 {
 }
 
 .pending {
-    font-size: 10px;
+    font-size: 0.85em;
 }
 
 /* The theme you voted for, and the "surprise me" option */
@@ -517,8 +452,7 @@ h3 {
 /* Preview of the personages in the theme you voted for */
 #theme-preview-container {
     margin: 20px auto;
-    width: 90%;
-    max-width: 700px;
+    width: 100%;
 }
 
 #theme-preview-list {
@@ -534,4 +468,25 @@ h3 {
     border: 1px solid var(--wbi-border);
     border-radius: 10px;
     text-align: center;
+}
+
+/* Phones */
+@media (max-width: 480px) {
+    #theme-vote-container,
+    #question-container {
+        padding: 14px;
+    }
+
+    .vote-btn {
+        min-height: var(--tap);
+    }
+
+    #history-container table {
+        font-size: 13px;
+    }
+
+    #history-container th,
+    #history-container td {
+        padding: 6px 5px;
+    }
 }

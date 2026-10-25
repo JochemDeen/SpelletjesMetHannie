@@ -1,72 +1,22 @@
+// public/js/stats.js: the Woordle statistics page
+
 document.addEventListener('DOMContentLoaded', async () => {
     try {
-        // Fetch statistics from the server
-        const response = await fetch('/api/get-stats');
-        const data = await response.json();
-        if (data.success) {
-            updateStatsSummary(data.stats);
-            renderGuessDistribution(data.stats.guessDistribution, data.stats.latestGuessIndex);
-            updateAverageStats(data.stats);
+        const { stats } = await api('/api/get-stats');
+        renderStatTiles(document.getElementById('stats-summary'), stats,
+            ['totalGames', 'percentCorrect', 'currentStreak', 'maxStreak']);
+        renderStatTiles(document.getElementById('score-summary'), stats,
+            ['monthlyScore', 'totalScore']);
+        renderDistribution(document.getElementById('guess-distribution'), stats.guessDistribution, stats.latestGuessIndex);
+        renderStatTiles(document.getElementById('average-stats'), stats, ['averageGuess', 'medianGuess']);
+
+        if (stats.latestGuessTime) {
+            const time = new Date(stats.latestGuessTime);
+            document.getElementById('latest-guess-time').textContent = time.toLocaleString('nl-NL', {
+                day: 'numeric', month: 'long', hour: '2-digit', minute: '2-digit'
+            });
         }
     } catch (error) {
-        console.error('Failed to load statistics:', error);
-    }
-
-    function updateStatsSummary(stats) {
-        document.getElementById('total-games').textContent = stats.totalGames;
-        document.getElementById('percent-correct').textContent = `${Math.round(stats.percentCorrect)}%`;
-        document.getElementById('current-streak').textContent = stats.currentStreak;
-        document.getElementById('max-streak').textContent = stats.maxStreak;
-        document.getElementById('total-score').textContent = stats.totalScore; // Update total score
-        document.getElementById('monthly-score').textContent = stats.monthlyScore; // Update monthly score
-    }
-
-    function renderGuessDistribution(guessDistribution, latestGuessIndex) {
-        const guessDistributionContainer = document.getElementById('guess-distribution');
-        guessDistributionContainer.innerHTML = ''; // Clear existing content
-    
-        // Find the maximum value for scaling
-        const maxGuesses = Math.max(...Object.values(guessDistribution));
-    
-        for (let i = 1; i <= 6; i++) {
-            const barWrapper = document.createElement('div');
-            barWrapper.style.display = 'flex';
-            barWrapper.style.alignItems = 'center';
-            barWrapper.style.marginBottom = '10px';
-    
-            const label = document.createElement('div');
-            label.textContent = `${i}`;
-            label.classList.add('label');
-            // label.style.marginRight = '5px';
-            // label.style.fontWeight = 'bold';
-            // label.style.width = '100px'; // Fixed width for alignment
-            // label.style.textAlign = 'right';
-    
-            const barContainer = document.createElement('div');
-            barContainer.classList.add('bar');
-    
-            // Correctly scale the bar width relative to the maximum
-            const widthPercentage = (guessDistribution[i] / maxGuesses) * 100;
-            barContainer.style.width = `calc(${widthPercentage}*0.8%`; 
-    
-            // Display the count inside the bar
-            barContainer.textContent = `${guessDistribution[i]}`;
-    
-            // Highlight the latest guess index bar
-            barContainer.style.backgroundColor = (i === latestGuessIndex) ? 'green' : '#4d4d4d';
-    
-            barWrapper.appendChild(label);
-            barWrapper.appendChild(barContainer);
-            guessDistributionContainer.appendChild(barWrapper);
-        }
-    }
-
-    function updateAverageStats(stats) {
-        document.getElementById('average-guess').textContent = stats.averageGuess;
-        document.getElementById('median-guess').textContent = stats.medianGuess;
-
-        const latestGuessTime = new Date(stats.latestGuessTime);
-        const formattedDate = `${latestGuessTime.getDate()}-${latestGuessTime.toLocaleString('nl-NL', { month: 'short' })} ${latestGuessTime.getHours().toString().padStart(2, '0')}:${latestGuessTime.getMinutes().toString().padStart(2, '0')}`;
-        document.getElementById('latest-guess-time').textContent = formattedDate;
+        toast(error.message, { type: 'error' });
     }
 });

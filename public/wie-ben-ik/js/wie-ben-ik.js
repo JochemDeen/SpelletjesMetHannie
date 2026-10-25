@@ -178,7 +178,7 @@ async function submitThemeVote(themeId) {
         });
         if (!res.ok) {
             const err = await res.json();
-            alert(err.error || "Stemmen is niet gelukt.");
+            toast(err.error || "Stemmen is niet gelukt.", { type: "error" });
         }
     } catch (error) {
         console.error("Error submitting theme vote:", error);
@@ -331,7 +331,7 @@ async function submitQuestion() {
     const text = input.value.trim();
 
     if (!text) {
-        alert("Je hebt niks ingevuld!");
+        toast("Je hebt niks ingevuld!", { type: "error" });
         return;
     }
     const isGuess = guessCheckbox.checked;
@@ -348,7 +348,7 @@ async function submitQuestion() {
         });
         if (!response.ok) {
             const err = await response.json();
-            alert(err.error || "Versturen is niet gelukt.");
+            toast(err.error || "Versturen is niet gelukt.", { type: "error" });
         } else {
             input.value = "";
             guessCheckbox.checked = false;
@@ -406,7 +406,7 @@ async function renderVoting() {
 
                     // If the voter goes against the LLM suggestion on a guess, double-check.
                     if (q.is_guess && q.llm_advice && answer !== "??" && answer !== q.llm_advice) {
-                        const sure = confirm(`De computer denkt "${escapeHtml(q.llm_advice.toUpperCase())}", maar jij stemt "${answer.toUpperCase()}".\n\nWeet je het zeker?`);
+                        const sure = confirm(`De computer denkt "${q.llm_advice.toUpperCase()}", maar jij stemt "${answer.toUpperCase()}".\n\nWeet je het zeker?`);
                         if (!sure) return;
                     }
 
@@ -419,7 +419,7 @@ async function renderVoting() {
                         });
                         if (!res.ok) {
                             const err = await res.json();
-                            alert(err.error || "Stemmen is niet gelukt.");
+                            toast(err.error || "Stemmen is niet gelukt.", { type: "error" });
                         }
                     } catch (error) {
                         console.error("Error submitting vote:", error);

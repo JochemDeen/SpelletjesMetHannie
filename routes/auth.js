@@ -3,7 +3,7 @@
 const express = require('express');
 const router = express.Router();
 const bcrypt = require('bcrypt');
-const { db } = require('../models/user');
+const { db, getUsernameById } = require('../models/user');
 const logger = require('../logger');
 const { siteInfo } = require('../models/siteInfo');
 
@@ -96,6 +96,17 @@ router.get('/dashboard', requireLogin, servePage('dashboard.html'));
 // Basic site info for the dashboard footer
 router.get('/api/site-info', requireLogin, (req, res) => {
     res.json(siteInfo);
+});
+
+// Who is logged in (for the greeting on the dashboard)
+router.get('/api/me', requireLogin, async (req, res) => {
+    try {
+        const username = await getUsernameById(req.session.userId);
+        res.json({ username });
+    } catch (error) {
+        logger.error('Error fetching current user:', error);
+        res.status(500).json({ error: 'Er is iets misgegaan.' });
+    }
 });
 
 module.exports = router;

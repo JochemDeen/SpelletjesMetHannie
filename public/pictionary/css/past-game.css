@@ -1,0 +1,84 @@
+/* public/pictionary/css/past-game.css: a finished Pictionary game */
+
+.date-navigation {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.date-navigation h2 {
+    margin: 0;
+    font-size: 1.2rem;
+    text-align: center;
+}
+
+.nav-arrow {
+    width: var(--tap);
+    padding: 0;
+    font-size: 1.6rem;
+}
+
+.nav-arrow:disabled {
+    visibility: hidden;
+}
+
+#game-state-container h3 {
+    margin: 0 0 10px;
+}
+
+.drawing-card {
+    text-align: center;
+}
+
+.drawing-card img {
+    display: block;
+    width: 100%;
+    height: auto;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    background-color: #fff;
+}
+
+.drawing-word {
+    margin: 10px 0 0;
+    font-size: 1.25rem;
+}
+
+.table-scroll {
+    overflow-x: auto;
+}
+
+.guess-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.guess-table th,
+.guess-table td {
+    padding: 8px 6px;
+    border-bottom: 1px solid var(--border);
+    text-align: left;
+}
+
+.guess-table th {
+    color: var(--ink-soft);
+    font-size: 0.9rem;
+}
+
+.guess-table tr.top-guess td {
+    background-color: #eef6ee;
+    font-weight: 700;
+}
+
+.share-row {
+    margin-top: 20px;
+    text-align: center;
+}
+
+.share-row svg {
+    width: 20px;
+    height: 20px;
+    fill: currentColor;
+}
