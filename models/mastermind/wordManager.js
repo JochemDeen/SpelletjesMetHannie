@@ -95,9 +95,12 @@ async function validateWord(word) {
 
 // Wordle-style feedback per letter: exact matches first, then misplaced
 // letters, each letter of the word used at most once.
+// Both must be strings: a JSON body could send an object with a huge
+// "length", which would make the loops below run (almost) forever.
 function generateFeedback(guess, wordOfTheDay) {
-  if (!guess || !wordOfTheDay || guess.length !== wordOfTheDay.length) {
-      throw new Error('Invalid guess or word of the day. They must be non-empty and of equal length.');
+  if (typeof guess !== 'string' || typeof wordOfTheDay !== 'string' ||
+      guess.length === 0 || guess.length !== wordOfTheDay.length) {
+      throw new Error('Invalid guess or word of the day. They must be non-empty strings of equal length.');
   }
 
   guess = guess.toLowerCase();
