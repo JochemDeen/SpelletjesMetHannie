@@ -61,6 +61,13 @@ Only words with at least `--min-ratings` ratings are considered.
 - `pictionary_word_ratings`: one rating per user per word (`easy`, `medium`, `hard`, `drop`).
 - `pictionary_word_suggestions`: suggested words (`pending`, `accepted`, `rejected`).
 
+## Woordle and Pictionary maintenance
+
+| Command | What it does |
+| --- | --- |
+| `node scripts/check-mastermind-scores.js` | Read-only: recomputes the Woordle monthly scores and "months won" from the raw guesses, and lists oddities (more than 6 guesses, guesses after solving, ...). Compare with the scoreboard page. |
+| `node scripts/cleanup-drawings.js [--days=30] [--delete]` | Lists Pictionary drawing files no game uses any more (replaced by a touch-up, old backups); `--delete` removes them. |
+
 ## Development only
 
 | Command | What it does |

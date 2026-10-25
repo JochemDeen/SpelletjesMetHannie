@@ -40,8 +40,8 @@ app.use((req, res, next) => {
 });
 
 // Middleware to parse incoming JSON and form data
-app.use(express.json({ limit: '5mb' }));
-app.use(express.urlencoded({ extended: true, limit: '5mb' }));
+app.use(express.json({ limit: '2mb' })); // room for one 800x400 PNG drawing
+app.use(express.urlencoded({ extended: true, limit: '100kb' }));
 
 // Serve static files from the 'public' directory. Assets (css/js/images) are
 // served right away; .html pages only after the login check further down.

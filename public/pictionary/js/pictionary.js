@@ -1,1336 +1,501 @@
-//public/pictionary/js/pictionary.js
-const titles = {
-    DRAW: "Teken je woord!",
-    THINK: "Bedenk je tekening!",
-    CHOOSE: "Kies een moeilijkheidsgraad!",
-    GUESS: "Raad het woord!",
-    GRADE: "Beoordeel de antwoorden!",
-    MODIFY: "Pas je tekening aan!",
-    IDLE: "Pictionary!"
-};
-const gameTitleElement = document.getElementById("game-title");
+// public/pictionary/js/pictionary.js: the Pictionary game page.
+// The server holds the one shared game; this page polls its state (as seen
+// by this player) every few seconds and shows the matching screen.
 
-function updateGameTitle(state) {
-    switch (state) {
-        case "drawing":
-            gameTitleElement.textContent = titles.DRAW;
+const POLL_MS = 5000;
+const THINKING_SECONDS = 60;
+const MAX_ROUNDS = 5;
+const DIFFICULTY_LABELS = { easy: 'Makkelijk', medium: 'Gemiddeld', hard: 'Moeilijk' };
+const PHASE_TITLES = {
+    choose: 'Kies een moeilijkheid',
+    thinking: 'Bedenk je tekening',
+    drawing: 'Teken je woord!',
+    modify: 'Pas je tekening aan',
+    guessing: 'Wat is het?',
+    'guessing-watching': '',
+    feedback: 'Beoordeel de gokken',
+    idle: '',
+    Off: ''
+};
+const SECTIONS = ['off-container', 'word-selection', 'thinking-container', 'drawing-container',
+    'guess-container', 'grading-guesses', 'guesses-table-container'];
+
+const canvas = document.getElementById('drawing-canvas');
+const board = new DrawingBoard(canvas, { onChange: onBoardChange });
+
+let game = null;          // last state from the server
+let shownKey = null;      // which screen is showing (state|round|game)
+let drawingKey = null;    // localStorage key for the drawing in progress
+let busy = false;         // a drawing or grades are being sent
+let timer = null;         // the running countdown, if any
+
+const keyOf = (data) => `${data.state}|${data.round}|${data.game_id}`;
+
+function show(...ids) {
+    SECTIONS.forEach(id => document.getElementById(id).classList.toggle('hidden', !ids.includes(id)));
+}
+
+function setTitle(text) {
+    document.getElementById('phase-title').textContent = text || '';
+}
+
+// ---------- Polling ----------
+
+async function refresh(force = false) {
+    let data;
+    try {
+        data = await api('/api/pictionary/state');
+    } catch (error) {
+        return; // keep the current screen; the next poll tries again
+    }
+    game = data;
+    if (force || keyOf(data) !== shownKey) {
+        shownKey = keyOf(data);
+        render(data);
+    } else if (data.state === 'guessing' || data.state === 'guessing-watching') {
+        updateGuessesTable();
+    }
+}
+
+function render(data) {
+    stopTimer();
+    setTitle(PHASE_TITLES[data.state]);
+    switch (data.state) {
+        case 'scoring':
+            window.location.href = '/pictionary/scoreboard';
             break;
-        case "thinking":
-            gameTitleElement.textContent = titles.THINK;
+        case 'Off':
+            showMessage('🙈', data.reason === 'not-enough-players'
+                ? 'Er doen nu te weinig mensen mee met Pictionary. Zet het aan bij de <a href="/settings">instellingen</a>!'
+                : `Je doet niet mee met dit spel${data.drawer_name ? ` (${escapeHtml(data.drawer_name)} tekent)` : ''}. Wil je de volgende keer meedoen? Zet Pictionary aan bij de <a href="/settings">instellingen</a>.`);
             break;
-        case "choose":
-            gameTitleElement.textContent = titles.CHOOSE;
+        case 'idle':
+            showMessage('✏️', `<strong>${escapeHtml(data.drawer_name)}</strong> is aan de beurt om te tekenen. Even geduld, deze pagina ververst vanzelf.`);
             break;
-        case "guessing":
-            gameTitleElement.textContent = titles.GUESS;
+        case 'choose':
+            renderChoose();
             break;
-        case "feedback":
-            gameTitleElement.textContent = titles.GRADE;
+        case 'thinking':
+            renderThinking(data.word);
             break;
-        case "modify":
-            gameTitleElement.textContent = titles.MODIFY;
+        case 'drawing':
+            renderDrawing('draw');
+            break;
+        case 'modify':
+            renderDrawing('modify');
+            break;
+        case 'guessing':
+            renderGuessing(true);
+            break;
+        case 'guessing-watching':
+            renderGuessing(false);
+            break;
+        case 'feedback':
+            renderGrading();
             break;
         default:
-            gameTitleElement.textContent = titles.IDLE;
-            break;
+            showMessage('🤔', 'Er ging iets mis. Probeer de pagina opnieuw te laden.');
     }
 }
 
-// Function to Fetch the Initial Game State
-async function fetchGameState() {
+function showMessage(icon, html) {
+    show('off-container');
+    document.getElementById('off-icon').textContent = icon;
+    document.getElementById('off-message').innerHTML = html;
+}
+
+// ---------- Countdown ----------
+
+// Counts down `seconds` with a smoothly shrinking bar; calls onDone at 0
+function startTimer(seconds, onDone) {
+    stopTimer();
+    const container = document.getElementById('drawing-container');
+    const bar = document.getElementById('timer-bar');
+    const text = document.getElementById('timer-text');
+    const endAt = Date.now() + seconds * 1000;
+
+    bar.style.transition = 'none';
+    bar.style.width = '100%';
+    void bar.offsetWidth;
+    bar.style.transition = `width ${seconds}s linear`;
+    bar.style.width = '0%';
+
+    const tick = () => {
+        const left = Math.max(0, Math.ceil((endAt - Date.now()) / 1000));
+        text.textContent = `${Math.floor(left / 60)}:${String(left % 60).padStart(2, '0')}`;
+        container.classList.toggle('timer-low', left <= 10);
+        if (left <= 0) {
+            stopTimer();
+            onDone();
+        }
+    };
+    tick();
+    timer = setInterval(tick, 250);
+}
+
+function stopTimer() {
+    clearInterval(timer);
+    timer = null;
+}
+
+// ---------- Drawer: choose & think ----------
+
+async function renderChoose() {
+    show('word-selection');
+    const options = document.getElementById('difficulty-options');
+    options.innerHTML = '';
+    let maxScores = {};
     try {
-        const response = await fetch("/api/pictionary/state");
-        if (!response.ok) throw new Error("Failed to fetch initial game state.");
-
-        const data = await response.json();
-        console.log("Initial data fetched:", data);
-        return data; // Return full data object (includes state, and word when thinking)
+        maxScores = await api('/api/pictionary/max-scores');
     } catch (error) {
-        console.error("Error fetching game state:", error);
-        return { state: "idle" }; // Default to idle state
+        // the buttons work without the points
     }
-
+    [['easy', '🟢'], ['medium', '🟡'], ['hard', '🔴']].forEach(([value, icon]) => {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'difficulty-option';
+        button.innerHTML = `<span class="difficulty-icon">${icon}</span>
+            <span>${DIFFICULTY_LABELS[value]}</span>
+            <small>max ${maxScores[value] ?? '?'} punten</small>`;
+        button.addEventListener('click', async () => {
+            options.querySelectorAll('button').forEach(b => { b.disabled = true; });
+            try {
+                const data = await api('/api/pictionary/set-difficulty', { method: 'POST', body: { difficulty: value } });
+                const next = { ...game, state: 'thinking', word: data.word };
+                shownKey = keyOf(next);
+                render(next);
+            } catch (error) {
+                toast(error.message, { type: 'error' });
+                refresh(true);
+            }
+        });
+        options.appendChild(button);
+    });
 }
 
-// Function to Handle the Game State
-// Accepts either a state string or a data object with { state, word, ... }
-function handleGameState(stateOrData) {
-    let state, data;
-    if (typeof stateOrData === 'object' && stateOrData !== null) {
-        state = stateOrData.state;
-        data = stateOrData;
-    } else {
-        state = stateOrData;
-        data = {};
-    }
+function renderThinking(word) {
+    show('thinking-container');
+    document.getElementById('thinking-word').textContent = word || '';
+    const timerText = document.getElementById('thinking-timer');
+    const endAt = Date.now() + THINKING_SECONDS * 1000;
+    const startDrawing = () => {
+        stopTimer();
+        renderDrawing('draw');
+    };
+    timer = setInterval(() => {
+        const left = Math.max(0, Math.ceil((endAt - Date.now()) / 1000));
+        timerText.textContent = `${Math.floor(left / 60)}:${String(left % 60).padStart(2, '0')}`;
+        if (left <= 0) startDrawing();
+    }, 250);
+    document.getElementById('start-drawing-btn').onclick = startDrawing;
+}
 
-    updateGameTitle(state);
+// ---------- Drawer: drawing and touching up ----------
 
-    // If the game is in the "scoring" state, redirect to the scoreboard
-    if (state === "scoring") {
-        window.location.href = "/pictionary/scoreboard";
+// mode 'draw': the first drawing; mode 'modify': the one touch-up per round
+async function renderDrawing(mode) {
+    setTitle(PHASE_TITLES[mode === 'draw' ? 'drawing' : 'modify']);
+    show('drawing-container');
+    const finishButton = document.getElementById('finish-drawing');
+    finishButton.disabled = true;
+    board.disable();
+
+    let data;
+    try {
+        data = await api(mode === 'draw' ? '/api/pictionary/start-drawing' : '/api/pictionary/enter-modify-state', { method: 'POST' });
+    } catch (error) {
+        toast(error.message, { type: 'error' });
+        refresh(true);
         return;
     }
+    shownKey = keyOf({ ...game, state: mode === 'draw' ? 'drawing' : 'modify', round: data.round });
+    document.getElementById('draw-word').textContent = data.word;
 
-    // 1. Hide all relevant containers first
-    hideAllContainers();
-
-    // 2. Show the container & call the function for the chosen state
-    switch (state) {
-      case "thinking":
-        document.getElementById("thinking-container").classList.remove("hidden");
-        handleThinking(data.word);
-        break;
-      case "drawing":
-        document.getElementById("drawing-container").classList.remove("hidden");
-        handleDraw();
-        break;
-      case "modify":
-        document.getElementById("drawing-container").classList.remove("hidden");
-        handleModifyDrawing();
-        break;
-      case "choose":
-        document.getElementById("word-selection").classList.remove("hidden");
-        document.getElementById("difficulty-options").classList.remove("hidden");
-        handleChoose();
-        break;
-      case "guessing":
-        document.getElementById("guess-container").classList.remove("hidden");
-        document.getElementById("guessing").classList.remove("hidden");
-
-        document.getElementById("guess-submission-controls").classList.remove("hidden");
-        handleGuess();
-        break;
-    case "guessing-watching":
-        document.getElementById("guess-container").classList.remove("hidden");
-        document.getElementById("guessing").classList.remove("hidden");
-        document.getElementById("guess-submission-controls").classList.add("hidden"); // Hide input & button
-        handleGuess();
-        break;
-
-      case "feedback":
-        document.getElementById("grading-guesses").classList.remove("hidden");
-        handleGrade();
-        break;
-      default:
-        break;
+    board.reset();
+    if (mode === 'modify' && data.image_src) {
+        try {
+            await board.setBaseImage(data.image_src);
+        } catch (error) {
+            toast('De tekening kon niet worden geladen.', { type: 'error' });
+        }
     }
-  }
-  
-function hideAllContainers() {
-    const containers = [
-      "word-selection",
-      "thinking-container",
-      "drawing-container",
-      "guess-submission",
-      "guesses-table-container",
-      "grading-guesses",
-    ];
-  
-    containers.forEach((id) => {
-      const el = document.getElementById(id);
-      if (el) el.classList.add("hidden");
-    });
-  }
+    // Picks up where you were if the page was reloaded while drawing
+    drawingKey = `pictionary-drawing-${game.game_id}-${data.round}-${mode}`;
+    try {
+        const saved = localStorage.getItem(drawingKey);
+        if (saved) board.restore(saved);
+    } catch (e) {
+        // storage unavailable
+    }
+    updateHistoryButtons();
 
-
-let isDrawingSessionStarting = false;
-
-const handleDraw = async () => {
-  const canvas = document.getElementById("drawing-canvas");
-  const canvasRef = { current: canvas };
-  const wordTitleEl = document.getElementById("draw-word-title");
-  const finishButton = document.getElementById("finish-drawing");
-  if (isDrawingSessionStarting) {
-    console.log("Drawing session already starting, ignoring duplicate call");
-    return;
-  }
-
-  try {
-    isDrawingSessionStarting = true;
+    if (data.countdown <= 0) {
+        finishDrawing(mode);
+        return;
+    }
+    board.enable();
     finishButton.disabled = false;
+    finishButton.textContent = mode === 'draw' ? 'Klaar!' : 'Klaar met aanpassen';
+    finishButton.onclick = () => finishDrawing(mode);
+    startTimer(data.countdown, () => finishDrawing(mode));
+}
 
-      // 1. Start the drawing session and get the countdown duration
-      const startResponse = await axios.post('/api/pictionary/start-drawing');
+async function finishDrawing(mode) {
+    if (busy) return;
+    busy = true;
+    stopTimer();
+    board.disable();
+    document.getElementById('finish-drawing').disabled = true;
 
-      if (startResponse.status !== 200) {
-          throw new Error('Failed to initialize drawing session.');
-      }
+    const url = mode === 'draw' ? '/api/pictionary/submit-drawing' : '/api/pictionary/submit-modified-drawing';
+    const body = (mode === 'draw' && !board.hasNewStrokes()) ? { empty: true } : { drawing: board.toDataURL() };
+    try {
+        const result = await api(url, { method: 'POST', body });
+        if (result.status === 'empty') {
+            toast('Je hebt niets getekend, dus dit spel telt niet. Er begint een nieuw spel.', { duration: 5000 });
+        } else {
+            toast(mode === 'draw' ? 'Je tekening is verstuurd!' : 'Je aanpassing is opgeslagen!', { type: 'success' });
+        }
+        try {
+            localStorage.removeItem(drawingKey);
+        } catch (e) {
+            // ignore
+        }
+    } catch (error) {
+        toast(error.message, { type: 'error' });
+    }
+    busy = false;
+    refresh(true);
+}
 
-      const countdownDuration = startResponse.data.countdown; // Duration in seconds
-      const wordToDraw = startResponse.data.word;
+function onBoardChange() {
+    updateHistoryButtons();
+    if (!drawingKey || !board.enabled) return;
+    try {
+        localStorage.setItem(drawingKey, board.serialize());
+    } catch (e) {
+        // storage full or unavailable: the drawing just isn't restorable
+    }
+}
 
-      wordTitleEl.innerHTML = `Teken een <span class="highlight-word">${escapeHtml(wordToDraw)}</span>, je hebt ${countdownDuration} seconden`;
-      console.log(`Countdown started: ${countdownDuration} seconds`);
-    
-      // 2. Start the timer and enable the canvas for drawing
-      const { timerBar, timerInterval } = startCountdown(countdownDuration);
+function updateHistoryButtons() {
+    document.getElementById('undo-button').disabled = board.strokes.length === 0;
+    document.getElementById('redo-button').disabled = board.redoStack.length === 0;
+}
 
-      enableDrawing(canvasRef);
-
-      finishButton.addEventListener("click", async () => {
-          finishButton.disabled = true;
-          disableDrawing(canvasRef);
-          disableColors();
-          clearInterval(timerInterval);
-          
-          console.log("Done button clicked. Drawing disabled, timer frozen.");
-          // Submit the drawing
-          await submitDrawing(canvasRef, timerBar);
-        }, { once: true }); // Add the once: true option
-
-      // 3. When the countdown finishes, submit the drawing automatically
-      setTimeout(async () => {
-          console.log("Time's up – disabled drawing and button.");
-          if (!finishButton.disabled) {
-            finishButton.disabled = true;
-            disableDrawing(canvasRef);
-            disableColors();
-            clearInterval(timerInterval);
-          
-            // Make sure this runs by adding await and proper error handling
-            try {
-                await submitDrawing(canvasRef, timerBar);
-            } catch (submitError) {
-                console.error("Error submitting drawing on timeout:", submitError);
-                // Attempt to refresh state even if submission failed
-                const newState = await fetchGameState();
-                handleGameState(newState);
+function setupToolbar() {
+    const toolbar = document.getElementById('toolbar');
+    const setActive = (selector, button) => {
+        toolbar.querySelectorAll(selector).forEach(b => b.classList.toggle('active', b === button));
+    };
+    toolbar.querySelectorAll('.swatch').forEach(button => {
+        button.addEventListener('click', () => {
+            board.color = button.dataset.color;
+            setActive('.swatch', button);
+            if (board.tool === 'eraser') {
+                board.tool = 'pen';
+                setActive('.tool-btn[data-tool]', toolbar.querySelector('[data-tool="pen"]'));
             }
-          }
-      }, countdownDuration * 1000);
-    isDrawingSessionStarting = false;
-  } catch (error) {
-      console.error('Error in handleDraw:', error.message);
-      isDrawingSessionStarting = false; // Reset flag in case of error
-
-      // Try to recover by fetching current state
-      try {
-          const newState = await fetchGameState();
-          handleGameState(newState);
-      } catch (stateError) {
-          console.error('Failed to recover game state:', stateError);
-      }
-  }
-};
-
-// Also update the submitDrawing function to be more robust:
-const submitDrawing = async (canvasRef, timerBar) => {
-  try {
-      // Stop the timer bar
-      if (timerBar) {
-          timerBar.style.width = '0%';
-      }
-  
-      // Extract the drawing from the canvas as a base64 string
-      const canvas = canvasRef.current;
-      const drawingData = exportCanvasWithWhiteBackground(canvas);
-  
-      const payload = {
-          drawing: drawingData,
-          timestamp: new Date().toISOString(),
-      };
-  
-      console.log('Submitting drawing to server...');
-      const payloadSize = JSON.stringify(payload).length;
-      console.log(`Payload size before sending: ${payloadSize} bytes (${payloadSize/1024/1024} MB)`);
-
-      // Send the drawing to the backend
-      const response = await axios.post('/api/pictionary/submit-drawing', payload);
-  
-      if (response.status === 200) {
-          console.log('Drawing submitted successfully:', response.data);
-          // Refresh game state after submission
-          const newState = await fetchGameState();
-          handleGameState(newState);
-      } else {
-          console.warn('Unexpected response while submitting drawing:', response);
-          throw new Error(`Unexpected response: ${response.status}`);
-      }
-  } catch (error) {
-      console.error('Error submitting drawing:', error.message);
-      if (window.isHandlingDrawingError) {
-          return;
-      }
-      
-      window.isHandlingDrawingError = true;
-      setTimeout(() => { 
-          window.isHandlingDrawingError = false;
-          handleGameState('idle');
-      }, 1000);
-  }
-};
-
-function disableColors() {
-    const colorButtons = document.querySelectorAll('#color-picker .color');
-    colorButtons.forEach(btn => {
-      btn.classList.add('hidden');
-    });
-
-    const eraserBtn = document.getElementById('eraser-button');
-    eraserBtn.classList.add('hidden');
-}
-
-// 3. Add the function to disable thickness controls, similar to disableColors
-function disableThicknessControls() {
-  const thicknessButtons = document.querySelectorAll('#thickness-controls .thickness-btn');
-  thicknessButtons.forEach(btn => {
-    btn.classList.add('hidden');
-  });
-}
-
-function disableDrawing(canvasRef) {
-    const canvas = canvasRef.current;
-    // Easiest way: remove event listeners
-    canvas.removeEventListener("mousedown", canvasRef.startMouseDrawing);
-    canvas.removeEventListener("mousemove", canvasRef.moveMouseDrawing);
-    canvas.removeEventListener("mouseup", canvasRef.stopMouseDrawing);
-  
-    canvas.removeEventListener("touchstart", canvasRef.startTouchDrawing);
-    canvas.removeEventListener("touchmove", canvasRef.moveTouchDrawing);
-    canvas.removeEventListener("touchend", canvasRef.stopTouchDrawing);
-    // Remove the custom cursor
-    if (canvasRef.customCursor) {
-      canvasRef.customCursor.remove();
-    }
-
-    // Restore default cursor
-    canvas.style.cursor = 'default';
-    disableColors();
-    disableThicknessControls();
-  
-    }
-
-let thinkingTimerInterval = null;
-
-function handleThinking(word) {
-    const wordTitleEl = document.getElementById("thinking-word-title");
-    const timerEl = document.getElementById("thinking-timer");
-    const startBtn = document.getElementById("start-drawing-btn");
-
-    if (word) {
-        wordTitleEl.innerHTML = `Je woord is: <span class="highlight-word">${escapeHtml(word)}</span>`;
-    }
-
-    // 60 seconds
-    const thinkingDuration = 60;
-    let timeLeft = thinkingDuration;
-
-    function formatTime(seconds) {
-        const m = Math.floor(seconds / 60);
-        const s = seconds % 60;
-        return `${m}:${s.toString().padStart(2, '0')}`;
-    }
-
-    timerEl.textContent = formatTime(timeLeft);
-
-    // Clear any previous interval
-    if (thinkingTimerInterval) clearInterval(thinkingTimerInterval);
-
-    thinkingTimerInterval = setInterval(() => {
-        timeLeft -= 1;
-        timerEl.textContent = formatTime(timeLeft);
-
-        if (timeLeft <= 0) {
-            clearInterval(thinkingTimerInterval);
-            thinkingTimerInterval = null;
-            handleGameState('drawing');
-        }
-    }, 1000);
-
-    // Start drawing button
-    startBtn.addEventListener("click", () => {
-        if (thinkingTimerInterval) {
-            clearInterval(thinkingTimerInterval);
-            thinkingTimerInterval = null;
-        }
-        handleGameState('drawing');
-    }, { once: true });
-}
-
-function startCountdown(duration) {
-    const timerBar = document.getElementById("timer-bar");
-    if (!timerBar) return null; // Defensive check
-    
-    let timeLeft = duration;
-    
-    // Update progress bar every second
-    const timerInterval = setInterval(() => {
-        timeLeft -= 1;
-        const percentage = (timeLeft / duration) * 100;
-        timerBar.style.width = `${percentage}%`;
-    
-        if (timeLeft <= 0) {
-        clearInterval(timerInterval);
-        }
-    }, 1000);
-    
-    return { timerBar, timerInterval };
-    }
-
-  const enableDrawing = (canvasRef) => {
-    const canvas = canvasRef.current;
-    const ctx = canvas.getContext('2d');
-    let drawing = false;
-    let selectedColor = '#000000'; // Default color
-    let selectedTool = "pen";
-    let brushThickness = 6; // Default medium thickness
-
-    // Add history for undo functionality
-  let drawingHistory = [];
-  let currentHistoryIndex = -1;
-
-  // Create a cursor canvas element for custom cursor
-  const cursorCanvas = document.createElement('canvas');
-  const cursorCtx = cursorCanvas.getContext('2d');
-  cursorCanvas.width = 40;  // Size of the cursor canvas
-  cursorCanvas.height = 40;
-  // Create a div to hold the custom cursor
-  const customCursor = document.createElement('div');
-  customCursor.id = 'custom-cursor';
-  customCursor.style.position = 'absolute';
-  customCursor.style.pointerEvents = 'none';
-  customCursor.style.zIndex = '1000';
-  customCursor.style.top = '0';
-  customCursor.style.left = '0';
-  customCursor.style.transform = 'translate(-50%, -50%)';
-  customCursor.style.display = 'none';
-  document.body.appendChild(customCursor);
-
-    // Function to update the custom cursor
-    function updateCustomCursor() {
-      // Clear the cursor canvas
-      cursorCtx.clearRect(0, 0, cursorCanvas.width, cursorCanvas.height);
-      
-      // Draw the cursor based on current tool and thickness
-      if (selectedTool === "eraser") {
-        // Eraser cursor - draw a circle with a red border
-        cursorCtx.beginPath();
-        cursorCtx.arc(cursorCanvas.width/2, cursorCanvas.height/2, 10, 0, 2 * Math.PI);
-        cursorCtx.strokeStyle = 'rgba(255, 0, 0, 0.8)';
-        cursorCtx.lineWidth = 2;
-        cursorCtx.stroke();
-        cursorCtx.fillStyle = 'rgba(255, 255, 255, 0.5)';
-        cursorCtx.fill();
-        
-        // Add a cross in the middle
-        cursorCtx.beginPath();
-        cursorCtx.moveTo(cursorCanvas.width/2 - 5, cursorCanvas.height/2);
-        cursorCtx.lineTo(cursorCanvas.width/2 + 5, cursorCanvas.height/2);
-        cursorCtx.moveTo(cursorCanvas.width/2, cursorCanvas.height/2 - 5);
-        cursorCtx.lineTo(cursorCanvas.width/2, cursorCanvas.height/2 + 5);
-        cursorCtx.strokeStyle = 'red';
-        cursorCtx.lineWidth = 1;
-        cursorCtx.stroke();
-      } else {
-        // Pen cursor - draw a circle with the selected color
-        cursorCtx.beginPath();
-        cursorCtx.arc(cursorCanvas.width/2, cursorCanvas.height/2, brushThickness/2, 0, 2 * Math.PI);
-        cursorCtx.fillStyle = selectedColor;
-        cursorCtx.fill();
-        
-        // Add a white border for better visibility on dark colors
-        cursorCtx.strokeStyle = 'rgba(255, 255, 255, 0.8)';
-        cursorCtx.lineWidth = 1;
-        cursorCtx.stroke();
-      }
-      
-      // Update the custom cursor with the new image
-      customCursor.style.width = cursorCanvas.width + 'px';
-      customCursor.style.height = cursorCanvas.height + 'px';
-      customCursor.style.backgroundImage = `url(${cursorCanvas.toDataURL()})`;
-      customCursor.style.backgroundSize = 'contain';
-    }
-  
-    // Initial cursor update
-    updateCustomCursor();
-    canvas.addEventListener('mousemove', (e) => {
-      const rect = canvas.getBoundingClientRect();
-      customCursor.style.left = (e.clientX) + 'px';
-      customCursor.style.top = (e.clientY) + 'px';
-    });
-    
-    // Show the custom cursor when over the canvas
-    canvas.addEventListener('mouseenter', () => {
-      customCursor.style.display = 'block';
-      canvas.style.cursor = 'none'; // Hide the default cursor
-    });
-    
-    // Hide the custom cursor when leaving the canvas
-    canvas.addEventListener('mouseleave', () => {
-      customCursor.style.display = 'none';
-      canvas.style.cursor = 'default'; // Restore the default cursor
-    });
-    
-  
-  
-  // Save initial canvas state (blank)
-  saveCanvasState();
-
-  
-// ===================
-  // HOOK UP THE COLORS
-  // ===================
-  document.querySelectorAll("#color-picker .color")
-    .forEach((colorBtn) => {
-        colorBtn.addEventListener("click", () => {
-            selectedTool = "pen";
-        selectedColor = colorBtn.dataset.color;
-        updateCustomCursor(); // Update cursor after color change
-        console.log("Color changed to:", selectedColor);
         });
     });
-
-// ===================
-  // HOOK UP THE ERASER
-  // ===================
-  const eraserBtn = document.getElementById("eraser-button");
-  eraserBtn.addEventListener("click", () => {
-    selectedTool = "eraser";
-    updateCustomCursor(); // Update cursor for eraser
-    console.log("Tool changed to eraser");
-  });
-
-  // HOOK UP THE THICKNESS CONTROLS
-  document.querySelectorAll(".thickness-btn").forEach((thicknessBtn) => {
-    thicknessBtn.addEventListener("click", () => {
-      brushThickness = parseInt(thicknessBtn.dataset.thickness);
-      
-      // Visual feedback - add active class to selected button
-      document.querySelectorAll(".thickness-btn").forEach(btn => {
-        btn.classList.remove("active");
-      });
-      thicknessBtn.classList.add("active");
-      updateCustomCursor(); // Update cursor with new thickness
-      
-      console.log("Brush thickness changed to:", brushThickness);
+    toolbar.querySelectorAll('.tool-btn[data-tool]').forEach(button => {
+        button.addEventListener('click', () => {
+            board.tool = button.dataset.tool;
+            setActive('.tool-btn[data-tool]', button);
+        });
     });
-  });
-  // Set the medium brush as active by default
-  const mediumBrush = document.getElementById("medium-brush");
-  if (mediumBrush) {
-    mediumBrush.classList.add("active");
-  }
-  
+    toolbar.querySelectorAll('.size-btn').forEach(button => {
+        button.addEventListener('click', () => {
+            board.size = Number(button.dataset.size);
+            setActive('.size-btn', button);
+        });
+    });
+    document.getElementById('undo-button').addEventListener('click', () => board.undo());
+    document.getElementById('redo-button').addEventListener('click', () => board.redo());
+    document.getElementById('clear-button').addEventListener('click', () => {
+        board.clear();
+        toast('Alles gewist. Per ongeluk? Druk op ↶.');
+    });
+}
 
-  // 4. Add the listeners
-  canvas.addEventListener("mousedown", startMouseDrawing);
-  canvas.addEventListener("mousemove", moveMouseDrawing);
-  canvas.addEventListener("mouseup", stopMouseDrawing);
+// ---------- Guessing ----------
 
-  canvas.addEventListener("touchstart", startTouchDrawing, { passive: false });
-  canvas.addEventListener("touchmove", moveTouchDrawing, { passive: false });
-  canvas.addEventListener("touchend", stopTouchDrawing);
-
-  // 5. Attach references so we can remove them later
-  canvasRef.startMouseDrawing = startMouseDrawing;
-  canvasRef.moveMouseDrawing = moveMouseDrawing;
-  canvasRef.stopMouseDrawing = stopMouseDrawing;
-  canvasRef.startTouchDrawing = startTouchDrawing;
-  canvasRef.moveTouchDrawing = moveTouchDrawing;
-  canvasRef.stopTouchDrawing = stopTouchDrawing;
-  canvasRef.customCursor = customCursor;
-
-  // HOOK UP THE UNDO BUTTON
-  const undoButton = document.getElementById('undo-button');
-  if (undoButton) {
-    undoButton.addEventListener('click', handleUndo);
-  }
-
-  // Function to save the current canvas state
-  function saveCanvasState() {
-    // If we're not at the end of the history array, remove everything after current index
-    if (currentHistoryIndex < drawingHistory.length - 1) {
-      drawingHistory = drawingHistory.slice(0, currentHistoryIndex + 1);
-    }
-    
-    // Limit history size to prevent memory issues
-    if (drawingHistory.length >= 20) {
-      drawingHistory.shift(); // Remove the oldest state
+async function renderGuessing(canGuess) {
+    show('guess-container', 'guesses-table-container');
+    const form = document.getElementById('guess-submission');
+    const waiting = document.getElementById('guess-waiting');
+    form.classList.toggle('hidden', !canGuess);
+    waiting.classList.toggle('hidden', canGuess);
+    if (canGuess) {
+        document.getElementById('guess-input').value = '';
     } else {
-      currentHistoryIndex++;
+        setTitle(game.is_drawer ? 'De anderen zijn aan het raden' : 'Wachten op de anderen');
+        waiting.textContent = game.is_drawer
+            ? 'Zodra iedereen een gok heeft gedaan, mag jij ze beoordelen.'
+            : 'Je gok is binnen! Zodra iedereen heeft geraden, beoordeelt de tekenaar de gokken.';
     }
-    
-    // Save current canvas state to history
-    drawingHistory.push(canvas.toDataURL());
-  }
-
-    // Function to handle undo button
-    function handleUndo() {
-      if (currentHistoryIndex > 0) {
-        currentHistoryIndex--;
-        const image = new Image();
-        image.src = drawingHistory[currentHistoryIndex];
-        image.onload = function() {
-          ctx.clearRect(0, 0, canvas.width, canvas.height);
-          ctx.drawImage(image, 0, 0);
-        };
-      }
-    }
-  
-
-    function startMouseDrawing(e) {
-        drawing = true;
-        ctx.beginPath();
-
-        const rect = canvas.getBoundingClientRect();
-        const scaleX = canvas.width / rect.width;
-        const scaleY = canvas.height / rect.height;
-
-        // offsetX is usually scaled automatically, but to be consistent:
-        const x = (e.clientX - rect.left) * scaleX;
-        const y = (e.clientY - rect.top) * scaleY;
-
-        ctx.moveTo(x, y);
-        if (selectedTool !== "eraser") {
-          ctx.globalCompositeOperation = "source-over";
-          ctx.fillStyle = selectedColor;
-          
-          // Draw a small circle at the starting point
-          ctx.beginPath();
-          ctx.arc(x, y, brushThickness/2, 0, Math.PI * 2);
-          ctx.fill();
-          
-          // Reset path and move to starting point again
-          ctx.beginPath();
-          ctx.moveTo(x, y);
-        }
-    
-      }
-    
-      function moveMouseDrawing(e) {
-        if (!drawing) return;
-        const rect = canvas.getBoundingClientRect();
-
-        // Scale from display size back to the canvas's internal coordinate space
-        const scaleX = canvas.width / rect.width;  
-        const scaleY = canvas.height / rect.height;
-
-        const x = (e.clientX - rect.left) * scaleX;
-        const y = (e.clientY - rect.top) * scaleY;
-
-        if (selectedTool === "eraser") {
-            ctx.globalCompositeOperation = "destination-out"; // remove pixels
-            ctx.lineWidth = 20;// Eraser is always thick
-          } else {
-            ctx.globalCompositeOperation = "source-over"; // normal drawing
-            ctx.strokeStyle = selectedColor;
-            ctx.lineWidth = brushThickness;
-
-            // Set line properties for smoother lines
-            ctx.lineCap = 'round';
-            ctx.lineJoin = 'round';
-            
-            // Add some anti-aliasing/smoothing effect
-            ctx.shadowColor = selectedColor;
-            ctx.shadowBlur = 1; // Small blur for anti-aliasing
-          }
-      
-        ctx.lineTo(x, y);
-        ctx.stroke();
-        ctx.strokeStyle = selectedColor;
-        ctx.lineCap = 'round';
-      }
-    
-      function stopMouseDrawing() {
-        drawing = false;
-        saveCanvasState(); 
-        // optional: ctx.closePath();
-      }
-    
-      // Touch equivalents
-      function startTouchDrawing(e) {
-        e.preventDefault();
-        drawing = true;
-        ctx.beginPath();
-        const touch = e.touches[0];
-        const rect = canvas.getBoundingClientRect();
-        const scaleX = canvas.width / rect.width;
-        const scaleY = canvas.height / rect.height;
-
-        const x = (touch.clientX - rect.left) * scaleX;
-        const y = (touch.clientY - rect.top) * scaleY;
-
-        ctx.moveTo(x, y);
-        
-        // For touch, also draw a dot at start
-        if (selectedTool !== "eraser") {
-          ctx.globalCompositeOperation = "source-over";
-          ctx.fillStyle = selectedColor;
-          
-          // Draw a small circle at the starting point
-          ctx.beginPath();
-          ctx.arc(x, y, brushThickness/2, 0, Math.PI * 2);
-          ctx.fill();
-          
-          // Reset path and move to starting point again
-          ctx.beginPath();
-          ctx.moveTo(x, y);
-        }
-      }
-    
-      function moveTouchDrawing(e) {
-        if (!drawing) return;
-        e.preventDefault();
-
-        const touch = e.touches[0];
-        const rect = canvas.getBoundingClientRect();
-        const scaleX = canvas.width / rect.width;
-        const scaleY = canvas.height / rect.height;
-
-        const x = (touch.clientX - rect.left) * scaleX;
-        const y = (touch.clientY - rect.top) * scaleY;
-
-        if (selectedTool === "eraser") {
-            ctx.globalCompositeOperation = "destination-out"; // remove pixels
-            ctx.lineWidth = 20;
-          } else {
-            ctx.globalCompositeOperation = "source-over"; // normal drawing
-            ctx.strokeStyle = selectedColor;
-            ctx.lineWidth = brushThickness;
-
-            // Set line properties for smoother lines
-            ctx.lineCap = 'round';
-            ctx.lineJoin = 'round';
-            
-            // Add some anti-aliasing/smoothing effect
-            ctx.shadowColor = selectedColor;
-            ctx.shadowBlur = 1; // Small blur for anti-aliasing
-
-          }
-        ctx.lineTo(x, y);
-        ctx.stroke();
-        
-        // For touch devices, move the custom cursor to follow the touch point
-        customCursor.style.left = (touch.clientX) + 'px';
-        customCursor.style.top = (touch.clientY) + 'px';
-        customCursor.style.display = 'block';
-      }
-    
-      function stopTouchDrawing(e) {
-        e.preventDefault();
-        if (drawing) {
-          drawing = false;
-          // Reset shadow to avoid affecting other operations
-          ctx.shadowBlur = 0;
-          saveCanvasState(); // Save state after completing a stroke
-          
-          // Hide custom cursor when touch ends
-          customCursor.style.display = 'none';
-        }    
-      }
-  };
-
-  function exportCanvasWithWhiteBackground(canvas) {
-    const width = canvas.width;
-    const height = canvas.height;
-    // Create a new canvas element
-    const tempCanvas = document.createElement('canvas');
-    tempCanvas.width = width;
-    tempCanvas.height = height;
-    const ctx = tempCanvas.getContext('2d');
-  
-    // Fill with white
-    ctx.fillStyle = '#ffffff';
-    ctx.fillRect(0, 0, width, height);
-  
-    // Draw the original canvas on top
-    ctx.drawImage(canvas, 0, 0);
-  
-    // Export the resulting image as a data URL
-    return tempCanvas.toDataURL('image/png');
-  }
-
-  async function handleChoose() {
-    try {
-        // Step 1: Ask user for difficulty selection
-        const difficulty = await showDifficultySelectionUI();
-
-        // Step 2: Send the difficulty to backend and get the assigned word
-        const response = await fetch('/api/pictionary/set-difficulty', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ difficulty })
-        });
-
-        const data = await response.json();
-
-        if (response.ok) {
-            console.log(`Assigned word: ${data.word}, Max Points: ${data.maxPoints}`);
-
-            // Transition to thinking state with the word
-            handleGameState(data);
-        } else {
-            console.error('Failed to set difficulty');
-        }
-    } catch (error) {
-        console.error('Error in handleChoose:', error);
-    }
-}
-
-async function showDifficultySelectionUI() {
-  return new Promise(async (resolve) => {
-      const selectionContainer = document.getElementById("word-selection");
-      const optionsDiv = document.getElementById("difficulty-options");
-
-      // Clear previous options
-      optionsDiv.innerHTML = "";
-
-      // Fetch max points
-      let maxScores = {};
-      try {
-          const response = await fetch("/api/pictionary/max-scores");
-          maxScores = await response.json();
-      } catch (error) {
-          console.error("Failed to fetch max scores:", error);
-      }
-
-      // Difficulty options in Dutch
-      const difficulties = [
-          { label: "Makkelijk", value: "easy", maxPoints: maxScores.easy || "?", icon: "🟢" },
-          { label: "Gemiddeld", value: "medium", maxPoints: maxScores.medium || "?", icon: "🟡" },
-          { label: "Moeilijk", value: "hard", maxPoints: maxScores.hard || "?", icon: "🔴" }
-      ];
-
-      // Create buttons
-      difficulties.forEach(({ label, value, maxPoints, icon }) => {
-          const btn = document.createElement("button");
-          btn.classList.add("difficulty-option", `difficulty-${value}`);
-          btn.innerHTML = `
-              <span class="difficulty-icon">${icon}</span>
-              <span>${label}</span>
-              <small>(Max: ${maxPoints} punten)</small>
-          `;
-
-          btn.addEventListener("click", () => {
-              selectionContainer.classList.add("hidden");
-              resolve(value);
-          });
-
-          optionsDiv.appendChild(btn);
-      });
-
-      // Show selection container
-      selectionContainer.classList.remove("hidden");
-  });
-}
-function showWordSelectionUI(words) {
-    return new Promise((resolve) => {
-      // Grab the container from your HTML
-      const wordSelectionContainer = document.getElementById("word-selection");
-      const wordOptionsDiv = document.getElementById("word-options");
-  
-      // Clear any previous items
-      wordOptionsDiv.innerHTML = "";
-  
-      // Show the container
-      wordSelectionContainer.classList.remove("hidden");
-    
-      // Create a div for the actual list of words
-      const wordsList = document.createElement("div");
-      wordsList.classList.add("words-list");
-      wordOptionsDiv.appendChild(wordsList);
-  
-      // Add a clickable box for each word
-      words.forEach((word) => {
-        const wordDiv = document.createElement("div");
-        wordDiv.classList.add("word-option");
-        wordDiv.textContent = word;
-        
-        // On click, hide the container & resolve the chosen word
-        wordDiv.addEventListener("click", () => {
-          wordSelectionContainer.classList.add("hidden");
-          resolve(word);
-        });
-  
-        wordsList.appendChild(wordDiv);
-      });
-    });
-  }
-
-async function handleGuess() {
-    document.getElementById("guess-submission").classList.remove("hidden");
-    document.getElementById("guesses-table-container").classList.remove("hidden");
-
-    document.getElementById('guess-input').value = "";
-
-    // Step 1: Fetch the image to be guessed
-    const response = await fetch('/api/pictionary/get-image');
-    const data = await response.json();
-    const drawerName = data.drawerName;
-    const imageSrc = data.imageSrc;
-    const difficulty = data.difficulty === 'easy' ? 'Makkelijk' : data.difficulty === 'medium' ? 'Gemiddeld' : 'Moeilijk';
-  
-    const imageCanvasDiv = document.getElementById("image-canvas");
-    imageCanvasDiv.innerHTML = `
-    <div style="text-align: center; margin-bottom: 10px; font-size: 18px; color: #333;">
-      Tekening door <span style="font-weight: bold;">${drawerName}</span><br>
-      <span style="font-size: 14px;">(Moeilijkheidsgraad: ${difficulty})</span>
-    </div>
-    <img src="${imageSrc}" alt="Drawing by ${drawerName}" 
-      style="max-width: 100%; height: auto; border: 1px solid #ddd; border-radius: 8px;" />
-    `;
-    updateGuessesTable(); // Update the guesses table first
-}
-async function submitGuess() {
-    try {
-        const guessInputEl = document.getElementById('guess-input');
-        const guessValue = guessInputEl.value.trim();
-
-
-        if (!guessValue) {
-            alert('Je hebt niks ingevuld!');
-            return;
-        }
-
-        // Step 3: Submit the guess to the backend
-        console.log('Submitting guess:', guessValue);
-        const response = await fetch('/api/pictionary/submit-guess', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ guess: guessValue })
-        });
-        if (!response.ok) {
-            console.error('Failed to submit guess');
-            return;
-        } else{
-          // 🔄 Refresh game state after submission
-          const newState = await fetchGameState();
-          handleGameState(newState);
-
-        }
-
-        // Step 4: Update guesses table
-        await updateGuessesTable();
-        console.log('Guess submitted and table updated');
-    } catch (error) {
-        console.error('Error in handleGuess:', error);
-    }
-}
-
-async function handleGrade() {
-    const wordTitleEl = document.getElementById("grading-guesses-title");
-    const modifyButton = document.getElementById("modify-drawing");
 
     try {
-        // Step 1: Fetch the image to be guessed
-        const response = await fetch('/api/pictionary/get-image');
-        const data = await response.json();
-        const drawerName = data.drawerName;
-        const imageSrc = data.imageSrc;
-        const wordToDraw = data.word;
-
-        wordTitleEl.innerHTML = `Teken een <span class="highlight-word">${escapeHtml(wordToDraw)}</span>`;
-    
-        const imageCanvasDiv = document.getElementById("image-canvas-guessing");
-        // Add timestamp to prevent caching
-        const timestamp = new Date().getTime();
-        const imageSrcWithTimestamp = `${imageSrc}?t=${timestamp}`;
-        imageCanvasDiv.innerHTML = `
-        <img src="${imageSrcWithTimestamp}" alt="Drawing by ${drawerName}" 
-            style="max-width: 100%; height: auto; border: 1px solid #ddd; border-radius: 8px;" />
-        `;
-        // Step 2: Fetch guesses to be graded
-        const response_guesses = await fetch('/api/pictionary/get-guesses-to-grade');
-        const data_guesses = await response_guesses.json();
-        const guesses = data_guesses.guesses;
-        const canModify = data_guesses.canModify;
-        console.log('data_guesses', data_guesses);
-        
-        // Enable/disable modify button based on canModify status
-        modifyButton.disabled = !canModify;
-        if (!canModify) {
-            modifyButton.title = "Je hebt de tekening al aangepast voor deze ronde";
-        }
-        
-        console.log('Guesses to grade:', guesses);
-       
-        // Step 3: Display guesses for grading
-        const gradedGuesses = await showGradingUI(guesses); 
-
-        // Step 4: Send the feedback to the backend
-        const result = await fetch('/api/pictionary/submit-grades', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ feedback: gradedGuesses })
-        });
-
-        if (result.ok) {
-            console.log('Grades submitted successfully');
-            // 🔄 Refresh game state after submission
-            const newState = await fetchGameState();
-            handleGameState(newState);
-        } else {
-           console.error('Failed to submit grades');
-        }
+        const data = await api('/api/pictionary/get-image');
+        document.getElementById('drawing-caption').innerHTML =
+            `Tekening van <strong>${escapeHtml(data.drawerName)}</strong> · ${DIFFICULTY_LABELS[data.difficulty] || ''} · ronde ${data.round} van ${MAX_ROUNDS}`;
+        document.getElementById('image-canvas').innerHTML =
+            `<img src="${escapeHtml(data.imageSrc)}" alt="Tekening van ${escapeHtml(data.drawerName)}">`;
     } catch (error) {
-        console.error('Error in handleGrade:', error);
+        document.getElementById('image-canvas').innerHTML = '';
     }
+    updateGuessesTable();
 }
 
-async function showGradingUI(guesses) {
-    const gradingContainer = document.getElementById('grading-guesses');
-    const guessesList = document.getElementById('guesses-list');
-    const submitButton = document.getElementById('submit-grades');
-
-    // Clear existing content
-    guessesList.innerHTML = '';
-
-    // Show a note when the pre-selected scores come from the LLM
-    if (guesses.some((guess) => guess.suggested_grade >= 1 && guess.suggested_grade <= 5)) {
-        const suggestedScores = guesses
-            .map((guess) => (guess.suggested_grade >= 1 && guess.suggested_grade <= 5 ? guess.suggested_grade : '?'))
-            .join(', ');
-        const suggestionNote = document.createElement('p');
-        suggestionNote.textContent = `💡 Voorgesteld door de computer: (${suggestedScores})`;
-        suggestionNote.classList.add('suggestion-note');
-        guessesList.appendChild(suggestionNote);
+document.getElementById('guess-submission').addEventListener('submit', async (event) => {
+    event.preventDefault();
+    const input = document.getElementById('guess-input');
+    const guess = input.value.trim();
+    if (!guess) {
+        toast('Je hebt niks ingevuld!', { type: 'error' });
+        return;
     }
+    const button = document.getElementById('submit-guess');
+    button.disabled = true;
+    try {
+        await api('/api/pictionary/submit-guess', { method: 'POST', body: { guess } });
+        toast('Je gok is verstuurd!', { type: 'success' });
+        refresh(true);
+    } catch (error) {
+        toast(error.message, { type: 'error' });
+    }
+    button.disabled = false;
+});
 
-    // Create grading elements for each guess
-    guesses.forEach((guess) => {
-        const guessContainer = document.createElement('div');
-        guessContainer.classList.add('guess-container');
-
-        const guessText = document.createElement('span');
-        guessText.textContent = guess.text;
-        guessText.classList.add('guess-text');
-        guessContainer.appendChild(guessText);
-
-        const gradingButtons = document.createElement('div');
-        gradingButtons.classList.add('grading-buttons');
-
-        for (let i = 1; i <= 5; i++) {
-            const gradeButton = document.createElement('button');
-            gradeButton.textContent = i;
-            gradeButton.dataset.id = guess.action_id;
-            gradeButton.dataset.grade = i;
-            gradeButton.classList.add('grade-button');
-            gradeButton.addEventListener('click', () => {
-                document.querySelectorAll(`button[data-id="${guess.action_id}"]`).forEach((btn) => {
-                    btn.classList.remove('selected');
-                });
-                gradeButton.classList.add('selected');
-                if (i === 5) {
-                    guessContainer.querySelector('.correct-indicator').classList.remove('hidden');
-                } else {
-                    guessContainer.querySelector('.correct-indicator').classList.add('hidden');
-                }
-            });
-            gradingButtons.appendChild(gradeButton);
-        }
-
-        guessContainer.appendChild(gradingButtons);
-
-        const correctIndicator = document.createElement('span');
-        correctIndicator.textContent = '✔';
-        correctIndicator.classList.add('correct-indicator', 'hidden');
-        guessContainer.appendChild(correctIndicator);
-
-        // Pre-select the LLM-suggested grade; the drawer can still change it.
-        if (guess.suggested_grade >= 1 && guess.suggested_grade <= 5) {
-            const suggestedButton = gradingButtons.querySelector(`button[data-grade="${guess.suggested_grade}"]`);
-            if (suggestedButton) {
-                suggestedButton.classList.add('selected');
-                if (guess.suggested_grade === 5) {
-                    correctIndicator.classList.remove('hidden');
-                }
-            }
-        }
-
-        guessesList.appendChild(guessContainer);
-    });
-
-    gradingContainer.classList.remove('hidden');
-
-    return new Promise((resolve) => {
-      const handleSubmitClick = async () => {
-          // Disable the button immediately to prevent multiple clicks
-          newSubmitButton.disabled = true;
-          console.log("Submit grades button clicked and disabled.");
-
-          const feedback = [];
-          let allGraded = true; // Assume all are graded if no guesses
-
-          if (guesses.length > 0) { // Only check for grading if there are guesses
-              guesses.forEach((guess) => {
-                  const selectedButton = document.querySelector(
-                      `button[data-id="${guess.action_id}"].selected`
-                  );
-                  if (selectedButton) {
-                      feedback.push({
-                          action_id: guess.action_id,
-                          feedback: parseInt(selectedButton.dataset.grade, 10),
-                      });
-                  } else {
-                      allGraded = false; // A guess was not graded
-                  }
-              });
-
-              if (!allGraded) {
-                  alert('Please grade all guesses before submitting.');
-                  newSubmitButton.disabled = false; // Re-enable button
-                  return; // Don't resolve, stop processing
-              }
-          }
-          // If guesses.length is 0, feedback remains [] and allGraded remains true.
-
-          // gradingContainer.classList.add('hidden'); // Let state change handle UI
-          console.log('Collected grades for submission:', feedback);
-          resolve(feedback);
-      };
-
-      // Clone the button and replace it to remove any old event listeners
-      const newSubmitButton = submitButton.cloneNode(true);
-      submitButton.parentNode.replaceChild(newSubmitButton, submitButton);
-      newSubmitButton.disabled = false; // Ensure it's enabled
-      newSubmitButton.addEventListener('click', handleSubmitClick);
-  });
+// SQLite timestamps are UTC without a zone ("2026-10-25 14:03:00")
+function formatGuessTime(value) {
+    if (!value) return { time: '–', full: '' };
+    const date = new Date(value.replace(' ', 'T') + 'Z');
+    if (Number.isNaN(date.getTime())) return { time: '–', full: '' };
+    return {
+        time: date.toLocaleTimeString('nl-NL', { hour: '2-digit', minute: '2-digit' }),
+        full: date.toLocaleString('nl-NL', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })
+    };
 }
-
-
 
 async function updateGuessesTable() {
+    let guesses;
     try {
-        const guessesResponse = await fetch('/api/pictionary/get-guesses');
-        const data = await guessesResponse.json();
-        const guesses = data.guesses; 
-        console.log('Guesses fetched:', guesses);
-    
-
-        const tableBody = document.getElementById('guessesTableBody');
-        if (!tableBody) {
-            console.error('Guesses table body not found');
-            return;
-        }
-
-        tableBody.innerHTML = '';
-
-        guesses.forEach((guess, index) => {
-            const row = document.createElement('tr');
-
-            // Format the date more nicely
-            const { displayTime, fullDate } = formatGuessTime(guess.time);
-
-            row.innerHTML = `
-            <td>${guess.round_number}</td>
-            <td>${guess.username || 'Onbekend'}</td>
-            <td title="${fullDate}">${displayTime || 'N/A'}</td>
-            <td>${guess.text ? escapeHtml(guess.text) : '***'}</td>
-            <td>${guess.feedback ? escapeHtml(guess.feedback) : '<span style="font-size: 10px;">⏳</span>'}</td>`;
-            tableBody.appendChild(row);
-        });
-
-        console.log('Guesses table updated successfully');
+        ({ guesses } = await api('/api/pictionary/get-guesses'));
     } catch (error) {
-        console.error('Error in updateGuessesTable:', error);
+        return;
     }
-}
-function formatGuessTime(isoString) {
-  if (!isoString) return { displayTime: 'N/A', fullDate: 'N/A' }; // Handle missing time
-
-  let normalized = isoString.replace(" ", "T") + "Z";  // Normalize for UTC parsing
-  const d = new Date(normalized);
-
-  if (isNaN(d.getTime())) return { displayTime: 'N/A', fullDate: 'N/A' }; // Fallback if invalid
-// Format like "1-jan 10:00"
-  // (Using Dutch style, but you can adapt)
-  const day = d.getDate();
-  const month = d.toLocaleString('nl-NL', { month: 'short' });
-  const hour = String(d.getHours()).padStart(2, '0');
-  const minute = String(d.getMinutes()).padStart(2, '0');
-
-  // Format for display
-  const displayTime = `${hour}:${minute}`;
-  const fullDate = `${day}-${month} ${hour}:${minute}`;
-
-  return { displayTime, fullDate };
-}
-
-function handleIdle() {
-    console.log("Handling 'Idle' state...");
-    // Add logic for the default state
-}
-
-// Main Game Initialization
-async function initGame() {
-    const data = await fetchGameState();
-    handleGameState(data);
-}
-
-// Run the Game Initialization when the page loads
-window.addEventListener("DOMContentLoaded", initGame);
-document.getElementById('submit-guess').addEventListener('click', submitGuess);
-
-// Add event listener for Enter key in guess input
-document.getElementById('guess-input').addEventListener('keypress', function(e) {
-    if (e.key === 'Enter') {
-        e.preventDefault(); // Prevent default form submission
-        submitGuess();
+    const tableBody = document.getElementById('guessesTableBody');
+    tableBody.innerHTML = '';
+    if (!guesses.length) {
+        tableBody.innerHTML = '<tr><td colspan="5" class="muted">Nog geen gokken.</td></tr>';
+        return;
     }
-});
+    guesses.forEach((guess) => {
+        const { time, full } = formatGuessTime(guess.time);
+        const row = document.createElement('tr');
+        if (guess.feedback == 5) row.className = 'top-guess';
+        row.innerHTML = `
+            <td>${escapeHtml(guess.round_number)}</td>
+            <td>${escapeHtml(guess.username || 'Onbekend')}</td>
+            <td title="${escapeHtml(full)}">${escapeHtml(time)}</td>
+            <td>${escapeHtml(guess.text)}${guess.feedback == 5 ? ' ⭐' : ''}</td>
+            <td>${guess.feedback ? escapeHtml(guess.feedback) : '⏳'}</td>`;
+        tableBody.appendChild(row);
+    });
+}
 
-async function handleModifyDrawing() {
+// ---------- Drawer: grading ----------
+
+async function renderGrading() {
+    show('grading-guesses', 'guesses-table-container');
+    updateGuessesTable();
+    const list = document.getElementById('guesses-list');
+    const submitButton = document.getElementById('submit-grades');
+    const modifyButton = document.getElementById('modify-drawing');
+    list.innerHTML = '<p class="muted">Gokken laden…</p>';
+    submitButton.disabled = true;
+
+    let image, toGrade;
     try {
-        // Enter modify state and get countdown duration
-        const response = await fetch('/api/pictionary/enter-modify-state', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
+        [image, toGrade] = await Promise.all([api('/api/pictionary/get-image'), api('/api/pictionary/get-guesses-to-grade')]);
+    } catch (error) {
+        toast(error.message, { type: 'error' });
+        return;
+    }
+    document.getElementById('grading-word').textContent = image.word;
+    document.getElementById('image-canvas-guessing').innerHTML =
+        `<img src="${escapeHtml(image.imageSrc)}" alt="Jouw tekening">`;
+
+    modifyButton.disabled = !toGrade.canModify;
+    modifyButton.textContent = toGrade.canModify
+        ? '✏️ Maak een kleine aanpassing (15 seconden)'
+        : 'Je hebt de tekening deze ronde al aangepast';
+    modifyButton.onclick = () => renderDrawing('modify');
+
+    list.innerHTML = '';
+    const guesses = toGrade.guesses;
+    if (guesses.some(g => g.suggested_grade)) {
+        const note = document.createElement('p');
+        note.className = 'suggestion-note';
+        note.textContent = '💡 De computer heeft alvast een cijfer gekozen. Je kunt het zelf nog aanpassen.';
+        list.appendChild(note);
+    }
+    if (!guesses.length) {
+        list.insertAdjacentHTML('beforeend', '<p class="muted">Niemand heeft deze ronde een gok gedaan.</p>');
+    }
+    guesses.forEach((guess) => {
+        const row = document.createElement('div');
+        row.className = 'grade-row';
+        const text = document.createElement('span');
+        text.className = 'grade-text';
+        text.textContent = guess.text;
+        const buttons = document.createElement('div');
+        buttons.className = 'grade-buttons';
+        for (let grade = 1; grade <= 5; grade++) {
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.className = 'grade-button';
+            button.dataset.id = guess.action_id;
+            button.dataset.grade = grade;
+            button.textContent = grade === 5 ? '5 ✔' : grade;
+            if (guess.suggested_grade === grade) button.classList.add('selected');
+            button.addEventListener('click', () => {
+                buttons.querySelectorAll('.grade-button').forEach(b => b.classList.toggle('selected', b === button));
+            });
+            buttons.appendChild(button);
+        }
+        row.append(text, buttons);
+        list.appendChild(row);
+    });
+
+    submitButton.disabled = false;
+    submitButton.onclick = async () => {
+        if (busy) return;
+        const feedback = [];
+        for (const guess of guesses) {
+            const selected = list.querySelector(`.grade-button.selected[data-id="${guess.action_id}"]`);
+            if (!selected) {
+                toast('Geef eerst elke gok een cijfer.', { type: 'error' });
+                return;
             }
-        });
-
-        if (!response.ok) {
-            throw new Error('Failed to enter modify state');
+            feedback.push({ action_id: guess.action_id, feedback: Number(selected.dataset.grade) });
         }
-
-        const data = await response.json();
-        const countdownDuration = data.countdown_duration || 1; // Default to 1 seconds if not provided
-        const wordToDraw = data.word;
-        const imageSrc = data.image_src;
-
-        // Show word reminder in title element
-        const wordTitleEl = document.getElementById("draw-word-title");
-        wordTitleEl.innerHTML = `Teken een <span class="highlight-word">${escapeHtml(wordToDraw)}</span>, je hebt ${countdownDuration} seconden`;
-        console.log(`Countdown started: ${countdownDuration} seconds`);
-
-        // Get canvas and load existing drawing
-        const canvas = document.getElementById("drawing-canvas");
-        const ctx = canvas.getContext('2d');
-
-        // Load existing drawing into canvas
-        const image = new Image();
-        image.onload = () => {
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-            ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
-        };
-        // Add timestamp to prevent caching
-        image.src = `${imageSrc}?t=${Date.now()}`;
-
-        // Enable drawing
-        const canvasRef = { current: canvas };
-        enableDrawing(canvasRef);
-
-        // Start countdown
-        const { timerBar, timerInterval } = startCountdown(countdownDuration);
-
-        // Set up finish button
-        const finishButton = document.getElementById('finish-drawing');
-        finishButton.disabled = false;
-        finishButton.onclick = async () => {
-            finishButton.disabled = true;
-            disableDrawing(canvasRef);
-            disableColors();
-            clearInterval(timerInterval);
-            await submitModifiedDrawing(canvasRef);
-        };
-
-        // Set up auto-submit when time runs out
-        setTimeout(async () => {
-            if (!finishButton.disabled) {
-                finishButton.disabled = true;
-                disableDrawing(canvasRef);
-                disableColors();
-                clearInterval(timerInterval);
-                await submitModifiedDrawing(canvasRef);
-            }
-        }, countdownDuration * 1000);
-
-        // Show drawing tools
-        document.getElementById('tools-container').style.display = 'flex';
-    } catch (error) {
-        console.error('Error entering modify state:', error);
-        alert('Er ging iets mis bij het aanpassen van je tekening. Probeer het opnieuw.');
-    }
-}
-
-async function submitModifiedDrawing(canvasRef) {
-    try {
-        // Extract the drawing from the canvas as a base64 string
-        const canvas = canvasRef.current;
-        const drawingData = exportCanvasWithWhiteBackground(canvas);
-
-        const payload = {
-            drawing: drawingData,
-            timestamp: new Date().toISOString(),
-        };
-
-        // Send the modified drawing to the backend
-        const response = await fetch('/api/pictionary/submit-modified-drawing', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(payload)
-        });
-
-        if (!response.ok) {
-            throw new Error('Failed to submit modified drawing');
-        }
-
-        console.log('Modified drawing submitted successfully');
-        // Refresh game state after submission
-        const newState = await fetchGameState();
-        handleGameState(newState);
-    } catch (error) {
-        console.error('Error submitting modified drawing:', error);
-        // Try to recover by fetching current state
+        busy = true;
+        submitButton.disabled = true;
         try {
-            const newState = await fetchGameState();
-            handleGameState(newState);
-        } catch (stateError) {
-            console.error('Failed to recover game state:', stateError);
+            await api('/api/pictionary/submit-grades', { method: 'POST', body: { feedback } });
+            toast('Beoordeeld!', { type: 'success' });
+        } catch (error) {
+            toast(error.message, { type: 'error' });
+            submitButton.disabled = false;
         }
-    }
+        busy = false;
+        refresh(true);
+    };
 }
 
-// Add event listener for the modify drawing button
-document.addEventListener('DOMContentLoaded', () => {
-    const modifyDrawingBtn = document.getElementById('modify-drawing');
-    if (modifyDrawingBtn) {
-        modifyDrawingBtn.addEventListener('click', async () => {
-            try {
-                console.log('Modify drawing button clicked');
-                
-                // First check the current game state
-                const stateResponse = await fetch('/api/pictionary/state');
-                const stateData = await stateResponse.json();
-                console.log('Current game state:', stateData.state);
-                
-                // Only proceed if we're in feedback state
-                if (stateData.state !== 'feedback') {
-                    console.error('Cannot modify drawing: game is not in feedback state');
-                    alert('Je kunt de tekening alleen aanpassen tijdens de beoordelingsfase.');
-                    return;
-                }
+// ---------- Start ----------
 
-                // Disable the button to prevent double-clicks
-                modifyDrawingBtn.disabled = true;
-
-                // Send request to backend to enter modify state
-                const response = await fetch('/api/pictionary/enter-modify-state', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    }
-                });
-                
-                if (!response.ok) {
-                    const errorData = await response.json();
-                    console.error('Failed to enter modify state:', errorData.error);
-                    throw new Error(errorData.error || 'Failed to enter modify state');
-                }
-
-                // The backend will change the state to 'modify', which will trigger handleModifyDrawing
-                // through the game state change handler
-                const newState = await fetchGameState();
-                handleGameState(newState);
-            } catch (error) {
-                console.error('Error entering modify state:', error);
-                alert('Er ging iets mis bij het aanpassen van de tekening. Probeer het opnieuw.');
-                // Re-enable the button in case of error
-                modifyDrawingBtn.disabled = false;
-            }
-        });
-    }
-});
+setupToolbar();
+poll(() => (busy ? null : refresh()), POLL_MS);

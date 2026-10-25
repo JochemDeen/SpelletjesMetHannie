@@ -33,7 +33,7 @@ async function getRoundNumber(gameId, userId) {
                 return reject(err);
             }
             const roundNumber = row?.round_number ?? 0;
-            logger.info(`Fetched round number for user ${userId} in game ${gameId}: ${roundNumber}`);
+            logger.debug(`Fetched round number for user ${userId} in game ${gameId}: ${roundNumber}`);
             resolve(roundNumber);
         });
     });
