@@ -203,7 +203,7 @@ button, input, select, textarea {
     flex-direction: column;
     align-items: center;
     gap: 8px;
-    padding: 12px 64px 12px;
+    padding: 12px 12px;
     background-color: var(--surface);
     border-bottom: 1px solid var(--border);
     box-shadow: var(--shadow);
@@ -250,7 +250,7 @@ button, input, select, textarea {
 }
 
 .site-title {
-    margin: 2px 0 0;
+    margin: 2px 52px 0;
     font-size: 1.7rem;
     font-weight: 800;
     text-align: center;
@@ -523,30 +523,42 @@ button, input, select, textarea {
     background-color: var(--surface-2);
 }
 
-@media (max-width: 420px) {
+@media (max-width: 480px) {
     body {
         font-size: 16px;
     }
 
     .site-header {
-        padding: 10px 56px;
+        gap: 6px;
+        padding: 6px 8px 8px;
+    }
+
+    .home-link,
+    .header-action {
+        top: 2px;
     }
 
     .home-link {
-        left: 6px;
+        left: 4px;
     }
 
     .header-action {
-        right: 6px;
+        right: 4px;
     }
 
     .site-title {
-        font-size: 1.45rem;
+        margin: 6px 48px 0;
+        font-size: 1.4rem;
+    }
+
+    .site-nav {
+        gap: 5px;
     }
 
     .site-nav a {
-        padding: 4px 11px;
-        font-size: 0.9rem;
+        min-height: 34px;
+        padding: 3px 10px;
+        font-size: 0.88rem;
     }
 }
 

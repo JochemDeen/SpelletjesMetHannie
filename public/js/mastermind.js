@@ -421,8 +421,39 @@ async function loadGame() {
     updateHintButton();
 }
 
+// ---------- Fit on one screen ----------
+
+// Size the tiles (and on short screens the keys) so header, board, buttons
+// and keyboard all fit in the visible part of the screen, also on phones
+// where the browser's own bars take part of the height.
+function fitBoard() {
+    const body = document.body;
+    const viewportHeight = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+    const keyHeight = viewportHeight < 600 ? 44 : viewportHeight < 720 ? 48 : 54;
+    body.style.setProperty('--key-height', `${keyHeight}px`);
+
+    const layout = document.querySelector('.game-layout');
+    const style = getComputedStyle(layout);
+    const header = document.querySelector('.site-header').offsetHeight;
+    const padding = parseFloat(style.paddingTop) + parseFloat(style.paddingBottom);
+    const gap = parseFloat(style.rowGap) || 10;
+    const actions = document.querySelector('.game-actions').offsetHeight;
+    const keyboard = keyboardEl.offsetHeight;
+    const boardGap = 6;
+
+    const free = viewportHeight - header - padding - actions - keyboard - gap * 2;
+    const byHeight = (free - boardGap * (MAX_GUESSES - 1)) / MAX_GUESSES;
+    const byWidth = (Math.min(window.innerWidth, 520) - 16 - boardGap * (WORD_LENGTH - 1)) / WORD_LENGTH;
+    const tile = Math.max(30, Math.min(62, Math.floor(Math.min(byHeight, byWidth))));
+    body.style.setProperty('--tile', `${tile}px`);
+}
+
 buildBoard();
 buildKeyboard();
+fitBoard();
+window.addEventListener('resize', fitBoard);
+if (window.visualViewport) window.visualViewport.addEventListener('resize', fitBoard);
+if (document.fonts) document.fonts.ready.then(fitBoard);
 document.getElementById('help-button').addEventListener('click', () => openModal('help-modal'));
 document.getElementById('hint-toggle').addEventListener('click', () => openModal('hint-modal'));
 document.getElementById('request-hint-btn').addEventListener('click', requestHint);
