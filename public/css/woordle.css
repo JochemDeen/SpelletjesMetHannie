@@ -194,21 +194,29 @@
 /* ---------- Game page ---------- */
 
 .woordle-game {
-    /* Tile size: as big as fits the width (5 tiles) and the height (6 rows
-       plus header and keyboard), between 40 and 62px */
-    --tile: clamp(40px, min((100vw - 56px) / 5, (100dvh - 400px) / 6), 62px);
+    /* The whole game fits on one screen: header, board, keyboard. The tile
+       size is set by fitBoard() in mastermind.js from the space that is
+       really left; this is only the starting value. */
+    --tile: 52px;
     --key-height: 54px;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    min-height: 100dvh;
 }
 
 .game-layout {
+    flex: 1;
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 12px;
+    justify-content: space-between;
+    gap: 10px;
     width: 100%;
     max-width: 520px;
     margin: 0 auto;
-    padding: 14px 8px 12px;
+    /* Keep the keyboard clear of the iPhone home bar */
+    padding: 12px 8px max(10px, env(safe-area-inset-bottom));
 }
 
 .board {
@@ -434,10 +442,6 @@
 }
 
 @media (max-width: 380px) {
-    .woordle-game {
-        --key-height: 48px;
-    }
-
     .key {
         font-size: 1rem;
     }
