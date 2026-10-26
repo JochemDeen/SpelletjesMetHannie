@@ -1,4 +1,4 @@
-/* Wie ben ik? past game — extends the mystery theme from wie-ben-ik.css */
+/* Wie ben ik? past game (builds on wie-ben-ik.css) */
 .date-navigation {
     display: flex;
     justify-content: space-between;
@@ -20,35 +20,31 @@
 }
 
 #winner-banner {
-    margin: 10px auto 20px auto;
+    margin: 0 0 16px;
     padding: 15px;
-    background-color: rgba(217, 185, 92, 0.12);
-    border: 1px solid var(--wbi-gold);
-    border-radius: 12px;
+    background-color: var(--highlight-bg);
+    border: 1px solid var(--highlight-border);
+    border-radius: var(--radius);
     text-align: center;
-    font-family: var(--font-heading);
     font-size: 1.2em;
-    font-weight: bold;
-    color: var(--wbi-gold);
-    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+    font-weight: 800;
 }
 
 .player-card.player-winner {
-    border-color: var(--wbi-gold);
-    background-color: rgba(217, 185, 92, 0.10);
+    border: 2px solid var(--gold);
+    background-color: var(--highlight-bg);
 }
 
 .player-card.player-winner .player-name {
-    color: var(--wbi-gold);
-    font-weight: bold;
+    color: var(--ink);
+    font-weight: 800;
 }
 
 /* Winning guess row in the history table */
 #history-container tr.history-winner {
-    background-color: rgba(217, 185, 92, 0.16);
+    background-color: var(--highlight-bg);
 }
 
 #history-container tr.history-winner td {
-    color: var(--wbi-gold);
-    font-weight: bold;
+    font-weight: 800;
 }

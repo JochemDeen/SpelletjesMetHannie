@@ -68,7 +68,7 @@
 }
 
 .guess-table tr.top-guess td {
-    background-color: #eef6ee;
+    background-color: var(--success-bg);
     font-weight: 700;
 }
 

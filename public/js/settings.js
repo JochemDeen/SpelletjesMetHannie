@@ -1,4 +1,4 @@
-// public/js/settings.js: the on/off switches for joining Pictionary and Wie ben ik
+// public/js/settings.js: joining Pictionary / Wie ben ik, and light or dark mode
 
 const TOGGLES = [
     { id: 'pictionaryToggle', key: 'pictionaryEnabled', url: '/settings/api/pictionary' },
@@ -6,6 +6,15 @@ const TOGGLES = [
 ];
 
 document.addEventListener('DOMContentLoaded', async () => {
+    // Light / dark / automatic: stored on this device by theme.js
+    const current = window.getThemeChoice ? window.getThemeChoice() : 'system';
+    document.querySelectorAll('input[name="theme"]').forEach((input) => {
+        input.checked = input.value === current;
+        input.addEventListener('change', () => {
+            if (input.checked && window.setThemeChoice) window.setThemeChoice(input.value);
+        });
+    });
+
     try {
         const settings = await api('/settings/api');
         TOGGLES.forEach(({ id, key }) => {
