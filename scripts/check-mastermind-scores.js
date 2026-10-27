@@ -10,6 +10,7 @@ const sqlite3 = require('sqlite3');
 const DB_PATH = path.join(__dirname, '..', 'database.sqlite');
 const db = new sqlite3.Database(DB_PATH, sqlite3.OPEN_READONLY);
 const POINTS = { 1: 8, 2: 6, 3: 4, 4: 3, 5: 2, 6: 1 };
+const LATE_PENALTY = 1;
 
 function all(sql, params = []) {
   return new Promise((resolve, reject) => db.all(sql, params, (err, rows) => (err ? reject(err) : resolve(rows))));
@@ -24,9 +25,11 @@ function pad(value, width) {
   const hasGameDate = columns.some(c => c.name === 'game_date');
   const dayExpr = hasGameDate ? 'COALESCE(r.game_date, date(r.timestamp))' : 'date(r.timestamp)';
   console.log(`Day column: ${hasGameDate ? 'game_date (falls back to UTC date of timestamp)' : 'UTC date of timestamp (game_date not added yet)'}\n`);
+  // late: guesses made the day after, when catching up yesterday's word (LATE_PENALTY points less)
+  const lateExpr = columns.some(c => c.name === 'late') ? 'r.late' : '0';
 
   const rows = await all(`
-    SELECT r.id, r.user_id, u.username, ${dayExpr} AS day, r.timestamp, r.feedback, r.wordOfTheDay
+    SELECT r.id, r.user_id, u.username, ${dayExpr} AS day, ${lateExpr} AS late, r.timestamp, r.feedback, r.wordOfTheDay
     FROM mastermind_results r LEFT JOIN users u ON u.id = r.user_id
     ORDER BY r.id`);
 
@@ -39,7 +42,7 @@ function pad(value, width) {
       continue;
     }
     const key = `${row.username}|${row.day}`;
-    if (!games.has(key)) games.set(key, { username: row.username, day: row.day, feedback: [], timestamps: [], words: new Set() });
+    if (!games.has(key)) games.set(key, { username: row.username, day: row.day, feedback: [], timestamps: [], words: new Set(), late: false });
     const game = games.get(key);
     let feedback = [];
     try {
@@ -50,6 +53,7 @@ function pad(value, width) {
     game.feedback.push(feedback);
     game.timestamps.push(row.timestamp);
     game.words.add(row.wordOfTheDay);
+    if (row.late) game.late = true;
   }
 
   const months = {}; // month -> username -> { score, days, wins }
@@ -60,16 +64,18 @@ function pad(value, width) {
     if (winAt !== -1 && winAt < guesses - 1) anomalies.push(`${game.day} ${game.username}: ${guesses - 1 - winAt} guess(es) after solving`);
     if (game.words.size > 1) anomalies.push(`${game.day} ${game.username}: guesses against ${game.words.size} different words`);
     const utcDays = new Set(game.timestamps.map(t => t.slice(0, 10)));
-    if (utcDays.size > 1) anomalies.push(`${game.day} ${game.username}: guesses spread over UTC days ${[...utcDays].join(', ')}`);
+    if (utcDays.size > 1 && !game.late) anomalies.push(`${game.day} ${game.username}: guesses spread over UTC days ${[...utcDays].join(', ')}`);
 
-    // Score as the app does: by number of guesses that day, 0 when not solved
-    const score = winAt === -1 ? 0 : (POINTS[guesses] || 0);
+    // Score as the app does: by number of guesses that day, 0 when not solved,
+    // LATE_PENALTY less (but not below 0) when the day was caught up
+    const score = winAt === -1 ? 0 : Math.max(0, (POINTS[guesses] || 0) - (game.late ? LATE_PENALTY : 0));
     const month = game.day.slice(0, 7);
     months[month] = months[month] || {};
-    const entry = months[month][game.username] = months[month][game.username] || { score: 0, days: 0, wins: 0 };
+    const entry = months[month][game.username] = months[month][game.username] || { score: 0, days: 0, wins: 0, caughtUp: 0 };
     entry.score += score;
     entry.days += 1;
     if (winAt !== -1) entry.wins += 1;
+    if (game.late) entry.caughtUp += 1;
   }
 
   const currentMonth = new Intl.DateTimeFormat('en-CA', { timeZone: 'Europe/Amsterdam', year: 'numeric', month: '2-digit' }).format(new Date()).slice(0, 7);
@@ -85,7 +91,7 @@ function pad(value, width) {
 
     console.log(`=== ${month}${decided ? '' : ' (current month, not counted yet)'}`);
     for (const [name, e] of players) {
-      console.log(`  ${pad(name, 14)} ${pad(e.score + ' pt', 8)} ${e.days} days played, ${e.wins} won`);
+      console.log(`  ${pad(name, 14)} ${pad(e.score + ' pt', 8)} ${e.days} days played, ${e.wins} won${e.caughtUp ? `, ${e.caughtUp} caught up` : ''}`);
     }
     console.log(`  Winner(s): ${winners.length ? winners.join(', ') + ` (${best} pt)` : 'none'}`);
     if (decided) {

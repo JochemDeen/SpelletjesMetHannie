@@ -12,6 +12,7 @@ const keyboardEl = document.getElementById('keyboard');
 const statusLine = document.getElementById('status-line');
 
 const game = {
+    date: null,         // null: today's word; otherwise yesterday's 'YYYY-MM-DD', being caught up
     guesses: [],        // submitted words
     feedback: [],       // per word: ['correct' | 'misplaced' | 'incorrect', ...]
     current: '',        // the word being typed
@@ -23,6 +24,7 @@ const game = {
 
 const hint = { available: false, remaining: 0, total: 0, text: null };
 const keyState = {};    // letter -> best state seen
+let catchUpDate = null; // yesterday's date while its word can still be caught up
 
 // ---------- Board ----------
 
@@ -197,7 +199,8 @@ async function submitCurrent() {
     game.busy = true;
     let data;
     try {
-        data = await api('/api/submit-guess', { method: 'POST', body: { guess: word } });
+        const body = game.date ? { guess: word, date: game.date } : { guess: word };
+        data = await api('/api/submit-guess', { method: 'POST', body });
     } catch (error) {
         // Nothing was stored: the row stays as it is so the player can try again
         toast(error.status === 400 ? error.message : 'Je poging kon niet worden verstuurd. Probeer het nog eens.',
@@ -217,10 +220,12 @@ async function submitCurrent() {
         game.finished = true;
         game.success = data.correct;
         game.answer = data.answer || null;
+        if (game.date) catchUpDate = null;
         onFinished(true);
     }
     game.busy = false;
     updateHintButton();
+    updateCatchUpControls();
 }
 
 function describeRow(word, feedback) {
@@ -294,7 +299,9 @@ async function openEndModal() {
     document.getElementById('end-title').textContent = game.success ? 'Gefeliciteerd! 🎉' : 'Helaas…';
     document.getElementById('end-answer').innerHTML = game.answer
         ? `Het woord was <strong>${escapeHtml(game.answer)}</strong>${game.success ? ` · ${game.guesses.length}/6` : ''}`
+            + (game.date ? '<br>Ingehaald: 1 punt minder dan normaal' : '')
         : '';
+    document.getElementById('compare-link').href = game.date ? `/mastermind/compare?date=${game.date}` : '/mastermind/compare';
     openModal('end-modal');
     startCountdown();
     try {
@@ -310,7 +317,8 @@ async function openEndModal() {
 // ---------- Sharing ----------
 
 function shareText() {
-    const date = new Date().toLocaleDateString('nl-NL', { day: 'numeric', month: 'long' });
+    const day = game.date ? new Date(`${game.date}T12:00:00`) : new Date();
+    const date = day.toLocaleDateString('nl-NL', { day: 'numeric', month: 'long' });
     const score = game.success ? `${game.guesses.length}/6` : 'X/6';
     const grid = game.feedback
         .map(row => row.map(state => ({ correct: '🟩', misplaced: '🟨' }[state] || '⬜')).join(''))
@@ -340,7 +348,8 @@ async function shareResults() {
 
 function updateHintButton() {
     const toggle = document.getElementById('hint-toggle');
-    toggle.classList.toggle('hidden', !hint.available || game.finished);
+    // Ollie only gives hints for today's word, not for a day being caught up
+    toggle.classList.toggle('hidden', !hint.available || game.finished || !!game.date);
 
     const button = document.getElementById('request-hint-btn');
     const response = document.getElementById('hint-response');
@@ -395,11 +404,45 @@ async function requestHint() {
     updateHintButton();
 }
 
+// ---------- Catching up yesterday ----------
+
+// Yesterday's word is opened with /mastermind?gisteren (from the results page
+// or the reminder on the home screen); while catching up the title says so
+// and a button leads back to today's word.
+function updateCatchUpControls() {
+    const catchingUp = !!game.date;
+    document.getElementById('back-to-today').classList.toggle('hidden', !catchingUp);
+    document.querySelector('.site-title').textContent = catchingUp ? 'Woordle van gisteren' : 'Woordle';
+    fitBoard();
+}
+
+// Empty board and keyboard, before showing another day's game
+function resetGame() {
+    Object.assign(game, { guesses: [], feedback: [], current: '', finished: false, success: false, answer: null });
+    Object.keys(keyState).forEach(letter => delete keyState[letter]);
+    keyboardEl.querySelectorAll('.key').forEach(key => key.classList.remove('correct', 'misplaced', 'incorrect'));
+    boardEl.querySelectorAll('.tile').forEach(tile => {
+        tile.textContent = '';
+        tile.className = 'tile';
+    });
+    document.getElementById('result-button').classList.add('hidden');
+}
+
+async function switchDay(date) {
+    if (game.busy) return;
+    resetGame();
+    await loadGame(date);
+    if (date) toast('Je speelt het woord van gisteren: 1 punt minder', { duration: 3500 });
+}
+
 // ---------- Start ----------
 
-async function loadGame() {
+// Load the game of today (date null) or of yesterday (catching up)
+async function loadGame(date = null) {
+    game.date = date;
     try {
-        const data = await api('/api/load-game-state');
+        const data = await api(date ? `/api/load-game-state?date=${date}` : '/api/load-game-state');
+        catchUpDate = data.catchUpDate || null;
         if (data.success) {
             const state = data.state;
             state.guesses.forEach((word, i) => {
@@ -419,6 +462,7 @@ async function loadGame() {
         toast(error.message, { type: 'error' });
     }
     updateHintButton();
+    updateCatchUpControls();
 }
 
 // ---------- Fit on one screen ----------
@@ -459,7 +503,16 @@ document.getElementById('hint-toggle').addEventListener('click', () => openModal
 document.getElementById('request-hint-btn').addEventListener('click', requestHint);
 document.getElementById('result-button').addEventListener('click', openEndModal);
 document.getElementById('share-button').addEventListener('click', shareResults);
-loadGame().then(loadHintStatus);
+document.getElementById('back-to-today').addEventListener('click', () => switchDay(null));
+// /mastermind?gisteren opens yesterday's word straight away, if it can still be caught up.
+// The address is set back to /mastermind, so a reload shows today's word.
+const wantsYesterday = new URLSearchParams(location.search).has('gisteren');
+if (wantsYesterday) history.replaceState(null, '', location.pathname);
+loadGame().then(async () => {
+    if (!wantsYesterday) return;
+    if (catchUpDate) await switchDay(catchUpDate);
+    else toast('Het woord van gisteren kun je niet meer spelen.');
+}).then(loadHintStatus);
 
 // First visit: explain the game once
 try {

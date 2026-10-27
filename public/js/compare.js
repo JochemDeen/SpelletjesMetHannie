@@ -11,7 +11,9 @@ document.addEventListener('DOMContentLoaded', async () => {
     const toKey = (date) => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
     const fromKey = (key) => new Date(`${key}T12:00:00`);
     const todayKey = toKey(new Date());
-    let selectedKey = todayKey;
+    // ?date=YYYY-MM-DD opens that day (linked after catching up yesterday's word)
+    const requestedKey = new URLSearchParams(location.search).get('date');
+    let selectedKey = /^\d{4}-\d{2}-\d{2}$/.test(requestedKey || '') && requestedKey < todayKey ? requestedKey : todayKey;
     let earliestKey = todayKey;
 
     try {
@@ -53,7 +55,7 @@ document.addEventListener('DOMContentLoaded', async () => {
                 : null;
             header.innerHTML = `
                 <span class="result-name">${escapeHtml(result.username)}</span>
-                <span class="result-meta">${result.success ? `${result.guesses.length}/6 · ${solveTime}` : 'Niet geraden'}</span>
+                <span class="result-meta">${result.success ? `${result.guesses.length}/6 · ${solveTime}` : 'Niet geraden'}${result.late ? ' · ingehaald' : ''}</span>
                 <span class="result-score">${result.score} pt</span>
             `;
             card.appendChild(header);
@@ -86,9 +88,13 @@ document.addEventListener('DOMContentLoaded', async () => {
             }
         } catch (error) {
             if (error.status === 403) {
-                showMessage(selectedKey === todayKey
-                    ? 'Speel eerst het woord van vandaag, dan zie je hoe de anderen het deden. <br><a class="btn btn-primary" href="/mastermind">Naar Woordle</a>'
-                    : 'Je hebt deze dag niet (helemaal) gespeeld, dus de resultaten blijven geheim.');
+                if (selectedKey === todayKey) {
+                    showMessage('Speel eerst het woord van vandaag, dan zie je hoe de anderen het deden. <br><a class="btn btn-primary" href="/mastermind">Naar Woordle</a>');
+                } else if (selectedKey === shiftDay(todayKey, -1)) {
+                    showMessage('Je hebt gisteren niet (helemaal) gespeeld. Je kunt het woord van gisteren vandaag nog spelen, voor 1 punt minder. <br><a class="btn btn-primary" href="/mastermind?gisteren">Speel het woord van gisteren</a>');
+                } else {
+                    showMessage('Je hebt deze dag niet (helemaal) gespeeld, dus de resultaten blijven geheim.');
+                }
             } else {
                 showMessage(escapeHtml(error.message));
             }

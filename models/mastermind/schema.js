@@ -15,7 +15,8 @@ db.serialize(() => {
   });
 
   // One row per guess; feedback is a JSON array of 'correct'/'misplaced'/'incorrect'.
-  // game_date is the (Dutch) day the guess belongs to.
+  // game_date is the (Dutch) day the guess belongs to; late is 1 when the
+  // guess was made after that day, when catching up yesterday's word.
   db.run(`
     CREATE TABLE IF NOT EXISTS mastermind_results (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -24,27 +25,32 @@ db.serialize(() => {
       feedback TEXT NOT NULL,
       wordOfTheDay TEXT NOT NULL,
       timestamp TEXT NOT NULL,
-      game_date TEXT
+      game_date TEXT,
+      late INTEGER NOT NULL DEFAULT 0
     )
   `, (err) => {
     if (err) logger.error('Failed to create mastermind_results table:', err.message);
   });
 
-  // Added in October 2026: before that, days were cut at midnight UTC and
-  // derived from the timestamp. Older rows keep that UTC day, so history
-  // doesn't shift; new rows store the Dutch day directly.
+  // Columns added after the table first went live. game_date (October 2026):
+  // before that, days were cut at midnight UTC and derived from the
+  // timestamp; older rows keep that UTC day, so history doesn't shift. late
+  // (October 2026, catching up yesterday): every older guess was on time.
   db.all('PRAGMA table_info(mastermind_results)', (err, columns) => {
     if (err) return logger.error('Failed to inspect mastermind_results:', err.message);
-    const addColumn = columns.some(c => c.name === 'game_date')
-      ? (callback) => callback(null)
-      : (callback) => db.run('ALTER TABLE mastermind_results ADD COLUMN game_date TEXT', callback);
-    addColumn((err) => {
+    const addColumn = (name, definition, callback) => columns.some(c => c.name === name)
+      ? callback(null)
+      : db.run(`ALTER TABLE mastermind_results ADD COLUMN ${name} ${definition}`, callback);
+    addColumn('game_date', 'TEXT', (err) => {
       if (err) return logger.error('Failed to add game_date column:', err.message);
       db.run('UPDATE mastermind_results SET game_date = date(timestamp) WHERE game_date IS NULL', function (err) {
         if (err) return logger.error('Failed to fill game_date:', err.message);
         if (this.changes) logger.info(`Filled game_date for ${this.changes} older Woordle guesses`);
       });
       db.run('CREATE INDEX IF NOT EXISTS idx_mastermind_results_date ON mastermind_results (game_date, user_id)');
+    });
+    addColumn('late', 'INTEGER NOT NULL DEFAULT 0', (err) => {
+      if (err) logger.error('Failed to add late column:', err.message);
     });
   });
 

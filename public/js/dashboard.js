@@ -1,5 +1,6 @@
 // public/js/dashboard.js: greeting, status badges on the game cards,
-// the dismissable announcement and the footer.
+// the dismissable announcement, the reminder about a missed Woordle day
+// and the footer.
 
 // Bump this to show the announcement again to everyone who closed it
 const UPDATE_VERSION = 'v3';
@@ -21,9 +22,40 @@ async function updateMastermindStatus() {
         } else {
             setStatus('mastermind-status', 'Bezig', 'yellow');
         }
+        remindCatchUp(data);
     } catch (error) {
         console.error('Error fetching Woordle status:', error);
     }
+}
+
+// Missed yesterday's Woordle? Say once per day (per device) that it can
+// still be played. The server only sets remindCatchUp for regular players.
+let catchUpReminderChecked = false;
+function remindCatchUp(data) {
+    if (catchUpReminderChecked) return; // the status is polled: only look at the first answer
+    catchUpReminderChecked = true;
+    if (!data.remindCatchUp) return;
+    const storageKey = 'woordleCatchUpReminder';
+    try {
+        if (localStorage.getItem(storageKey) === data.catchUpDate) return;
+        localStorage.setItem(storageKey, data.catchUpDate);
+    } catch (e) {
+        // Storage unavailable (private mode): show it every time
+    }
+    const modal = document.getElementById('catch-up-modal');
+    modal.classList.remove('hidden');
+    modal.querySelector('.modal-close').focus();
+}
+
+function setupCatchUpModal() {
+    const modal = document.getElementById('catch-up-modal');
+    const close = () => modal.classList.add('hidden');
+    modal.addEventListener('click', (event) => {
+        if (event.target === modal || event.target.closest('[data-close]')) close();
+    });
+    document.addEventListener('keydown', (event) => {
+        if (event.key === 'Escape') close();
+    });
 }
 
 const PICTIONARY_STATUS = {
@@ -124,6 +156,7 @@ async function loadSiteFooter() {
 document.addEventListener('DOMContentLoaded', () => {
     loadGreeting();
     setupAnnouncement();
+    setupCatchUpModal();
     loadSiteFooter();
     poll(updateStatuses, 15000);
 });
