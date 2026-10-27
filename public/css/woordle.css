@@ -109,6 +109,12 @@
     gap: 14px;
 }
 
+/* The grid gap spaces the cards; the stacked-card margin from base.css
+   would push every card after the first one down. */
+#compare-container .card + .card {
+    margin-top: 0;
+}
+
 .compare-message {
     grid-column: 1 / -1;
     text-align: center;
