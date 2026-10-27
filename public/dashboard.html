@@ -66,6 +66,19 @@
 
   <footer class="site-footer" id="siteFooter" hidden></footer>
 
+  <!-- Reminder: yesterday's Woordle can still be caught up (see dashboard.js) -->
+  <div class="modal-backdrop hidden" id="catch-up-modal">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="catch-up-title">
+      <button type="button" class="modal-close" data-close aria-label="Sluiten">×</button>
+      <h2 id="catch-up-title">Woordle van gisteren gemist?</h2>
+      <p>Je kunt het woord van gisteren vandaag nog spelen. Je krijgt dan 1 punt minder dan normaal.</p>
+      <div class="reminder-buttons">
+        <a href="/mastermind?gisteren" class="btn btn-primary">Speel het woord van gisteren</a>
+        <button type="button" class="btn btn-secondary" data-close>Nu niet</button>
+      </div>
+    </div>
+  </div>
+
   <script src="/js/common.js"></script>
   <script src="/js/dashboard.js"></script>
 </body>

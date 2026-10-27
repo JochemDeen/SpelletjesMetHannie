@@ -6,6 +6,7 @@ const db = require('../db');
 const { todayNL, monthNL, addDays, previousMonth } = require('./dates');
 
 const MAX_GUESSES = 6;
+const LATE_PENALTY = 1; // points less for a day caught up the day after
 const SEPARATOR = '|~|';
 
 function all(sql, params = []) {
@@ -18,28 +19,31 @@ function isSolved(feedback) {
   return Array.isArray(feedback) && feedback.length > 0 && feedback.every(entry => entry === 'correct');
 }
 
-// Points for one day: fewer guesses is more points, nothing when not solved
-function calculateScore(guesses, success) {
+// Points for one day: fewer guesses is more points, nothing when not solved,
+// and LATE_PENALTY less for a day that was caught up (finished the day after)
+function calculateScore(guesses, success, late = false) {
   if (!success) return 0;
   const count = Array.isArray(guesses) ? guesses.length : guesses;
-  return { 1: 8, 2: 6, 3: 4, 4: 3, 5: 2, 6: 1 }[count] || 0;
+  const points = { 1: 8, 2: 6, 3: 4, 4: 3, 5: 2, 6: 1 }[count] || 0;
+  return Math.max(0, points - (late ? LATE_PENALTY : 0));
 }
 
 async function updateUserGuess(user_id, guess, feedback, wordOfTheDay, gameDate = todayNL()) {
+  const late = gameDate < todayNL() ? 1 : 0;
   await new Promise((resolve, reject) => {
     db.run(
-      'INSERT INTO mastermind_results (user_id, guess, feedback, wordOfTheDay, timestamp, game_date) VALUES (?, ?, ?, ?, ?, ?)',
-      [user_id, guess, JSON.stringify(feedback), wordOfTheDay, new Date().toISOString(), gameDate],
+      'INSERT INTO mastermind_results (user_id, guess, feedback, wordOfTheDay, timestamp, game_date, late) VALUES (?, ?, ?, ?, ?, ?, ?)',
+      [user_id, guess, JSON.stringify(feedback), wordOfTheDay, new Date().toISOString(), gameDate, late],
       (err) => (err ? reject(err) : resolve())
     );
   });
-  logger.info(`Saved Woordle guess for user ${user_id}`);
+  logger.info(`Saved Woordle guess for user ${user_id} (${gameDate}${late ? ', caught up' : ''})`);
 }
 
 // A player's game for one day, or null when they haven't guessed yet
 async function getUserGameState(user_id, date = todayNL()) {
   const rows = await all(
-    'SELECT guess, feedback FROM mastermind_results WHERE user_id = ? AND game_date = ? ORDER BY id',
+    'SELECT guess, feedback, late FROM mastermind_results WHERE user_id = ? AND game_date = ? ORDER BY id',
     [user_id, date]
   );
   if (!rows.length) return null;
@@ -47,14 +51,36 @@ async function getUserGameState(user_id, date = todayNL()) {
   const feedback = rows.map(row => JSON.parse(row.feedback));
   const success = feedback.some(isSolved);
   const finished = success || guesses.length >= MAX_GUESSES;
-  return { guesses, feedback, success, currentRow: rows.length, finished };
+  const late = rows.some(row => row.late);
+  return { guesses, feedback, success, currentRow: rows.length, finished, late };
+}
+
+// Yesterday's word can still be played (for LATE_PENALTY points less) by
+// anyone who didn't finish it on the day itself. Returns yesterday's date
+// while that's possible for this player, otherwise null.
+async function getCatchUpDate(user_id) {
+  const yesterday = addDays(todayNL(), -1);
+  const state = await getUserGameState(user_id, yesterday);
+  return state && state.finished ? null : yesterday;
+}
+
+// Whether the player played Woordle at all in the week before yesterday. Only
+// then does the home screen remind them of a missed day, so people who don't
+// play Woordle aren't asked about it every day.
+async function playedWeekBefore(user_id) {
+  const yesterday = addDays(todayNL(), -1);
+  const rows = await all(
+    'SELECT 1 FROM mastermind_results WHERE user_id = ? AND game_date >= ? AND game_date < ? LIMIT 1',
+    [user_id, addDays(yesterday, -7), yesterday]
+  );
+  return rows.length > 0;
 }
 
 // One entry per player per day: { user_id, username, date, guesses, feedback,
-// success, finished, solveTime, score }. where/params filter the rows.
+// success, finished, late, solveTime, score }. where/params filter the rows.
 async function getDailyResults(where = '1 = 1', params = []) {
   const rows = await all(`
-    SELECT r.user_id, u.username, r.game_date AS date,
+    SELECT r.user_id, u.username, r.game_date AS date, MAX(r.late) AS late,
            GROUP_CONCAT(r.guess, '${SEPARATOR}') AS guesses,
            GROUP_CONCAT(r.feedback, '${SEPARATOR}') AS feedbacks,
            GROUP_CONCAT(r.timestamp, '${SEPARATOR}') AS timestamps
@@ -86,9 +112,10 @@ async function getDailyResults(where = '1 = 1', params = []) {
       feedback,
       success,
       finished: success || guesses.length >= MAX_GUESSES,
+      late: row.late === 1,
       solveTime: success ? timestamps[solvedAt] : null,
       lastTime: timestamps[timestamps.length - 1],
-      score: calculateScore(guesses, success)
+      score: calculateScore(guesses, success, row.late === 1)
     };
   });
 }
@@ -102,7 +129,7 @@ async function getAllResults(user_id, date = todayNL()) {
   const results = await getDailyResults('r.game_date = ?', [date]);
   return results
     .filter(result => result.finished)
-    .map(({ username, guesses, feedback, success, solveTime, score }) => ({ username, guesses, feedback, success, solveTime, score }));
+    .map(({ username, guesses, feedback, success, late, solveTime, score }) => ({ username, guesses, feedback, success, late, solveTime, score }));
 }
 
 // Personal statistics. Today's game only counts once it is finished.
@@ -229,8 +256,11 @@ async function getEarliestDate() {
 
 module.exports = {
   MAX_GUESSES,
+  LATE_PENALTY,
   updateUserGuess,
   getUserGameState,
+  getCatchUpDate,
+  playedWeekBefore,
   getDailyResults,
   getAllResults,
   getUserStats,

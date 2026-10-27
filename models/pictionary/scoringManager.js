@@ -2,11 +2,14 @@
 const logger = require('../../logger');
 const db = require('../db'); 
 
-// Define the scoring table at the top for easy adjustments
+// Points for the drawer and each correct guesser, by the round (1-5) in which
+// the word was guessed. Hard pays more, but not so much that it is always the
+// best pick: on the games played so far these average out to roughly 4.7
+// (easy), 6.4 (medium) and 7.7 (hard) points per game.
 const scoringTable = {
-    easy: [5, 3, 1, 0],
-    medium: [10, 6, 3, 1, 0],
-    hard: [20, 12, 6, 3, 0],
+    easy: [5, 4, 3, 2, 1],
+    medium: [7, 5, 4, 3, 2],
+    hard: [10, 8, 6, 4, 3],
 };
 
 async function getMaxScore(difficulty) {
@@ -124,25 +127,35 @@ async function updateScoring(gameId) {
                 let roundIndex = Math.min(current_round - 1, scoringTable[difficultyLevel].length - 1);
                 let points = scoringTable[difficultyLevel][roundIndex];
 
-                // Find users who guessed correctly (feedback == 5)
+                // Find users who guessed correctly (feedback == 5) or almost (feedback == 4) in the last round
                 db.all(
-                    `SELECT DISTINCT user_id FROM actions WHERE game_id = ? AND feedback = 5 AND round_number = ?`,
+                    `SELECT user_id, MAX(feedback) AS feedback FROM actions
+                     WHERE game_id = ? AND feedback >= 4 AND round_number = ?
+                     GROUP BY user_id`,
                     [gameId, current_round],
-                    (err, correctGuessers) => {
+                    (err, scoringGuessers) => {
                         if (err) {
                             logger.error('Error fetching correct guessers:', err.message);
                             return reject(err);
                         }
 
+                        const correctGuessers = scoringGuessers.filter(guesser => guesser.feedback === 5);
+                        const closeGuessers = scoringGuessers.filter(guesser => guesser.feedback === 4);
+
                         // Prepare scoring inserts
                         let scoringEntries = [];
-                        
-                        // Add the drawer's score
-                        scoringEntries.push([drawer_user_id, gameId, points]);
+
+                        // Add the drawer's score: nothing when the game ended (after round 5) without a correct guess
+                        scoringEntries.push([drawer_user_id, gameId, correctGuessers.length > 0 ? points : 0]);
 
                         // Add scores for correct guessers
                         correctGuessers.forEach(({ user_id }) => {
                             scoringEntries.push([user_id, gameId, points]);
+                        });
+
+                        // Partial credit: an "almost" (4) in the last round earns half the points, rounded down
+                        closeGuessers.forEach(({ user_id }) => {
+                            scoringEntries.push([user_id, gameId, Math.floor(points / 2)]);
                         });
 
                         if (scoringEntries.length === 0) {

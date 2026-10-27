@@ -129,6 +129,14 @@
     padding: 10px 8px;
 }
 
+/* Reminder popup about yesterday's Woordle */
+.reminder-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 18px;
+}
+
 .site-footer {
     padding: 0 16px 16px;
     text-align: center;

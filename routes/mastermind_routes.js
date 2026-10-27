@@ -6,7 +6,7 @@ const router = express.Router();
 const { requireLogin } = require('../middleware/authMiddleware');
 const { servePage } = require('../utils/servePage');
 const Mastermind = require('../models/mastermind');
-const { todayNL, monthNL, isDateString, isMonthString } = require('../models/mastermind/dates');
+const { todayNL, monthNL, addDays, isDateString, isMonthString } = require('../models/mastermind/dates');
 const logger = require('../logger');
 
 // Pages
@@ -27,6 +27,15 @@ function oneAtATime(userId, task) {
     if (guessQueues.get(userId) === current) guessQueues.delete(userId);
   }).catch(() => {});
   return current;
+}
+
+// The day a guess or game state is for: today's word (no date given), or
+// yesterday's word being caught up. Any other date gives null.
+function playableDate(requested) {
+  const today = todayNL();
+  if (requested === undefined || requested === today) return today;
+  if (requested === addDays(today, -1)) return requested;
+  return null;
 }
 
 // Validate Word Endpoint
@@ -54,10 +63,14 @@ router.post('/api/submit-guess', requireLogin, async (req, res) => {
       if (!(await Mastermind.validateWord(guess))) {
         return { status: 400, body: { error: 'Dat woord kennen we niet.' } };
       }
-      const date = todayNL();
+      const date = playableDate(req.body.date);
+      if (!date) {
+        return { status: 400, body: { error: 'Dat woord kun je niet meer spelen.' } };
+      }
       const gameState = await Mastermind.getUserGameState(user_id, date);
       if (gameState && gameState.finished) {
-        return { status: 400, body: { error: 'Je hebt het woord van vandaag al gespeeld.' } };
+        const day = date === todayNL() ? 'vandaag' : 'gisteren';
+        return { status: 400, body: { error: `Je hebt het woord van ${day} al gespeeld.` } };
       }
       const wordOfTheDay = await Mastermind.getWordOfTheDay(date);
       const feedback = Mastermind.generateFeedback(guess, wordOfTheDay);
@@ -77,19 +90,26 @@ router.post('/api/submit-guess', requireLogin, async (req, res) => {
   }
 });
 
-// Load Game State Endpoint
+// Load Game State Endpoint: today's game, or yesterday's with ?date=.
+// catchUpDate is yesterday's date while this player can still catch it up;
+// remindCatchUp says whether the home screen should point that out.
 router.get('/api/load-game-state', requireLogin, async (req, res) => {
   const user_id = req.session.userId;
+  const date = playableDate(req.query.date);
+  if (!date) {
+    return res.status(400).json({ success: false, error: 'Dat woord kun je niet meer spelen.' });
+  }
   try {
-    const date = todayNL();
     const gameState = await Mastermind.getUserGameState(user_id, date);
+    const catchUpDate = await Mastermind.getCatchUpDate(user_id);
+    const remindCatchUp = !!catchUpDate && await Mastermind.playedWeekBefore(user_id);
     if (gameState) {
       if (gameState.finished) {
         gameState.answer = await Mastermind.getWordOfTheDay(date);
       }
-      res.json({ success: true, state: gameState, date });
+      res.json({ success: true, state: gameState, date, catchUpDate, remindCatchUp });
     } else {
-      res.json({ success: false, message: 'No game state found.', date });
+      res.json({ success: false, message: 'No game state found.', date, catchUpDate, remindCatchUp });
     }
   } catch (error) {
     logger.error('Error loading game state:', error);
