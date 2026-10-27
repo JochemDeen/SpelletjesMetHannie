@@ -116,8 +116,8 @@ async function getActiveGame() {
   async function createNewGame(activeUsers) {
     return new Promise((resolve, reject) => {
         const lastGameSql = `
-            SELECT drawer_user_id, countdown_seconds, current_round
-            FROM games 
+            SELECT drawer_user_id
+            FROM games
             WHERE status = 'completed' AND image_path IS NOT NULL
             ORDER BY created_at DESC LIMIT 1
         `;
@@ -141,34 +141,23 @@ async function getActiveGame() {
             }
             
             const guessers = JSON.stringify(activeUsers.filter(id => id !== nextDrawerUserId));
-            
-            // Determine the countdown adjustment
-            let newCountdown = 60; // Default countdown if no previous game
-            if (lastRow && lastRow.drawer_user_id === nextDrawerUserId) {
-                newCountdown = lastRow.countdown_seconds;
-                if (lastRow.current_round === 1 && newCountdown > 5) {
-                    newCountdown = Math.max(5, newCountdown - 5);
-                } else if (lastRow.current_round > 4 && newCountdown < 180) {
-                    newCountdown = Math.min(180, newCountdown + 5);
-                }
-            }
-            
+
             logger.info(`Next drawer determined as: ${nextDrawerUserId}`);
             logger.info(`Guessers list: ${guessers}`);
-            logger.info(`Countdown set to: ${newCountdown} seconds`);
-            
+
+            // The drawing time is the countdown_seconds column default (60 s)
             const insertSql = `
-                INSERT INTO games (drawer_user_id, state, status, guessers, countdown_seconds)
-                VALUES (?, 'choose', 'ongoing', ?, ?)
+                INSERT INTO games (drawer_user_id, state, status, guessers)
+                VALUES (?, 'choose', 'ongoing', ?)
             `;
-            
-            db.run(insertSql, [nextDrawerUserId, guessers, newCountdown], function (insertErr) {
+
+            db.run(insertSql, [nextDrawerUserId, guessers], function (insertErr) {
                 if (insertErr) {
                     logger.error('Failed to create a new game:', insertErr.message);
                     return reject(insertErr);
                 }
-                
-                logger.info(`New game created with game_id: ${this.lastID}, drawer_user_id: ${nextDrawerUserId}, countdown: ${newCountdown} sec`);
+
+                logger.info(`New game created with game_id: ${this.lastID}, drawer_user_id: ${nextDrawerUserId}`);
                 resolve(this.lastID);
             });
         });
