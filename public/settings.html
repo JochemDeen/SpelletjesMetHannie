@@ -45,6 +45,50 @@
       <p class="muted settings-note">Woordle kun je altijd spelen.</p>
     </section>
     <section class="card">
+      <h2 class="settings-heading">Meldingen</h2>
+      <p class="muted">Een seintje als je aan de beurt bent, ook als de site dicht is.</p>
+      <label class="toggle-row" for="pushToggle">
+        <span class="toggle-label">Meldingen op dit apparaat</span>
+        <span class="switch">
+          <input type="checkbox" id="pushToggle" role="switch" disabled>
+          <span class="slider" aria-hidden="true"></span>
+        </span>
+      </label>
+      <p class="muted settings-note" id="pushNote" hidden></p>
+      <div id="notifyOptions">
+        <p class="muted settings-note">Waarvoor? Dit geldt voor al je apparaten.</p>
+        <label class="toggle-row" for="notifyPictionaryToggle">
+          <span class="toggle-label">Pictionary: jij bent aan de beurt</span>
+          <span class="switch">
+            <input type="checkbox" id="notifyPictionaryToggle" role="switch">
+            <span class="slider" aria-hidden="true"></span>
+          </span>
+        </label>
+        <label class="toggle-row" for="notifyWieBenIkToggle">
+          <span class="toggle-label">Wie ben ik: jij bent aan de beurt</span>
+          <span class="switch">
+            <input type="checkbox" id="notifyWieBenIkToggle" role="switch">
+            <span class="slider" aria-hidden="true"></span>
+          </span>
+        </label>
+        <label class="toggle-row" for="notifyWoordleToggle">
+          <span class="toggle-label">Woordle: herinnering om 10 uur<small class="toggle-hint">als je nog niet gespeeld hebt</small></span>
+          <span class="switch">
+            <input type="checkbox" id="notifyWoordleToggle" role="switch">
+            <span class="slider" aria-hidden="true"></span>
+          </span>
+        </label>
+        <label class="toggle-row" for="notifyResultsToggle">
+          <span class="toggle-label">Uitslag als een spel klaar is</span>
+          <span class="switch">
+            <input type="checkbox" id="notifyResultsToggle" role="switch">
+            <span class="slider" aria-hidden="true"></span>
+          </span>
+        </label>
+        <button type="button" class="btn btn-secondary btn-block push-test" id="pushTest" hidden>Stuur een testmelding</button>
+      </div>
+    </section>
+    <section class="card">
       <h2 class="settings-heading">Weergave</h2>
       <p class="muted">Geldt voor dit apparaat.</p>
       <div class="theme-choice" role="radiogroup" aria-label="Weergave">
@@ -66,6 +110,7 @@
   </main>
 
   <script src="/js/common.js"></script>
+  <script src="/js/push.js"></script>
   <script src="/js/settings.js"></script>
 </body>
 </html>

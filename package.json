@@ -17,6 +17,7 @@
     "express": "^4.21.1",
     "express-session": "^1.18.1",
     "sqlite3": "^5.1.7",
+    "web-push": "^3.6.7",
     "winston": "^3.19.0"
   },
   "engines": {

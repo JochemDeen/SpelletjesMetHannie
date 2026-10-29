@@ -36,6 +36,7 @@ router.get('/api/wie-ben-ik/state', requireLogin, async (req, res) => {
       }
       const newGameId = await WieBenIk.createNewGame(activeUsers);
       game = await WieBenIk.getGameById(newGameId);
+      WieBenIk.notifyThemeVote(newGameId, await WieBenIk.getPlayers(newGameId), userId);
     }
 
     // Safety net: run the phase checks so a stuck game recovers on any poll.
@@ -43,15 +44,15 @@ router.get('/api/wie-ben-ik/state', requireLogin, async (req, res) => {
       // Whoever switched the game on/off in Settings joins or leaves right
       // away (a leave may finish the vote) instead of waiting for the next game.
       await WieBenIk.syncThemeVotePlayers(game.game_id, await Users.getActiveWieBenIkUserIds());
-      if (await WieBenIk.checkForEndOfThemeVote(game.game_id)) {
+      if (await WieBenIk.checkForEndOfThemeVote(game.game_id, userId)) {
         game = await WieBenIk.getGameById(game.game_id);
       }
     } else if (game.state === 'question') {
-      if (await WieBenIk.checkForEndOfQuestions(game.game_id)) {
+      if (await WieBenIk.checkForEndOfQuestions(game.game_id, userId)) {
         game = await WieBenIk.getGameById(game.game_id);
       }
     } else if (game.state === 'voting') {
-      const result = await WieBenIk.checkForEndOfVoting(game.game_id);
+      const result = await WieBenIk.checkForEndOfVoting(game.game_id, userId);
       if (result.roundEnded) {
         game = await WieBenIk.getGameById(game.game_id);
       }
@@ -190,7 +191,7 @@ router.post('/api/wie-ben-ik/theme-vote', requireLogin, async (req, res) => {
     }
 
     await WieBenIk.submitThemeVote(game.game_id, userId, votedThemeId);
-    await WieBenIk.checkForEndOfThemeVote(game.game_id);
+    await WieBenIk.checkForEndOfThemeVote(game.game_id, userId);
     res.json({
       status: 'success',
       theme_id: votedThemeId,
@@ -318,7 +319,7 @@ router.post('/api/wie-ben-ik/question', requireLogin, async (req, res) => {
     }
 
     await WieBenIk.submitQuestion(game.game_id, userId, game.current_round, questionText, is_guess, llmAdvice);
-    await WieBenIk.checkForEndOfQuestions(game.game_id);
+    await WieBenIk.checkForEndOfQuestions(game.game_id, userId);
     res.json({ status: 'success' });
   } catch (error) {
     logger.error('Wie ben ik: error submitting question:', error.message);
@@ -385,7 +386,7 @@ router.post('/api/wie-ben-ik/vote', requireLogin, async (req, res) => {
       return res.status(400).json({ error: 'Je kunt niet op je eigen vraag stemmen.' });
     }
     await WieBenIk.submitVote(question_id, userId, answer);
-    await WieBenIk.checkForEndOfVoting(game.game_id);
+    await WieBenIk.checkForEndOfVoting(game.game_id, userId);
     res.json({ status: 'success' });
   } catch (error) {
     if (error.message && error.message.includes('UNIQUE')) {

@@ -1,6 +1,7 @@
 //models/pictionary/gameManager.js
 const logger = require('../../logger');
 const db = require('../db'); 
+const notifications = require('./notifications');
 
 // Returns the current global active game (if any), ignoring the current user.
 async function getActiveGame() {
@@ -183,9 +184,10 @@ async function getActiveGame() {
 }
 
 
-async function checkForEndOfGuessing(gameId) {
+// actorId: the player whose request runs the check (left out of the notification)
+async function checkForEndOfGuessing(gameId, actorId) {
     return new Promise((resolve, reject) => {
-        const gameSql = `SELECT guessers, current_round FROM games WHERE game_id = ?`;
+        const gameSql = `SELECT g.*, u.username AS drawer_name FROM games g JOIN users u ON g.drawer_user_id = u.id WHERE g.game_id = ?`;
         db.get(gameSql, [gameId], (err, game) => {
             if (err) return reject(err);
             if (!game) return resolve(false);
@@ -204,10 +206,13 @@ async function checkForEndOfGuessing(gameId) {
                 if (err) return reject(err);
                 
                 if (result.guessCount === guessers.length) {
-                    // Update state to "feedback"
-                    db.run(`UPDATE games SET state = 'feedback' WHERE game_id = ?`, [gameId], (err) => {
+                    // Update state to "feedback" (only once, if two polls race)
+                    db.run(`UPDATE games SET state = 'feedback' WHERE game_id = ? AND state = 'guessing'`, [gameId], function (err) {
                         if (err) return reject(err);
-                        logger.info(`Game ${gameId} moved to feedback phase.`);
+                        if (this.changes > 0) {
+                            logger.info(`Game ${gameId} moved to feedback phase.`);
+                            notifications.notifyDrawerToGrade(game, actorId);
+                        }
                         resolve(true);
                     });
                 } else {
