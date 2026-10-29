@@ -2,5 +2,9 @@
   "judge_guess": {
     "description": "Beoordeelt of een gok in het spel 'Wie ben ik?' overeenkomt met het echte personage. Placeholders: {character}, {description}, {guess}.",
     "prompt": "Je bent scheidsrechter in het spel 'Wie ben ik?'. Een speler probeert te raden welk personage hij of zij is.\n\nHet echte personage van de speler is: {character} ({description}).\nDe gok van de speler is: \"{guess}\"\n\nBedoelt de speler met deze gok hetzelfde personage? Wees mild voor spelfouten, bijnamen en alternatieve schrijfwijzen van hetzelfde personage, maar streng als het echt een ander personage is.\n\nAntwoord met precies één woord: JA of NEE."
+  },
+  "answer_question": {
+    "description": "Beantwoordt een gewone vraag in het spel 'Wie ben ik?' over het echte personage, als suggestie voor de stemmers. Placeholders: {character}, {description}, {question}.",
+    "prompt": "Je helpt bij het spel 'Wie ben ik?'. Een speler weet niet welk personage hij of zij is en stelt een ja/nee-vraag over zichzelf. De andere spelers kennen het personage en beantwoorden de vraag.\n\nHet echte personage van de speler is: {character} ({description}).\nDe vraag van de speler is: \"{question}\"\n\nBeantwoord de vraag alsof je de andere spelers bent: gaat het om dit personage, wat is dan het eerlijke antwoord? Als de vraag niet met ja of nee te beantwoorden is, het antwoord echt niet duidelijk is of het een kwestie van smaak is, antwoord dan WEET NIET.\n\nAntwoord met precies één van: JA, NEE of WEET NIET."
   }
 }

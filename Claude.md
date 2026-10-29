@@ -9,7 +9,7 @@ Small gaming website for playing games with my mom (Hannie) and a few select fam
 Games:
 - **Woordle** (internally still called **Mastermind**: URLs `/mastermind`, tables `mastermind_*`, `models/mastermind/`) — daily word-guessing game like Wordle, one shared "word of the day" for all users. Players only ever see the name Woordle.
 - **Pictionary** — one shared, global game at a time (not per-user rooms): one drawer, everyone else guesses, drawer grades guesses each round.
-- **Wie ben ik** — one shared, global game at a time: players vote for a theme, everyone gets a secret character (visible to the others, not to yourself), and per round everyone asks one question which the other players then answer by voting Ja/Nee/??. A player can turn their question into a guess; a Gemini-backed judge suggests to the voters whether the guess is right, and a majority of Ja votes wins the game.
+- **Wie ben ik** — one shared, global game at a time: players vote for a theme, everyone gets a secret character (visible to the others, not to yourself), and per round everyone asks one question which the other players then answer by voting Ja/Nee/??. A Gemini-backed judge suggests an answer to the voters for every question. A player can turn their question into a guess; the judge then suggests whether the guess is right, and a majority of Ja votes wins the game.
 
 ## Commands
 
@@ -30,7 +30,7 @@ Config is loaded via `dotenv` from `.env` (not committed):
 - `PORT` — server port (default 3000)
 - `SESSION_SECRET` — express-session secret
 - `COOKIE_SECURE` — set `'true'` to mark session cookie secure (production/HTTPS)
-- `GEMINI_API_KEY` — enables the Woordle hints ("Ollie", `models/mastermind/hintsManager.js`), the Wie ben ik guess judge (`models/wieBenIk/llmJudge.js`), and the Pictionary grade suggester (`models/pictionary/gradeSuggester.js`), which all call Gemini through `models/gemini.js`; if unset, hints are reported as unavailable and guesses/grades simply get no LLM suggestion, rather than erroring.
+- `GEMINI_API_KEY` — enables the Woordle hints ("Ollie", `models/mastermind/hintsManager.js`), the Wie ben ik judge (`models/wieBenIk/llmJudge.js`), and the Pictionary grade suggester (`models/pictionary/gradeSuggester.js`), which all call Gemini through `models/gemini.js`; if unset, hints are reported as unavailable and questions/guesses/grades simply get no LLM suggestion, rather than erroring.
 - `LOG_LEVEL` — optional winston level (default `info`; `debug` adds the per-poll game dumps)
 
 Sessions are stored in `sessions.sqlite` via `connect-sqlite3`; app data lives in `database.sqlite` in the project root (both resolved relative to the project, not the working directory).
@@ -43,7 +43,7 @@ Sessions are stored in `sessions.sqlite` via `connect-sqlite3`; app data lives i
 - `models/db.js` — the one shared SQLite connection and core table creation
 - `models/gemini.js` — the one Gemini text call (`callGemini`, 15 s timeout, model id in one constant)
 - `models/user.js` — user lookups
-- `prompts/` — prompts used for the Gemini calls (Woordle hints, Wie ben ik guess judge, Pictionary grade suggester)
+- `prompts/` — prompts used for the Gemini calls (Woordle hints, Wie ben ik judge, Pictionary grade suggester)
 - `utils/` — `servePage.js` (route handler for the static pages) and `wordAdmin.js` (word-list editing for the admin scripts)
 - `public/` — shared pages (login, dashboard, settings) and the Woordle pages; `public/css/base.css` holds the shared look (colour tokens incl. dark mode, Nunito font, header, buttons, cards, toasts, modal) and `public/js/common.js` the shared helpers (`api()`, `toast()`, `poll()`, `escapeHtml()`) that every page loads
 - `public/pictionary/` — all public-facing code for Pictionary
@@ -90,7 +90,7 @@ There is exactly **one active Pictionary game at a time** across the whole site 
 - `gameManager.js` — the global game record and state machine, theme voting (most votes wins, random tie-break; a player can change their vote until everyone has voted, and the "Verras me!" option is translated to a random real theme by the route before it is stored) and the 24h `scoring` pseudo-state after a game finishes (same pattern as Pictionary).
 - `questionsManager.js` — questions/guesses per round, Ja/Nee/?? votes, and the round-resolution logic (`checkForEndOfVoting`: a guess with more Ja than Nee votes wins the game, otherwise the next round starts).
 - `scoringManager.js` — a win counts as one entry (score 1) per winner, last-game/monthly scoreboards.
-- `llmJudge.js` — Gemini call comparing a guess against the player's real character, returns `'ja'`/`'nee'`/`null` (never throws; prompt in `prompts/wie-ben-ik-judge.json`).
+- `llmJudge.js` — Gemini calls against the player's real character, stored in `wbi_questions.llm_advice` and shown to the voters: `judgeGuess` (does the guess match, `'ja'`/`'nee'`/`null`) and `answerQuestion` (answer to a regular question, `'ja'`/`'nee'`/`'??'`/`null`). Never throw; prompts in `prompts/wie-ben-ik-judge.json`. Only a vote against the advice on a guess asks for confirmation.
 
 Like Pictionary there is exactly **one active game at a time** (`wbi_games.status = 'ongoing'`), auto-created from users with the `wieBenIkEnabled` setting (needs ≥ 2). When a user has no explicit `wieBenIkEnabled` row, it falls back to their `pictionaryEnabled` setting (then to on), so at rollout only Pictionary players joined automatically. During `theme_vote` (before characters are handed out) the players follow the setting on every state poll (`syncThemeVotePlayers`): switching it on joins the game as long as someone still has to vote, switching it off leaves it unless that would drop the game below 2 players. After the theme is picked, a newcomer spectates until the next game. The `wbi_games.state` machine is `theme_vote` → (`question` → `voting` per round) → `completed`. The route derives a per-viewer projection (`theme-vote[-waiting]`, `question[-waiting]`, `voting[-waiting]`, `scoring`, `Off`) and hides the viewer's own character while the game is ongoing; vote tallies for the current round stay hidden until the round is resolved. Logged-in non-participants spectate an ongoing game (`spectate-{theme-vote,question,voting}` states): they see the question history (current-round texts only once the question phase is over) but no characters at all. The past-game endpoint (`/api/wie-ben-ik/get-game`) only serves completed games, with all characters revealed. `/wie-ben-ik/personages` is a character browser (all figures per theme, linked from the theme-vote screen); its data endpoint (`/api/wie-ben-ik/characters`) returns 403 while a game is live (any state past `theme_vote`).
 

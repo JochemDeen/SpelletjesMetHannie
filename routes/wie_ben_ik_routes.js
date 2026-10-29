@@ -292,7 +292,7 @@ router.post('/api/wie-ben-ik/question', requireLogin, async (req, res) => {
     if (!questionText) {
       return res.status(400).json({ error: 'Je hebt niks ingevuld.' });
     }
-    // Questions are sent to every player on each poll (and guesses to Gemini)
+    // Questions are sent to every player on each poll (and to Gemini)
     if (questionText.length > 500) {
       return res.status(400).json({ error: 'Je vraag is te lang.' });
     }
@@ -310,11 +310,14 @@ router.post('/api/wie-ben-ik/question', requireLogin, async (req, res) => {
       return res.status(400).json({ error: 'Je hebt deze ronde al een vraag gesteld.' });
     }
 
-    // For a guess, ask the LLM to compare the guess with the real character
-    // so voters get a suggestion. On failure the game continues without one.
+    // Ask the LLM for a suggestion to the voters: for a guess whether it
+    // matches the real character, for a question what the answer is. On
+    // failure the game continues without one.
     let llmAdvice = null;
-    if (is_guess && me.character_name) {
-      llmAdvice = await WieBenIk.judgeGuess(me.character_name, me.character_description, questionText);
+    if (me.character_name) {
+      llmAdvice = is_guess
+        ? await WieBenIk.judgeGuess(me.character_name, me.character_description, questionText)
+        : await WieBenIk.answerQuestion(me.character_name, me.character_description, questionText);
     }
 
     await WieBenIk.submitQuestion(game.game_id, userId, game.current_round, questionText, is_guess, llmAdvice);
@@ -349,7 +352,7 @@ router.get('/api/wie-ben-ik/to-vote', requireLogin, async (req, res) => {
         character_description: q.character_description,
         text: q.text,
         is_guess: !!q.is_guess,
-        llm_advice: q.is_guess ? q.llm_advice : null
+        llm_advice: q.llm_advice
       }))
     });
   } catch (error) {
@@ -503,7 +506,7 @@ router.get('/api/wie-ben-ik/get-game', requireLogin, async (req, res) => {
         round_number: q.round_number,
         text: q.text,
         is_guess: !!q.is_guess,
-        llm_advice: q.is_guess ? q.llm_advice : null,
+        llm_advice: q.llm_advice,
         ja: q.ja,
         nee: q.nee,
         onbekend: q.onbekend
