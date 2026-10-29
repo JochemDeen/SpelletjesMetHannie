@@ -6,6 +6,7 @@ const { servePage } = require('../utils/servePage');
 const logger = require('../logger');
 
 const WieBenIk = require('../models/wieBenIk');
+const Users = require('../models/user');
 
 // ----------------------
 // Pages
@@ -28,7 +29,6 @@ router.get('/api/wie-ben-ik/state', requireLogin, async (req, res) => {
       if (game?.state === 'scoring') {
         return res.json({ game_id: game.game_id, state: 'scoring', status: 'completed' });
       }
-      const Users = require('../models/user');
       const activeUsers = await Users.getActiveWieBenIkUserIds();
       logger.info(`Wie ben ik: active users: ${JSON.stringify(activeUsers)}`);
       if (!activeUsers || activeUsers.length < 2) {
@@ -38,11 +38,11 @@ router.get('/api/wie-ben-ik/state', requireLogin, async (req, res) => {
       game = await WieBenIk.getGameById(newGameId);
     }
 
-    const players = await WieBenIk.getPlayers(game.game_id);
-    const me = players.find(p => p.user_id === userId);
-
     // Safety net: run the phase checks so a stuck game recovers on any poll.
     if (game.state === 'theme_vote') {
+      // Whoever switched the game on/off in Settings joins or leaves right
+      // away (a leave may finish the vote) instead of waiting for the next game.
+      await WieBenIk.syncThemeVotePlayers(game.game_id, await Users.getActiveWieBenIkUserIds());
       if (await WieBenIk.checkForEndOfThemeVote(game.game_id)) {
         game = await WieBenIk.getGameById(game.game_id);
       }
@@ -56,6 +56,9 @@ router.get('/api/wie-ben-ik/state', requireLogin, async (req, res) => {
         game = await WieBenIk.getGameById(game.game_id);
       }
     }
+
+    const players = await WieBenIk.getPlayers(game.game_id);
+    const me = players.find(p => p.user_id === userId);
 
     if (!me) {
       // Non-participants spectate: they follow the questions, never the characters.

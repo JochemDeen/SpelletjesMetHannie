@@ -137,6 +137,39 @@ async function submitThemeVote(gameId, userId, themeId) {
   });
 }
 
+// While the theme vote runs (no characters yet), the players follow the
+// settings: who turned the game on joins, who turned it off leaves. Both
+// statements re-check the game in SQL, so they can't race with the resolution:
+// a join needs someone still voting (otherwise the theme is about to be
+// picked), and a leave never drops the game below 2 players.
+async function syncThemeVotePlayers(gameId, activeUserIds) {
+  const run = (sql, params) => new Promise((resolve, reject) => {
+    db.run(sql, params, function (err) { err ? reject(err) : resolve(this.changes); });
+  });
+  const players = await getPlayers(gameId);
+  const playerIds = players.map(p => p.user_id);
+
+  for (const userId of activeUserIds.filter(id => !playerIds.includes(id))) {
+    const added = await run(`
+      INSERT OR IGNORE INTO wbi_players (game_id, user_id)
+      SELECT ?, ?
+      WHERE EXISTS (SELECT 1 FROM wbi_games WHERE game_id = ? AND state = 'theme_vote')
+        AND EXISTS (SELECT 1 FROM wbi_players WHERE game_id = ? AND theme_vote IS NULL)
+    `, [gameId, userId, gameId, gameId]);
+    if (added) logger.info(`Wie ben ik: user ${userId} joined game ${gameId} during the theme vote.`);
+  }
+
+  for (const userId of playerIds.filter(id => !activeUserIds.includes(id))) {
+    const removed = await run(`
+      DELETE FROM wbi_players
+      WHERE game_id = ? AND user_id = ?
+        AND EXISTS (SELECT 1 FROM wbi_games WHERE game_id = ? AND state = 'theme_vote')
+        AND (SELECT COUNT(*) FROM wbi_players WHERE game_id = ?) > 2
+    `, [gameId, userId, gameId, gameId]);
+    if (removed) logger.info(`Wie ben ik: user ${userId} left game ${gameId} during the theme vote.`);
+  }
+}
+
 // When every player voted: pick the theme with the most votes (random among
 // ties), assign a distinct character to every player and start round 1.
 async function checkForEndOfThemeVote(gameId) {
@@ -246,6 +279,7 @@ module.exports = {
   getPlayers,
   setGameState,
   submitThemeVote,
+  syncThemeVotePlayers,
   checkForEndOfThemeVote,
   completeGame,
   getLatestGameId,
