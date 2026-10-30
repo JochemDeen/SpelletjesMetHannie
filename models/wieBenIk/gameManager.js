@@ -3,6 +3,7 @@ const logger = require('../../logger');
 const db = require('../db');
 require('./schema'); // ensure wbi_* tables exist
 const characterManager = require('./characterManager');
+const notifications = require('./notifications');
 
 // Returns the current global active game (if any).
 // Mirrors the Pictionary behaviour: if there is no ongoing game but the last
@@ -172,7 +173,8 @@ async function syncThemeVotePlayers(gameId, activeUserIds) {
 
 // When every player voted: pick the theme with the most votes (random among
 // ties), assign a distinct character to every player and start round 1.
-async function checkForEndOfThemeVote(gameId) {
+// actorId: the player whose request runs the check (left out of the notification)
+async function checkForEndOfThemeVote(gameId, actorId) {
   const players = await getPlayers(gameId);
   if (players.length === 0) return false;
   if (players.some(p => !p.theme_vote)) return false;
@@ -204,14 +206,15 @@ async function checkForEndOfThemeVote(gameId) {
         });
       });
       db.run(
-        `UPDATE wbi_games SET theme_id = ?, theme_name = ?, state = 'question', current_round = 1 WHERE game_id = ?`,
+        `UPDATE wbi_games SET theme_id = ?, theme_name = ?, state = 'question', current_round = 1 WHERE game_id = ? AND state = 'theme_vote'`,
         [themeId, themeName, gameId],
-        (err) => {
+        function (err) {
           if (err) {
             logger.error(`Wie ben ik: failed to start game ${gameId} after theme vote:`, err.message);
             return reject(err);
           }
           logger.info(`Wie ben ik: game ${gameId} started with theme '${themeName}', round 1.`);
+          if (this.changes > 0) notifications.notifyAskQuestion(gameId, 1, themeName, players, actorId);
           resolve(true);
         }
       );

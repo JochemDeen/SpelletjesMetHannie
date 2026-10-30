@@ -203,6 +203,7 @@ router.get('/api/pictionary/state', requireLogin, async (req, res) => {
       const newGameId = await Pictionary.createNewGame(activeUsers);
       logger.info(`New Pictionary game ${newGameId} created.`);
       gameState = await Pictionary.getGameById(newGameId);
+      Pictionary.notifyNewGame(gameState, userId);
     }
     const gameId = gameState.game_id;
     const isDrawer = gameState.drawer_user_id === userId;
@@ -213,7 +214,7 @@ router.get('/api/pictionary/state', requireLogin, async (req, res) => {
     }
 
     if (gameState.state === 'guessing') {
-      if (await Pictionary.checkForEndOfGuessing(gameId)) {
+      if (await Pictionary.checkForEndOfGuessing(gameId, userId)) {
         gameState.state = 'feedback';
       }
     }
@@ -412,9 +413,11 @@ router.post('/api/pictionary/submit-grades', requireLogin, requireActiveGame, re
       if (feedbackResult.gameCompleted) {
         await Pictionary.updateScoring(gameId);
         logger.info(`Game ${gameId} is now completed.`);
+        Pictionary.notifyResult(game, await Pictionary.getGuesses(gameId), req.session.userId);
       } else {
         await Pictionary.setGameState(gameId, 'guessing');
         logger.info(`Game ${gameId} advanced to round ${game.current_round + 1}.`);
+        Pictionary.notifyGuessers(game, game.current_round + 1, req.session.userId);
       }
     }
     const updated = await Pictionary.getGameById(gameId);
@@ -466,6 +469,7 @@ router.post('/api/pictionary/submit-drawing', requireLogin, requireActiveGame, r
     }
     const filePath = await Pictionary.saveDrawing(game.game_id, drawing);
     logger.info(`Game ${game.game_id}: drawing submitted`);
+    Pictionary.notifyGuessers(game, game.current_round, req.session.userId);
     res.json({ status: 'success', filePath });
   } catch (error) {
     sendError(res, error, 'Error submitting drawing');

@@ -14,6 +14,7 @@ const settingsRoutes = require('./routes/settings');
 const rateRoutes = require('./routes/ratings');
 const { requireLogin } = require('./middleware/authMiddleware');
 const logger = require('./logger');
+const { startDailyReminder } = require('./models/mastermind/reminder');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -112,4 +113,5 @@ app.use((err, req, res, next) => {
 // Start the server
 app.listen(PORT, () => {
   logger.info(`Server is running on port ${PORT}`);
+  startDailyReminder();
 });

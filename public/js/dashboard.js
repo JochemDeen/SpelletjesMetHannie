@@ -158,5 +158,6 @@ document.addEventListener('DOMContentLoaded', () => {
     setupAnnouncement();
     setupCatchUpModal();
     loadSiteFooter();
+    Push.sync(); // link this device's notifications to whoever is logged in now
     poll(updateStatuses, 15000);
 });

@@ -68,6 +68,12 @@ Only words with at least `--min-ratings` ratings are considered.
 | `node scripts/check-mastermind-scores.js` | Read-only: recomputes the Woordle monthly scores and "months won" from the raw guesses, and lists oddities (more than 6 guesses, guesses after solving, ...). Compare with the scoreboard page. |
 | `node scripts/cleanup-drawings.js [--days=30] [--delete]` | Lists Pictionary drawing files no game uses any more (replaced by a touch-up, old backups); `--delete` removes them. |
 
+## Push notifications
+
+| Command | What it does |
+| --- | --- |
+| `node scripts/generate-vapid-keys.js` | Prints a new key pair for push notifications; paste the three lines into `.env` (once per server, with your own e-mail address in `VAPID_SUBJECT`) and restart the app. New keys later mean every device has to switch notifications on again. |
+
 ## Development only
 
 | Command | What it does |
