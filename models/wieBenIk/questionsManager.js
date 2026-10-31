@@ -3,6 +3,7 @@ const logger = require('../../logger');
 const db = require('../db');
 const gameManager = require('./gameManager');
 const scoringManager = require('./scoringManager');
+const notifications = require('./notifications');
 
 async function hasSubmittedQuestion(gameId, roundNumber, userId) {
   return new Promise((resolve, reject) => {
@@ -110,7 +111,8 @@ async function submitVote(questionId, userId, answer) {
 }
 
 // When every player submitted a question this round, move to voting.
-async function checkForEndOfQuestions(gameId) {
+// actorId: the player whose request runs the check (left out of the notification)
+async function checkForEndOfQuestions(gameId, actorId) {
   const game = await gameManager.getGameById(gameId);
   if (!game || game.state !== 'question') return false;
   const players = await gameManager.getPlayers(gameId);
@@ -123,13 +125,17 @@ async function checkForEndOfQuestions(gameId) {
     db.get(sql, [gameId, game.current_round], async (err, row) => {
       if (err) return reject(err);
       if ((row?.cnt || 0) < players.length) return resolve(false);
-      try {
-        await gameManager.setGameState(gameId, 'voting');
-        logger.info(`Wie ben ik: game ${gameId} round ${game.current_round} moved to voting.`);
+      db.run(`UPDATE wbi_games SET state = 'voting' WHERE game_id = ? AND state = 'question'`, [gameId], function (updateErr) {
+        if (updateErr) {
+          logger.error('Wie ben ik: failed to update game state:', updateErr.message);
+          return reject(updateErr);
+        }
+        if (this.changes > 0) {
+          logger.info(`Wie ben ik: game ${gameId} round ${game.current_round} moved to voting.`);
+          notifications.notifyVote(gameId, game.current_round, players, actorId);
+        }
         resolve(true);
-      } catch (e) {
-        reject(e);
-      }
+      });
     });
   });
 }
@@ -137,7 +143,8 @@ async function checkForEndOfQuestions(gameId) {
 // When every question in the round received a vote from every other player,
 // resolve the round: a guess with more 'ja' than 'nee' votes wins the game;
 // otherwise the next round starts.
-async function checkForEndOfVoting(gameId) {
+// actorId: the player whose request runs the check (left out of the notification)
+async function checkForEndOfVoting(gameId, actorId) {
   const game = await gameManager.getGameById(gameId);
   if (!game || game.state !== 'voting') {
     return { roundEnded: false, gameCompleted: false };
@@ -161,6 +168,7 @@ async function checkForEndOfVoting(gameId) {
     const completed = await gameManager.completeGame(gameId, winners);
     if (completed) {
       await scoringManager.updateScoring(gameId);
+      notifications.notifyWinners(gameId, winners, players, actorId);
     }
     return { roundEnded: true, gameCompleted: true };
   }
@@ -169,12 +177,15 @@ async function checkForEndOfVoting(gameId) {
     db.run(
       `UPDATE wbi_games SET current_round = current_round + 1, state = 'question' WHERE game_id = ? AND state = 'voting'`,
       [gameId],
-      (err) => {
+      function (err) {
         if (err) {
           logger.error(`Wie ben ik: failed to advance round for game ${gameId}:`, err.message);
           return reject(err);
         }
         logger.info(`Wie ben ik: game ${gameId} advanced to round ${game.current_round + 1}.`);
+        if (this.changes > 0) {
+          notifications.notifyAskQuestion(gameId, game.current_round + 1, game.theme_name, players, actorId);
+        }
         resolve({ roundEnded: true, gameCompleted: false });
       }
     );
