@@ -380,8 +380,9 @@ async function renderVoting() {
             card.classList.add("vote-card");
             if (q.is_guess) card.classList.add("vote-guess");
 
-            const adviceHtml = (q.is_guess && q.llm_advice)
-                ? `<div class="llm-advice">💡 De computer denkt: <strong>${escapeHtml(q.llm_advice.toUpperCase())}</strong></div>`
+            const adviceLabel = q.llm_advice === "??" ? "WEET HET NIET" : (q.llm_advice || "").toUpperCase();
+            const adviceHtml = q.llm_advice
+                ? `<div class="llm-advice">💡 De computer denkt: <strong>${escapeHtml(adviceLabel)}</strong></div>`
                 : "";
 
             card.innerHTML = `

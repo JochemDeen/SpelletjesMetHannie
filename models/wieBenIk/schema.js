@@ -45,7 +45,7 @@ db.serialize(() => {
       round_number INTEGER NOT NULL,
       text TEXT NOT NULL,
       is_guess INTEGER DEFAULT 0,
-      llm_advice TEXT,                -- 'ja' or 'nee' suggestion from the LLM (guesses only)
+      llm_advice TEXT,                -- LLM suggestion: 'ja'/'nee' (guess), 'ja'/'nee'/'??' (question)
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (game_id) REFERENCES wbi_games(game_id),
       FOREIGN KEY (user_id) REFERENCES users(id)
